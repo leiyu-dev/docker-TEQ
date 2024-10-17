@@ -17,7 +17,11 @@ public abstract class AbstractFlinkNode implements FlinkNode {
         env.setParallelism(1);
     }
 
-    public void startEnvironment() throws Exception {
-        env.execute();
+    public void startEnvironment(){
+        try {
+            env.execute();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
