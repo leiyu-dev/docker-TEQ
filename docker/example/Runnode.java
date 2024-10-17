@@ -1,5 +1,5 @@
 package example;
-import mynode;
+import example.mynode;
 public class Runnode {
     public static void main(String[] args) {
         mynode node = new mynode();

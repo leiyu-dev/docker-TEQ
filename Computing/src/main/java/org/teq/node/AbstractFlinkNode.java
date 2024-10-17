@@ -1,15 +1,23 @@
 package org.teq.node;
 
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.connector.source.Source;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.operators.source.TimestampsAndWatermarks;
 
 public abstract class AbstractFlinkNode implements FlinkNode {
+    private StreamExecutionEnvironment env;
 
-    public static void main(String[] args) {
-        System.out.println("Hello, World!");
+    public StreamExecutionEnvironment getEnv() {
+        return env;
     }
-    public static void runEnvironment() throws Exception {
-//        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-//        env.execute();
-        System.out.println("Run Environment");
+
+    public void initEnvironment(){
+        env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+    }
+
+    public void startEnvironment() throws Exception {
+        env.execute();
     }
 }
