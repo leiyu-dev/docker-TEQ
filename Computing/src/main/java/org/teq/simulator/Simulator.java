@@ -1,10 +1,11 @@
 package org.teq.simulator;
 
 import org.teq.configurator.DockerConfigurator;
+import org.teq.node.AbstractDockerNode;
 import org.teq.node.AbstractFlinkNode;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import java.io.*;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import javassist.*;
@@ -12,91 +13,110 @@ import javassist.*;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
-public class Simulator {
-    static String classNamePrefix = "mynode";
+import static org.teq.configurator.SimulatorConfigurator.classNamePrefix;
 
-    private DockerRunner dockerRunner;
+public class Simulator {
+
+    private static final Logger logger = LogManager.getLogger(Simulator.class);
+    private int numberOfNodes = 0;
+    private final DockerRunner dockerRunner;
 
     public Simulator(){
         dockerRunner = new DockerRunner();
-        dockerRunner.InitRunnerWithTcpHost(DockerConfigurator.imageName,DockerConfigurator.tcpPort);
+        dockerRunner.initRunnerWithTcpHost(DockerConfigurator.imageName,DockerConfigurator.tcpPort);
     }
 
-    public List<Class<AbstractFlinkNode>> nodes = new ArrayList<>();
-    public void addNode(Class<?> clazz){
-        if(AbstractFlinkNode.class.isAssignableFrom(clazz)){
-            nodes.add((Class<AbstractFlinkNode>) clazz);
+    public List<Class<AbstractDockerNode>> nodes = new ArrayList<>();
+    public void addNode(AbstractDockerNode node){
+        Class<?>clazz = node.getClass();
+        if(AbstractDockerNode.class.isAssignableFrom(clazz)){
+            nodes.add((Class<AbstractDockerNode>) clazz);
         }
        else {
-            System.out.println("Class "+ clazz.getName() +" is not a subclass of AbstractFlinkNode");
+            logger.error("Class "+ clazz.getName() +" is not a subclass of AbstractFlinkNode");
         }
     }
     public void start() throws Exception {
-        System.out.println("Simulator initializing");
+        logger.info("Starting the simulation");
 
-        //组件好docker文件夹
+        runAssembleScript();
+
+        logger.info("Starting the nodes");
+
+        for(Class<AbstractDockerNode>clazz : nodes){
+            startNode(clazz);
+        }
+
+        // 等待所有节点运行完
+        dockerRunner.waitUntilContainerStopped();
+    }
+
+    private void runAssembleScript() throws IOException {
+        //assemble the docker folder
         //TODO:LINUX
+        logger.info("Assembling docker folder");
         String command = "powershell.exe -ExecutionPolicy Bypass -File run.ps1";
         Process process = Runtime.getRuntime().exec(command);
 
-
-
         String line;
-        // 获取命令的标准输出
+        // get the output from the process
         BufferedReader inputReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        System.out.println("Standard Output:");
         while ((line = inputReader.readLine()) != null) {
-            System.out.println(line);
+            logger.debug("Script Output:"+line);
         }
 
         // 获取命令的错误输出
         BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
         System.out.println("Error Output (if any):");
         while ((line = errorReader.readLine()) != null) {
-            System.err.println(line);
+            logger.error("Script Error:"+line);
         }
-
-
-        int numberOfNodes = 0;
-        for(Class<?>clazz : nodes){
-            numberOfNodes++;
-            // 使用Javassist加载这个匿名类
-            ClassPool pool = ClassPool.getDefault();
-            CtClass ctClass = pool.get(clazz.getName());
-            String packageName = clazz.getPackageName();
-            String className = classNamePrefix + numberOfNodes;
-            String dirName = "docker/" + packageName.replace(".","/") + "/";
-            String fileName = dirName + className + ".class";
-
-            // 修改类的名字为 'example.mynode'
-            ctClass.setName(packageName + "." + className);
-
-            // 将修改后的字节码写入文件
-            byte[] byteCode = ctClass.toBytecode();
-            saveClassToFile(byteCode, fileName);
-
-            System.out.println("Class saved as " + fileName);
-
-            writeStartClassToFile(DockerConfigurator.hostPath+"/",packageName,className,dirName);
-
-            writeStartScriptToFile(DockerConfigurator.hostPath+"/",packageName,className);
-
-            // 运行该节点的容器
-            dockerRunner.RunContainer(className);
-        }
-
+        logger.info("Docker folder assembled");
 
     }
+
+    private void startNode(Class<AbstractDockerNode>clazz) throws Exception {
+        numberOfNodes++;
+        // 使用Javassist加载这个匿名类
+        ClassPool pool = ClassPool.getDefault();
+        CtClass ctClass = pool.get(clazz.getName());
+        String packageName = clazz.getPackageName();
+        String className = classNamePrefix + numberOfNodes;
+        String dirName = "docker/" + packageName.replace(".","/") + "/";
+        String fileName = dirName + className + ".class";
+        ctClass.setName(packageName + "." + className);
+
+        // 将修改后的字节码写入文件
+        byte[] byteCode = ctClass.toBytecode();
+        saveClassToFile(byteCode, fileName);
+
+        logger.info("Class saved as " + fileName);
+
+        logger.debug("Writing start class to file");
+        writeStartClassToFile(DockerConfigurator.hostPath+"/",packageName,className,dirName);
+
+        logger.debug("Writing start script to file");
+        writeStartScriptToFile(DockerConfigurator.hostPath+"/",packageName,className);
+
+        // 运行该节点的容器
+        logger.debug("Running container for class " + className);
+        dockerRunner.runContainer(className);
+
+        logger.info("Node " + className + " started");
+    }
+
     private void writeStartScriptToFile(String dockerFileName,String packageName, String className) throws IOException {
         String scriptContent = "#!/bin/bash\n" +
+                "cd \"$(dirname \"${BASH_SOURCE[0]}\")\"\n" +
                 "java -cp ./lib/*:. " + packageName + ".Run" + className + "\n";
 
-        String fileName = dockerFileName + "run.sh";
+        String fileName = dockerFileName + DockerConfigurator.startScript;
 
         File sourceFile = new File(fileName);
         try (FileOutputStream fos = new FileOutputStream(sourceFile)) {
             fos.write(scriptContent.getBytes());
         }
+        logger.info("Start script saved as " + fileName);
     }
 
     private void writeStartClassToFile(String dockerFileName, String packageName,String nodeClassName, String dirName) throws IOException {
@@ -117,22 +137,23 @@ public class Simulator {
         }
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
-            System.out.println("无法找到 Java 编译器，请确保您使用的是 JDK 而不是 JRE。");
+            logger.error("Start class: Java compiler not found. Are you running a JRE instead of a JDK?");
             return;
         }
 
         // 使用编译器编译文件
         int result = compiler.run(null, null, null,"-classpath", dockerFileName , sourceFile.getPath());
         if (result == 0) {
-            System.out.println("编译成功！");
+            logger.info(fileName + " compiled successfully");
         } else {
-            System.out.println("编译失败！");
+            logger.error(fileName + " compilation failed");
         }
 
         // 删除临时的 .java 源文件
         sourceFile.delete();
 
     }
+
     private static void saveClassToFile(byte[] classData, String filePath) throws IOException {
         File file = new File(filePath);
         File parentDir = file.getParentFile();

@@ -2,8 +2,8 @@
 $ErrorActionPreference = "Stop"
 
 # 第一步：编译 Maven 项目
-Write-Host "Compiling Maven project..."
-mvn compile
+# Write-Host "Compiling Maven project..."
+# mvn compile
 
 # 第二步：将编译后的 class 文件复制到 docker 目录
 Write-Host "Copying compiled class files to docker directory..."

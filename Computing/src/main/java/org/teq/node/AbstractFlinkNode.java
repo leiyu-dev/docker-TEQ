@@ -1,11 +1,9 @@
 package org.teq.node;
 
-import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.connector.source.Source;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.operators.source.TimestampsAndWatermarks;
 
-public abstract class AbstractFlinkNode implements FlinkNode {
+public abstract class AbstractFlinkNode extends AbstractDockerNode {
+
     private StreamExecutionEnvironment env;
 
     public StreamExecutionEnvironment getEnv() {

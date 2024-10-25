@@ -1,0 +1,40 @@
+<Configuration status="INFO">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss}  %-5level - %msg%n"/>
+        </Console>
+        <File name="File" fileName="Computing/logs/app.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss}  %-5level - %msg%n"/>
+        </File>
+        <File name="DebugFile" fileName="Computing/logs/debug.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss}  %-5level - %msg%n"/>
+        </File>
+        <!-- File Appender for Flink logs -->
+        <File name="FlinkFile" fileName="Computing/logs/flink.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss}  %-5level %logger{36} - %msg%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <!-- Logger for Flink classes -->
+        <Logger name="org.apache.flink" level="debug" additivity="false">
+            <AppenderRef ref="FlinkFile"/>
+        </Logger>
+        <Logger name="org.teq" level="debug" additivity="false">
+            <AppenderRef ref="DebugFile"/>
+            <AppenderRef ref="File">
+                <Filters>
+                    <ThresholdFilter level="info" onMatch="accept" onMismatch="deny"/>
+                </Filters>
+            </AppenderRef>
+            <AppenderRef ref="Console">
+                <Filters>
+                    <ThresholdFilter level="info" onMatch="accept" onMismatch="deny"/>
+                </Filters>
+            </AppenderRef>
+        </Logger>
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="File"/>
+        </Root>
+    </Loggers>
+</Configuration>

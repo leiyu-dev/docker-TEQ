@@ -1,5 +1,5 @@
 package org.teq.node;
 
-public interface FlinkNode {
+public interface Node {
     void process();
 }
