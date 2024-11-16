@@ -4,6 +4,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.LogContainerCmd;
+import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
@@ -11,11 +12,13 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.command.LogContainerResultCallback;
 import org.teq.configurator.DockerConfigurator;
 import org.teq.configurator.SimulatorConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
 public class DockerRunner {
-
+    private static final Logger logger = LogManager.getLogger(DockerRunner.class);
     private DockerClient dockerClient;
     private String imageName;
     private void deleteAllContainers() {
@@ -30,21 +33,39 @@ public class DockerRunner {
             }
         }
     }
-    public void initRunnerWithTcpHost(String imageName, int tcpPort){
+    public void initRunnerWithPort(String imageName, String HostPort){
+        logger.info("Initializing the docker runner with port" + HostPort);
         this.imageName = imageName;
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-                .withDockerHost("tcp://localhost:" + tcpPort)  // 使用 TCP 连接
+                .withDockerHost(HostPort)  // 使用 TCP 连接
                 .build();
         DockerClient dockerClient = DockerClientBuilder.getInstance(config).build();
-        dockerClient.pullImageCmd(imageName).start();
+        try{
+            dockerClient.pullImageCmd(imageName)
+                .exec(new PullImageResultCallback())
+                .awaitCompletion();
+        }catch (InterruptedException e){
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+        logger.info("Docker image " + imageName + " found successfully");
         this.dockerClient = dockerClient;
         deleteAllContainers();
     }
 
-    public void initRunnerWithNpipeHost(String imageName){
+    public void initRunnerWithDefaultHost(String imageName){
+        logger.info("Initializing the docker runner with default host");
         this.imageName = imageName;
         DockerClient dockerClient = DockerClientBuilder.getInstance().build();
-        dockerClient.pullImageCmd(imageName).start();
+        try{
+            dockerClient.pullImageCmd(imageName)
+                .exec(new PullImageResultCallback())
+                .awaitCompletion();
+        }catch (InterruptedException e){
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+        logger.info("Docker image " + imageName + " found successfully");
         this.dockerClient = dockerClient;
         deleteAllContainers();
     }

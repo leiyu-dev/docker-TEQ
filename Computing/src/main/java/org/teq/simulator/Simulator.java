@@ -22,8 +22,14 @@ public class Simulator {
     private final DockerRunner dockerRunner;
 
     public Simulator(){
+        logger.info("Initializing the simulator");
         dockerRunner = new DockerRunner();
-        dockerRunner.initRunnerWithTcpHost(DockerConfigurator.imageName,DockerConfigurator.tcpPort);
+        // this line use TCP connection, if you want to use TCP, uncomment this line
+        // dockerRunner.initRunnerWithTcpHost(DockerConfigurator.imageName,DockerConfigurator.tcpPort);
+
+        // this line use default connection
+        // if you want to use default connection(DOCKER_HOST,Unix Socket(linux),npipe(windows)), uncomment this line
+        dockerRunner.initRunnerWithDefaultHost(DockerConfigurator.imageName);
     }
 
     public List<Class<AbstractDockerNode>> nodes = new ArrayList<>();
@@ -53,9 +59,10 @@ public class Simulator {
 
     private void runAssembleScript() throws IOException {
         //assemble the docker folder
-        //TODO:LINUX
+        //TODO:Windows
         logger.info("Assembling docker folder");
-        String command = "powershell.exe -ExecutionPolicy Bypass -File run.ps1";
+//        String command = "powershell.exe -ExecutionPolicy Bypass -File run.ps1";
+        String command = "bash assemble.sh";
         Process process = Runtime.getRuntime().exec(command);
 
         String line;
