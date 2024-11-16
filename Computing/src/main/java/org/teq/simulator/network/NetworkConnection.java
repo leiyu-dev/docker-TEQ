@@ -1,4 +1,4 @@
-package org.teq.simulator;
+package org.teq.simulator.network;
 
 public class NetworkConnection {
     String from;

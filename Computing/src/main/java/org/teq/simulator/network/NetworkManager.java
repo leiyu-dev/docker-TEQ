@@ -1,4 +1,6 @@
-package org.teq.simulator;
+package org.teq.simulator.network;
+
+import org.teq.simulator.NetworkConnection;
 
 import java.util.Map;
 
@@ -7,7 +9,7 @@ import java.util.Map;
  */
 public class NetworkManager {
 
-    private Map<String, Map<String,NetworkConnection>>networkMap;
+    private Map<String, Map<String, NetworkConnection>>networkMap;
     boolean connect(int nodeFrom,int nodeTo){
         return true;
     }
