@@ -1,19 +1,20 @@
 package org.teq.simulator;
 
 import org.teq.configurator.DockerConfigurator;
+import org.teq.configurator.SimulatorConfigurator;
 import org.teq.node.AbstractDockerNode;
 import org.teq.node.AbstractFlinkNode;
+import org.teq.simulator.docker.DockerRunner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import javassist.*;
+import org.teq.simulator.network.NetworkHostNode;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
-
-import static org.teq.configurator.SimulatorConfigurator.classNamePrefix;
 
 public class Simulator {
 
@@ -21,15 +22,15 @@ public class Simulator {
     private int numberOfNodes = 0;
     private final DockerRunner dockerRunner;
 
-    public Simulator(){
+    public Simulator() throws Exception {
         logger.info("Initializing the simulator");
-        dockerRunner = new DockerRunner();
         // this line use TCP connection, if you want to use TCP, uncomment this line
-        // dockerRunner.initRunnerWithTcpHost(DockerConfigurator.imageName,DockerConfigurator.tcpPort);
+        // dockerRunner = new DockerRunner(DockerConfigurator.imageName,DockerConfigurator.tcpPort);
 
         // this line use default connection
         // if you want to use default connection(DOCKER_HOST,Unix Socket(linux),npipe(windows)), uncomment this line
-        dockerRunner.initRunnerWithDefaultHost(DockerConfigurator.imageName);
+        dockerRunner = new DockerRunner(DockerConfigurator.imageName);
+        startNetworkHostNode(NetworkHostNode.class);
     }
 
     public List<Class<AbstractDockerNode>> nodes = new ArrayList<>();
@@ -42,6 +43,7 @@ public class Simulator {
             logger.error("Class "+ clazz.getName() +" is not a subclass of AbstractFlinkNode");
         }
     }
+
     public void start() throws Exception {
         logger.info("Starting the simulation");
 
@@ -55,6 +57,10 @@ public class Simulator {
 
         // 等待所有节点运行完
         dockerRunner.waitUntilContainerStopped();
+        logger.info("Simulation finished");
+        if(SimulatorConfigurator.cleanUpAfterSimulation == true){
+            cleanUp();
+        }
     }
 
     private void runAssembleScript() throws IOException {
@@ -83,16 +89,29 @@ public class Simulator {
     }
 
     private void startNode(Class<AbstractDockerNode>clazz) throws Exception {
-        numberOfNodes++;
-        // 使用Javassist加载这个匿名类
+        startNode(clazz,"");
+    }
+
+    private void assembleFile(Class<AbstractDockerNode>clazz,String className)throws Exception{
         ClassPool pool = ClassPool.getDefault();
         CtClass ctClass = pool.get(clazz.getName());
         String packageName = clazz.getPackageName();
-        String className = classNamePrefix + numberOfNodes;
+        if(className == ""){
+            className = SimulatorConfigurator.classNamePrefix + numberOfNodes;    
+        }
+        logger.info("Assembling class " + className);
         String dirName = "docker/" + packageName.replace(".","/") + "/";
         String fileName = dirName + className + ".class";
         ctClass.setName(packageName + "." + className);
 
+        // 修改节点的 getNodeID 方法
+        CtClass abstractDockerNode = pool.get(AbstractDockerNode.class.getName());
+        CtMethod getNodeIDMethod = abstractDockerNode.getDeclaredMethod("getNodeID");
+        getNodeIDMethod.setBody("{ return " + numberOfNodes + "; }");
+        byte[] byteCodeGetNodeID = abstractDockerNode.toBytecode();
+        String getNodeIDFileName = "docker/" + abstractDockerNode.getPackageName().replace(".","/") + "/" + abstractDockerNode.getSimpleName() + ".class";
+        saveClassToFile(byteCodeGetNodeID, getNodeIDFileName);
+        // print sd
         // 将修改后的字节码写入文件
         byte[] byteCode = ctClass.toBytecode();
         saveClassToFile(byteCode, fileName);
@@ -104,6 +123,11 @@ public class Simulator {
 
         logger.debug("Writing start script to file");
         writeStartScriptToFile(DockerConfigurator.hostPath+"/",packageName,className);
+        numberOfNodes++;
+    }
+
+    private void startNode(Class<AbstractDockerNode>clazz, String className) throws Exception {
+        assembleFile(clazz,className);
 
         // 运行该节点的容器
         logger.debug("Running container for class " + className);
@@ -112,12 +136,22 @@ public class Simulator {
         logger.info("Node " + className + " started");
     }
 
+    private void startNetworkHostNode(Class<?>clazz) throws Exception {
+        if(!AbstractDockerNode.class.isAssignableFrom(clazz)){
+            throw new Exception("Class "+ clazz.getName() +" is not a subclass of AbstractDockerNode");
+        }
+        String networkHostName = SimulatorConfigurator.classNamePrefix + DockerConfigurator.networkHostName;
+        assembleFile((Class<AbstractDockerNode>) clazz, networkHostName);
+        logger.info("Running network host container: " + networkHostName);
+        dockerRunner.runNetworkHostContainer(networkHostName);
+    }
+
     private void writeStartScriptToFile(String dockerFileName,String packageName, String className) throws IOException {
         String scriptContent = "#!/bin/bash\n" +
                 "cd \"$(dirname \"${BASH_SOURCE[0]}\")\"\n" +
                 "java -cp ./lib/*:. " + packageName + ".Run" + className + "\n";
 
-        String fileName = dockerFileName + DockerConfigurator.startScript;
+        String fileName = dockerFileName + DockerConfigurator.startScriptName;
 
         File sourceFile = new File(fileName);
         try (FileOutputStream fos = new FileOutputStream(sourceFile)) {
@@ -173,5 +207,9 @@ public class Simulator {
         try (FileOutputStream fos = new FileOutputStream(filePath)) {
             fos.write(classData);
         }
+    }
+
+    private void cleanUp() {
+        dockerRunner.cleanUp();
     }
 }

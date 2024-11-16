@@ -3,7 +3,15 @@ package org.teq.node;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 public abstract class AbstractFlinkNode extends AbstractDockerNode {
+    abstract public void flink_process();
 
+    @Override
+    public void process(){
+        initEnvironment();
+        flink_process();
+        startEnvironment();
+    }
+    
     private StreamExecutionEnvironment env;
 
     public StreamExecutionEnvironment getEnv() {
