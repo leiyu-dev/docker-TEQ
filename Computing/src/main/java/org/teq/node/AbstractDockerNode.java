@@ -9,10 +9,10 @@ public abstract class AbstractDockerNode implements Node{
 
 
     /*
-    * This method will be modified when asseemble the code in the docker. It will return the real node id instead of 0
+    * This method will be modified when asseemble the code in the docker. It will return the real node id
     * @return the **distinct** id of the node
     */  
     public int getNodeID(){
-        return 0;
+        return Integer.parseInt(System.getenv("NODE_ID"));
     }
 }

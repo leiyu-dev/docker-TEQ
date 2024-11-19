@@ -13,9 +13,12 @@ public class DockerNetworkController {
     DockerNetworkController(DockerClient client) {
         this.dockerClient = client;
     }
-    void createNetworkHostContainer(String imageName,String networkHostName) {
+    void createNetworkHostContainer(String imageName,String networkHostName,int containerId) {
         this.networkHostName = networkHostName;
         Ports portBindings = new Ports();
+        String[] env = {
+                "NODE_ID=" + containerId
+        };
         ExposedPort exposedPort = ExposedPort.tcp(8888);
         portBindings.bind(exposedPort, Ports.Binding.bindPort(8888)); // bind the port 8888 to the container
         Volume volume = new Volume(DockerConfigurator.volumePath);
@@ -32,6 +35,7 @@ public class DockerNetworkController {
                 .withCmd(command)
                 .withName(networkHostName)
                 .withHostConfig(hostConfig)
+                .withEnv(env)
                 .exec();
         dockerClient.startContainerCmd(container.getId()).exec();
     }

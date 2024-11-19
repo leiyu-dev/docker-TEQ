@@ -79,11 +79,11 @@ public class DockerRunner {
         initDockerRunner();
     }
 
-    public void runNetworkHostContainer(String containerName){
-        dockerNetworkController.createNetworkHostContainer(imageName, containerName);
+    public void runNetworkHostContainer(String containerName, int containerId){
+        dockerNetworkController.createNetworkHostContainer(imageName, containerName, containerId);
     }
 
-    public void runContainer(String containerName){
+    public void runContainer(String containerName,int containerId){
         
         Volume volume = new Volume(DockerConfigurator.volumePath);
         HostConfig hostConfig = HostConfig.newHostConfig()
@@ -93,10 +93,14 @@ public class DockerRunner {
             "bash", "-c",
             "chmod -R 777 " + DockerConfigurator.volumePath + "&& bash "+ DockerConfigurator.volumePath + "/" + DockerConfigurator.startScriptName
         };
+        String[] env = {
+            "NODE_ID=" + containerId
+        };
         CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
                 .withHostConfig(hostConfig)  // 传递 HostConfig（包含挂载信息）
                 .withName(containerName)  // 容器名称
                 .withCmd(command)  // 容器启动命令
+                .withEnv(env)
                 .exec();
         dockerClient.startContainerCmd(container.getId()).exec();
         if(DockerConfigurator.getStdout){
