@@ -1,44 +1,41 @@
 package example;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+// 客户端线程类
+class ListenThread implements Runnable {
+    private final String host;
+    private final int port;
 
-public class ListenThread implements Runnable {
-    private static final Logger logger = LogManager.getLogger(ListenThread.class);
-    private final int port = 8888;
-    
+    public ListenThread(String host, int port) {
+        this.host = host;
+        this.port = port;
+    }
+
     @Override
     public void run() {
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("Listening on port " + port + "...");
+        try (Socket socket = new Socket();) {
+            socket.connect(new InetSocketAddress(host, port), 5000); // 设置连接超时 5000ms
+            var input = socket.getInputStream();
+            socket.setSoTimeout(5000); // 设置读取超时 5000ms
+            System.out.println("Connected to server at " + host + ":" + port);
 
-            // 无限循环监听端口
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                System.out.println("Connected to client: " + clientSocket.getInetAddress());
+            byte[] buffer = new byte[1024]; // 缓冲区
+            int bytesRead;
 
-                // 读取客户端发送的数据
-                try (BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(clientSocket.getInputStream()))) {
-
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        System.out.println("Received: " + line);
-                    }
-                }
-
-                clientSocket.close();
-                System.out.println("Client disconnected.");
+            while ((bytesRead = input.read(buffer)) != -1) { // 读取数据
+                String message = new String(buffer, 0, bytesRead); // 转换为字符串
+                System.out.println("Received: " + message);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+
+        } catch (Exception ex) {
+            System.err.println("Error in client thread: " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 }

@@ -80,13 +80,16 @@ public class DockerRunner {
     }
 
     public void runNetworkHostContainer(String containerName, int containerId){
+        networkHostName = containerName;
         dockerNetworkController.createNetworkHostContainer(imageName, containerName, containerId);
     }
 
     public void runContainer(String containerName,int containerId){
-        
+        logger.info("Running container " + containerName);
         Volume volume = new Volume(DockerConfigurator.volumePath);
         HostConfig hostConfig = HostConfig.newHostConfig()
+                .withCpuQuota(100000L)  // 最大使用 100% 的一个 CPU
+                .withCpuPeriod(100000L)
                 .withBinds(new Bind(DockerConfigurator.hostPath, volume))  // 本地文件夹路径
                 .withNetworkMode("container:" + networkHostName);
         String[] command = {
@@ -120,6 +123,7 @@ public class DockerRunner {
 //                throw new RuntimeException(e);
             }
         }
+        logger.info("Container " + containerName + " started successfully");
     }
 
     public void waitUntilContainerStopped(){

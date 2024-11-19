@@ -15,16 +15,16 @@ public class DockerNetworkController {
     }
     void createNetworkHostContainer(String imageName,String networkHostName,int containerId) {
         this.networkHostName = networkHostName;
-        Ports portBindings = new Ports();
         String[] env = {
                 "NODE_ID=" + containerId
         };
         ExposedPort exposedPort = ExposedPort.tcp(8888);
-        portBindings.bind(exposedPort, Ports.Binding.bindPort(8888)); // bind the port 8888 to the container
+        Ports.Binding hostPortBinding = Ports.Binding.bindPort(8888);
+        PortBinding portBinding = new PortBinding(hostPortBinding, exposedPort);
         Volume volume = new Volume(DockerConfigurator.volumePath);
         HostConfig hostConfig = HostConfig.newHostConfig()
                 .withBinds(new Bind(DockerConfigurator.hostPath, volume))  // 本地文件夹路径
-                .withPortBindings(portBindings);
+                .withPortBindings(portBinding);
         String[] command = {
             "bash", "-c",
             "chmod -R 777 " + DockerConfigurator.volumePath + "&& bash "+ DockerConfigurator.volumePath + "/" + DockerConfigurator.startScriptName
@@ -34,6 +34,7 @@ public class DockerNetworkController {
         CreateContainerResponse container =  dockerClient.createContainerCmd(imageName)
                 .withCmd(command)
                 .withName(networkHostName)
+                .withExposedPorts(exposedPort)
                 .withHostConfig(hostConfig)
                 .withEnv(env)
                 .exec();

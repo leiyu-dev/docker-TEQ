@@ -207,7 +207,7 @@ public class Simulator {
         }
 
         // 删除临时的 .java 源文件
-//        sourceFile.delete();
+        sourceFile.delete();
 
     }
 

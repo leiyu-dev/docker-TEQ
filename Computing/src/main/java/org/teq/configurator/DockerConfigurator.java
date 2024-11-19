@@ -12,5 +12,5 @@ public class DockerConfigurator {
     public static String hostPath = projectPath + "/" + volumeFolder;
     public static String networkHostName = "-NetworkHost";
     
-    public static boolean getStdout = true;
+    public static boolean getStdout = false;
 }
