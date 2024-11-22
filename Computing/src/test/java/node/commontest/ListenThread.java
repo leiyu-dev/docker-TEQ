@@ -1,4 +1,4 @@
-package example;
+package node.commontest;
 
 import java.io.BufferedReader;
 import java.io.InputStream;

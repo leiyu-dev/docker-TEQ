@@ -24,6 +24,7 @@ public class DockerNetworkController {
         Volume volume = new Volume(DockerConfigurator.volumePath);
         HostConfig hostConfig = HostConfig.newHostConfig()
                 .withBinds(new Bind(DockerConfigurator.hostPath, volume))  // 本地文件夹路径
+                .withNetworkMode(DockerConfigurator.networkName)
                 .withPortBindings(portBinding);
         String[] command = {
             "bash", "-c",

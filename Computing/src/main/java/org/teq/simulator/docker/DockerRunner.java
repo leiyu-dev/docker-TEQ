@@ -2,20 +2,21 @@ package org.teq.simulator.docker;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.LogContainerCmd;
-import com.github.dockerjava.api.command.PullImageResultCallback;
+import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
-import com.github.dockerjava.core.command.LogContainerResultCallback;
 import org.teq.configurator.DockerConfigurator;
 import org.teq.configurator.SimulatorConfigurator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
+import org.teq.node.DockerNodeParameters;
+import com.github.dockerjava.api.model.Network.Ipam;
+import com.github.dockerjava.api.model.Network.Ipam.Config;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DockerRunner {
     private static final Logger logger = LogManager.getLogger(DockerRunner.class);
@@ -34,20 +35,44 @@ public class DockerRunner {
             }
         }
     }
+    private void deleteNetwork(){
+        var networks = dockerClient.listNetworksCmd().exec();
+        String networkId = networks.stream()
+                .filter(network -> network.getName().equals(DockerConfigurator.networkName))
+                .map(network -> network.getId())
+                .findFirst()
+                .orElse(null);
+        if (networkId == null)return;
+        dockerClient.removeNetworkCmd(networkId).exec();
+    }
     public DockerNetworkController dockerNetworkController;
 
     private void initDockerRunner(){
-        try{
-            dockerClient.pullImageCmd(imageName)
-                .exec(new PullImageResultCallback())
-                .awaitCompletion();
-        }catch (InterruptedException e){
-            e.printStackTrace();
-            throw new RuntimeException(e);
+        List<Image>images = dockerClient.listImagesCmd().exec();
+        boolean imageExists = images.stream()
+                .flatMap(image -> image.getRepoTags() != null ? List.of(image.getRepoTags()).stream() : List.of().stream())
+                .anyMatch(repoTag -> imageName.equals(repoTag));
+        if(!imageExists) {
+            try {
+                dockerClient.pullImageCmd(imageName)
+                        .exec(new PullImageResultCallback())
+                        .awaitCompletion();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
+            }
         }
         logger.info("Docker image " + imageName + " found successfully");
         deleteAllContainers();
+        deleteNetwork();
+
         dockerNetworkController = new DockerNetworkController(dockerClient);
+        CreateNetworkResponse network = dockerClient.createNetworkCmd()
+                .withName(DockerConfigurator.networkName)
+                .withDriver("bridge") // 使用桥接网络
+                .withIpam(new Ipam().withConfig(new Config().withSubnet(DockerConfigurator.networkSubnet)))
+                .exec();
+        logger.info("Create network" + network.getId());
     }
 
 
@@ -84,27 +109,47 @@ public class DockerRunner {
         dockerNetworkController.createNetworkHostContainer(imageName, containerName, containerId);
     }
 
-    public void runContainer(String containerName,int containerId){
+    public void runContainer(String containerName, int containerId, DockerNodeParameters parameters){
         logger.info("Running container " + containerName);
         Volume volume = new Volume(DockerConfigurator.volumePath);
         HostConfig hostConfig = HostConfig.newHostConfig()
-                .withCpuQuota(100000L)  // 最大使用 100% 的一个 CPU
-                .withCpuPeriod(100000L)
                 .withBinds(new Bind(DockerConfigurator.hostPath, volume))  // 本地文件夹路径
-                .withNetworkMode("container:" + networkHostName);
+                .withNetworkMode(DockerConfigurator.networkName);
+
+        /* CPU restriction */
+        if(parameters.cpuRestrictType == DockerNodeParameters.CpuRestrictType.ROUGH){
+            hostConfig = hostConfig.withCpuPeriod(1000000L)
+                    .withCpuQuota((long) (1000000 * parameters.cpuUsageRate));  // 最大使用 100% 的一个 CPU
+        }
+        else { // precise
+            System.out.println("Precise CPU restriction is not supported yet");
+            System.exit(-1);
+        }
+        hostConfig = hostConfig.withOomKillDisable(true); //disable out of memory kill
+
+
+        /* Memory restriction */
+        hostConfig = hostConfig.withMemory((long) parameters.memorySize * 1024 * 1024 * 1024)
+                .withMemorySwap((long) parameters.memorySize * 1024 * 1024 * 1024);
+
+
+
         String[] command = {
             "bash", "-c",
             "chmod -R 777 " + DockerConfigurator.volumePath + "&& bash "+ DockerConfigurator.volumePath + "/" + DockerConfigurator.startScriptName
         };
         String[] env = {
-            "NODE_ID=" + containerId
+            "NODE_ID=" + containerId,
+            "NODE_NAME=" + containerName,
         };
         CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
                 .withHostConfig(hostConfig)  // 传递 HostConfig（包含挂载信息）
                 .withName(containerName)  // 容器名称
                 .withCmd(command)  // 容器启动命令
                 .withEnv(env)
+                .withHostName(containerName)
                 .exec();
+
         dockerClient.startContainerCmd(container.getId()).exec();
         if(DockerConfigurator.getStdout){
             LogContainerCmd logContainerCmd = dockerClient.logContainerCmd(container.getId())

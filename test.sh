@@ -1,0 +1,1 @@
+docker run -it --network teq-network --name net1 maven:3.9.9-amazoncorretto-11-debian bash

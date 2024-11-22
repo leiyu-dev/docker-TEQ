@@ -1,21 +1,18 @@
 package org.teq.simulator;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.teq.configurator.DockerConfigurator;
 import org.teq.configurator.SimulatorConfigurator;
 import org.teq.node.AbstractDockerNode;
-import org.teq.node.AbstractFlinkNode;
 import org.teq.node.DefaultDockerNode;
+import org.teq.node.DockerNodeParameters;
 import org.teq.simulator.docker.DockerRunner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import javassist.*;
-import org.teq.simulator.network.NetworkHostNode;
 
-import javax.print.Doc;
+
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
@@ -28,7 +25,7 @@ public class Simulator {
     private String startClassImportContent = "";
     private String startClassSwitchContent = "";
 
-    public Simulator() throws Exception {
+    public Simulator(AbstractDockerNode networkHostNode) throws Exception {
         logger.info("Initializing the simulator");
         // this line use TCP connection, if you want to use TCP, uncomment this line
         // dockerRunner = new DockerRunner(DockerConfigurator.imageName,DockerConfigurator.tcpPort);
@@ -39,7 +36,7 @@ public class Simulator {
 
         //Add the network host node to the node list
         String networkHostName = SimulatorConfigurator.classNamePrefix + DockerConfigurator.networkHostName;
-        addNode(NetworkHostNode.class,networkHostName,NodeType.network);
+        addNode(networkHostNode,networkHostName,NodeType.network);
 
         logger.info("Initializing success");
     }
@@ -48,12 +45,12 @@ public class Simulator {
         normal,
     }
     private class Node{
-        public Class<? extends AbstractDockerNode>nodeClass;
+        public DockerNodeParameters parameters;
         public String nodeName;
         public NodeType nodeType;
         public int nodeId;
-        Node(Class<? extends AbstractDockerNode>nodeClass,String nodeName,NodeType nodeType,int nodeId){
-            this.nodeClass = nodeClass;
+        Node(DockerNodeParameters parameters,String nodeName,NodeType nodeType,int nodeId){
+            this.parameters = parameters;
             this.nodeName = nodeName;
             this.nodeType = nodeType;
             this.nodeId = nodeId;
@@ -65,15 +62,16 @@ public class Simulator {
         addNode(node,"");
     }
     public void addNode(AbstractDockerNode node,String nodeName) {
-        addNode(node.getClass(),nodeName,NodeType.normal);
+        addNode(node,nodeName,NodeType.normal);
     }
-    private void addNode(Class<? extends AbstractDockerNode>clazz,String nodeName,NodeType nodeType){
+    private void addNode(AbstractDockerNode node,String nodeName,NodeType nodeType){
+        Class<AbstractDockerNode>clazz = (Class<AbstractDockerNode>)node.getClass();
         if(nodeName.isEmpty()){
             nodeName = SimulatorConfigurator.classNamePrefix + numberOfNodes;
         }
         logger.debug("add node" + nodeName);
         addNodeToStartClass(clazz.getName());
-        nodes.add(new Node(clazz,nodeName,nodeType,numberOfNodes));
+        nodes.add(new Node(node.parameters,nodeName,nodeType,numberOfNodes));
         numberOfNodes++;
     }
 
@@ -83,16 +81,17 @@ public class Simulator {
         runAssembleScript();
         writeStartScriptToFile();
         writeStartClassToFile();
-
+        writeRuntimeData();
 
         logger.info("Starting the nodes");
         for(Node node : nodes){
+            DockerNodeParameters parameters = node.parameters;
             String nodeName = node.nodeName;
             NodeType nodeType = node.nodeType;
             int nodeId = node.nodeId;
             logger.debug("Running container for class " + nodeName);
             if(nodeType == NodeType.normal) {
-                dockerRunner.runContainer(nodeName, nodeId);
+                dockerRunner.runContainer(nodeName, nodeId, parameters);
                 logger.info("Node " + nodeName + " started");
             }
             else if(nodeType == NodeType.network){
@@ -211,6 +210,28 @@ public class Simulator {
 
     }
 
+    private void writeRuntimeData(){
+        String nodeNameFilePath = DockerConfigurator.dataPath + "/" + DockerConfigurator.nodeNameFilePath;
+        File nodeNameFile = new File(nodeNameFilePath);
+        File parentDir = nodeNameFile.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            if (!parentDir.mkdirs()) {
+                logger.error("Failed to create directories: " + parentDir);
+            }
+        }
+        try{
+            FileOutputStream fos = new FileOutputStream(nodeNameFile);
+            for(Node node : nodes){
+                logger.info("Writing node name " + node.nodeName + " to file");
+                String nodeName = node.nodeName;
+                fos.write((nodeName + "\n").getBytes());
+            }
+        } catch (Exception e){
+            logger.error("Error in writing node name file into file " + nodeNameFilePath);
+        }
+        logger.info("Node name file saved as " + nodeNameFilePath);
+
+    }
 
     private void cleanUp() {
         dockerRunner.cleanUp();

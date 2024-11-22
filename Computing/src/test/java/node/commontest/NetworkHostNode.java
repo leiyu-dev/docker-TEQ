@@ -1,28 +1,46 @@
-package example;
+package node.commontest;
+
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.executiongraph.restart.RestartStrategy;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.SocketClientSink;
+import org.apache.flink.streaming.api.functions.source.SocketTextStreamFunction;
 import org.teq.node.AbstractFlinkNode;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.teq.simulator.docker.DockerRuntimeData;
+import org.teq.simulator.network.connector.CommonDataReceiver;
 
-import javax.sql.CommonDataSource;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.concurrent.TimeUnit;
-
-public class MyFlinkNode extends AbstractFlinkNode{
+public class NetworkHostNode extends AbstractFlinkNode{
     @Override
     public void flink_process() {
         StreamExecutionEnvironment env = getEnv();
-        String filePath = "./file.txt";
-        DataStream<String> input = env.readTextFile(filePath);
-        input.print();
-        input.map(new RichMapFunction<String, Void>() {
+        List<DataStream<String>>streams = new ArrayList<>();
+        DockerRuntimeData data = new DockerRuntimeData();
+        List<String>nodeList = data.getNodeNameList();
+        for(String nodeName : nodeList){
+            System.out.println(nodeName);
+        }
+        for(int i=1;i<=3;i++){
+            DataStream<String> stream = env.addSource(new CommonDataReceiver(nodeList.get(i), 9000));
+            streams.add(stream);
+        }
+        DataStream<String> mergedStream = streams.get(0);
+        for(int i=1;i<3;i++){
+            mergedStream = mergedStream.union(streams.get(i));
+        }
+        mergedStream.map(new RichMapFunction<String, Void>() {
             private transient ServerSocket serverSocket;
             private transient Socket clientSocket;
             private transient PrintWriter out;
@@ -30,7 +48,7 @@ public class MyFlinkNode extends AbstractFlinkNode{
             @Override
             public void open(Configuration parameters) throws Exception {
                 super.open(parameters);
-                serverSocket = new ServerSocket(9000 + getNodeID());
+                serverSocket = new ServerSocket(8888,50, InetAddress.getByName("0.0.0.0"));
                 System.out.println("Server started, waiting for client...");
                 clientSocket = serverSocket.accept();
                 out = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -39,7 +57,6 @@ public class MyFlinkNode extends AbstractFlinkNode{
 
             @Override
             public Void map(String value) throws Exception {
-                value = "Node " + getNodeID() + ": " + value;
                 out.println(value);
                 System.out.println("Sent: " + value);
                 return null;
@@ -53,6 +70,5 @@ public class MyFlinkNode extends AbstractFlinkNode{
                 if (serverSocket != null) serverSocket.close();
             }
         });
-        System.out.println("Hello World from " + this.getClass().getName());
     }
 }
