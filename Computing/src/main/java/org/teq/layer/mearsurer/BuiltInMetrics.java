@@ -1,7 +1,10 @@
 package org.teq.layer.mearsurer;
 
-public class BuiltInMetrics {
+import java.io.Serializable;
+
+public class BuiltInMetrics implements Serializable {
     private long id;
+    private String fromNode;
     private double packageLength;//unit: kb
     private double memoryUsage;//unit Mb
     private double cpuUsage;//unit: %
@@ -44,6 +47,14 @@ public class BuiltInMetrics {
         return timestampOut;
     }
 
+    public void setFromNode(String fromNode) {
+        this.fromNode = fromNode;
+    }
+
+    public String getFromNode() {
+        return fromNode;
+    }
+
     @Override
     public String toString() {
         return "BuiltInMetrics{" +
@@ -53,6 +64,7 @@ public class BuiltInMetrics {
                 ", cpuUsage=" + cpuUsage +
                 ", timestampIn=" + timestampIn +
                 ", timestampOut=" + timestampOut +
+                ", fromNode='" + fromNode + '\'' +
                 '}';
     }
 }

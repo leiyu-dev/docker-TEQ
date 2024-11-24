@@ -22,37 +22,6 @@ public class MyFlinkNode extends AbstractFlinkNode{
         DataStream<String> input = env.readTextFile(filePath);
         input.print();
         input.addSink(new CommonDataSender<>(DockerRuntimeData.getNetworkHostNodeName(), 9000+getNodeID(), 1000000, 1000));
-//        input.map(new RichMapFunction<String, Void>() {
-//            private transient ServerSocket serverSocket;
-//            private transient Socket clientSocket;
-//            private transient PrintWriter out;
-//
-//            @Override
-//            public void open(Configuration parameters) throws Exception {
-//                super.open(parameters);
-//                serverSocket = new ServerSocket(9000);
-//                System.out.println("Server started, waiting for client...");
-//                clientSocket = serverSocket.accept();
-//                out = new PrintWriter(clientSocket.getOutputStream(), true);
-//                System.out.println("Client connected.");
-//            }
-//
-//            @Override
-//            public Void map(String value) throws Exception {
-//                value = "Node " + getNodeID() + ": " + value;
-//                out.println(value);
-//                System.out.println("Sent: " + value);
-//                return null;
-//            }
-//
-//            @Override
-//            public void close() throws Exception {
-//                super.close();
-//                if (out != null) out.close();
-//                if (clientSocket != null) clientSocket.close();
-//                if (serverSocket != null) serverSocket.close();
-//            }
-//        });
         System.out.println("Hello World from " + this.getClass().getName());
     }
 }

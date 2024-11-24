@@ -19,7 +19,7 @@ public abstract class AbstractDockerNode implements Node{
         return Integer.parseInt(System.getenv("NODE_ID"));
     }
 
-    private static String getNodeName(){
+    protected static String getNodeName(){
         return System.getenv("NODE_NAME");
     }
 
