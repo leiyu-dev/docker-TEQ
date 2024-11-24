@@ -10,11 +10,11 @@ public abstract class AbstractFlinkNode extends AbstractDockerNode {
         super(parameters);
     }
 
-    abstract public void flink_process();
+    abstract public void flinkProcess();
     @Override
     public void process(){
         initEnvironment();
-        flink_process();
+        flinkProcess();
         startEnvironment();
     }
     

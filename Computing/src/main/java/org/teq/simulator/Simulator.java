@@ -1,13 +1,17 @@
 package org.teq.simulator;
 
 import org.teq.configurator.DockerConfigurator;
+import org.teq.configurator.NetworkConfigurator;
 import org.teq.configurator.SimulatorConfigurator;
+import org.teq.layer.Layer;
 import org.teq.node.AbstractDockerNode;
 import org.teq.node.DefaultDockerNode;
 import org.teq.node.DockerNodeParameters;
 import org.teq.simulator.docker.DockerRunner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.teq.utils.utils;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +39,8 @@ public class Simulator {
         dockerRunner = new DockerRunner(DockerConfigurator.imageName);
 
         //Add the network host node to the node list
-        String networkHostName = SimulatorConfigurator.classNamePrefix + DockerConfigurator.networkHostName;
-        addNode(networkHostNode,networkHostName,NodeType.network);
+        String networkHostName = NetworkConfigurator.networkHostName;
+        addNode(networkHostNode, networkHostName,NodeType.network);
 
         logger.info("Initializing success");
     }
@@ -44,19 +48,40 @@ public class Simulator {
         network,
         normal,
     }
-    private class Node{
+    private class SimulatorNode{
         public DockerNodeParameters parameters;
         public String nodeName;
         public NodeType nodeType;
         public int nodeId;
-        Node(DockerNodeParameters parameters,String nodeName,NodeType nodeType,int nodeId){
+        SimulatorNode(DockerNodeParameters parameters,String nodeName,NodeType nodeType,int nodeId){
             this.parameters = parameters;
             this.nodeName = nodeName;
             this.nodeType = nodeType;
             this.nodeId = nodeId;
         }
     }
-    private List<Node> nodes = new ArrayList<>();
+    private class SimulatorLayer{
+        public String layerName;
+        SimulatorLayer(String layerName){
+            this.layerName = layerName;
+        }
+    }
+    private List<SimulatorNode> nodes = new ArrayList<>();
+    private List<SimulatorLayer>layers = new ArrayList<>();
+    public void addLayer(Layer layer){
+        int nodeCount = layer.getNodeCount();
+        StringBuilder nodeNameContent = new StringBuilder();
+        String layerNodeNameFile = DockerConfigurator.dataFolderPath + "/" + layer.getLayerName() + "/" +
+                DockerConfigurator.nodeNameFileName;
+        for(int i = 0; i < nodeCount; i++){
+            AbstractDockerNode node = layer.getFunctionNode();
+            node.parameters = layer.getNodeParameter(i);
+            nodeNameContent.append(layer.getNodeName(i)).append("\n");
+            addNode(node,layer.getNodeName(i));
+        }
+        layers.add(new SimulatorLayer(layer.getLayerName()));
+        utils.writeStringToFile(layerNodeNameFile,nodeNameContent.toString());
+    }
 
     public void addNode(AbstractDockerNode node){
         addNode(node,"");
@@ -67,11 +92,14 @@ public class Simulator {
     private void addNode(AbstractDockerNode node,String nodeName,NodeType nodeType){
         Class<AbstractDockerNode>clazz = (Class<AbstractDockerNode>)node.getClass();
         if(nodeName.isEmpty()){
-            nodeName = SimulatorConfigurator.classNamePrefix + numberOfNodes;
+            nodeName = SimulatorConfigurator.classNamePrefix + numberOfNodes + "_auto_name";
+        }
+        else {
+            nodeName = SimulatorConfigurator.classNamePrefix + nodeName;
         }
         logger.debug("add node" + nodeName);
         addNodeToStartClass(clazz.getName());
-        nodes.add(new Node(node.parameters,nodeName,nodeType,numberOfNodes));
+        nodes.add(new SimulatorNode(node.parameters,nodeName,nodeType,numberOfNodes));
         numberOfNodes++;
     }
 
@@ -84,7 +112,7 @@ public class Simulator {
         writeRuntimeData();
 
         logger.info("Starting the nodes");
-        for(Node node : nodes){
+        for(SimulatorNode node : nodes){
             DockerNodeParameters parameters = node.parameters;
             String nodeName = node.nodeName;
             NodeType nodeType = node.nodeType;
@@ -142,10 +170,7 @@ public class Simulator {
 
         String fileName = DockerConfigurator.hostPath + "/" + DockerConfigurator.startScriptName;
 
-        File sourceFile = new File(fileName);
-        try (FileOutputStream fos = new FileOutputStream(sourceFile)) {
-            fos.write(scriptContent.getBytes());
-        }
+        utils.writeStringToFile(fileName,scriptContent);
         logger.info("Start script saved as " + fileName);
     }
 
@@ -178,16 +203,7 @@ public class Simulator {
                 DockerConfigurator.StartPackageName.replace(".","/") + "/" +
                 DockerConfigurator.StartClassName + ".java";
 
-        File sourceFile = new File(fileName);
-        File parentDir = sourceFile.getParentFile();
-        if (parentDir != null && !parentDir.exists()) {
-            if (!parentDir.mkdirs()) {
-                logger.error("Failed to create directories: " + parentDir);
-            }
-        }
-        try (FileOutputStream fos = new FileOutputStream(sourceFile)) {
-            fos.write(classContent.getBytes());
-        }
+        utils.writeStringToFile(fileName,classContent);
         logger.info("start class saved as" + fileName);
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
@@ -198,39 +214,30 @@ public class Simulator {
 
         // 使用编译器编译文件
         int result = compiler.run(null, null, null,"-classpath",
-                DockerConfigurator.hostPath + "/", sourceFile.getPath());
+                DockerConfigurator.hostPath + "/", fileName);
         if (result == 0) {
             logger.info(fileName + " compiled successfully");
         } else {
             logger.error(fileName + " compilation failed");
         }
 
-        // 删除临时的 .java 源文件
-        sourceFile.delete();
-
     }
 
     private void writeRuntimeData(){
-        String nodeNameFilePath = DockerConfigurator.dataPath + "/" + DockerConfigurator.nodeNameFilePath;
-        File nodeNameFile = new File(nodeNameFilePath);
-        File parentDir = nodeNameFile.getParentFile();
-        if (parentDir != null && !parentDir.exists()) {
-            if (!parentDir.mkdirs()) {
-                logger.error("Failed to create directories: " + parentDir);
-            }
+        String nodeNameFilePath = DockerConfigurator.dataFolderPath + "/" + DockerConfigurator.nodeNameFileName;
+        StringBuilder nodeNameContent = new StringBuilder();
+        for(SimulatorNode node : nodes){
+            nodeNameContent.append(node.nodeName).append("\n");
         }
-        try{
-            FileOutputStream fos = new FileOutputStream(nodeNameFile);
-            for(Node node : nodes){
-                logger.info("Writing node name " + node.nodeName + " to file");
-                String nodeName = node.nodeName;
-                fos.write((nodeName + "\n").getBytes());
-            }
-        } catch (Exception e){
-            logger.error("Error in writing node name file into file " + nodeNameFilePath);
-        }
+        utils.writeStringToFile(nodeNameFilePath,nodeNameContent.toString());
         logger.info("Node name file saved as " + nodeNameFilePath);
 
+        String layerNamePath = DockerConfigurator.dataFolderPath + "/" + DockerConfigurator.layerNameFileName;
+        StringBuilder layerNameContent = new StringBuilder();
+        for(SimulatorLayer layer : layers){
+            layerNameContent.append(layer.layerName).append("\n");
+        }
+        utils.writeStringToFile(layerNamePath,layerNameContent.toString());
     }
 
     private void cleanUp() {

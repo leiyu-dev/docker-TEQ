@@ -12,13 +12,14 @@ public abstract class AbstractDockerNode implements Node{
 
     /*
     * This method will be modified when asseemble the code in the docker. It will return the real node id
+    * This can only be used in Node class
     * @return the **distinct** id of the node
     */  
-    public static int getNodeID(){
+    protected static int getNodeID(){
         return Integer.parseInt(System.getenv("NODE_ID"));
     }
 
-    public static String getNodeName(){
+    private static String getNodeName(){
         return System.getenv("NODE_NAME");
     }
 

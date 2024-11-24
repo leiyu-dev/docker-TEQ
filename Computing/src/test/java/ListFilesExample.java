@@ -1,8 +1,10 @@
+import com.alibaba.fastjson.JSON;
+
 import java.io.File;
 
 public class ListFilesExample {
     public static void main(String[] args) {
-        // 指定目标文件夹路径
-
+        String a = "1111222";
+        System.out.println(JSON.parseObject(a, String.class));
     }
 }

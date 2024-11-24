@@ -8,15 +8,16 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import org.teq.configurator.DockerConfigurator;
+import org.teq.configurator.NetworkConfigurator;
 import org.teq.configurator.SimulatorConfigurator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.teq.node.DockerNodeParameters;
 import com.github.dockerjava.api.model.Network.Ipam;
 import com.github.dockerjava.api.model.Network.Ipam.Config;
-import java.util.HashMap;
+import org.teq.utils.utils;
+
 import java.util.List;
-import java.util.Map;
 
 public class DockerRunner {
     private static final Logger logger = LogManager.getLogger(DockerRunner.class);
@@ -38,12 +39,13 @@ public class DockerRunner {
     private void deleteNetwork(){
         var networks = dockerClient.listNetworksCmd().exec();
         String networkId = networks.stream()
-                .filter(network -> network.getName().equals(DockerConfigurator.networkName))
+                .filter(network -> network.getName().equals(NetworkConfigurator.networkName))
                 .map(network -> network.getId())
                 .findFirst()
                 .orElse(null);
         if (networkId == null)return;
-        dockerClient.removeNetworkCmd(networkId).exec();
+        dockerClient.removeNetworkCmd(networkId)
+                .exec();
     }
     public DockerNetworkController dockerNetworkController;
 
@@ -65,13 +67,16 @@ public class DockerRunner {
         logger.info("Docker image " + imageName + " found successfully");
         deleteAllContainers();
         deleteNetwork();
-
         dockerNetworkController = new DockerNetworkController(dockerClient);
         CreateNetworkResponse network = dockerClient.createNetworkCmd()
-                .withName(DockerConfigurator.networkName)
+                .withName(NetworkConfigurator.networkName)
                 .withDriver("bridge") // 使用桥接网络
-                .withIpam(new Ipam().withConfig(new Config().withSubnet(DockerConfigurator.networkSubnet)))
+                .withIpam(new Ipam().withConfig(new Config().withSubnet(NetworkConfigurator.networkSubnet).withGateway(NetworkConfigurator.networkGateway)))
                 .exec();
+        Network teqNetwork = dockerClient.inspectNetworkCmd().withNetworkId(network.getId()).exec();
+        String gateway = teqNetwork.getIpam().getConfig().get(0).getGateway();
+        utils.writeStringToFile(DockerConfigurator.dataFolderPath + "/" + DockerConfigurator.hostIpFileName, gateway);
+        logger.info("Gateway: " + gateway);
         logger.info("Create network" + network.getId());
     }
 
@@ -114,7 +119,7 @@ public class DockerRunner {
         Volume volume = new Volume(DockerConfigurator.volumePath);
         HostConfig hostConfig = HostConfig.newHostConfig()
                 .withBinds(new Bind(DockerConfigurator.hostPath, volume))  // 本地文件夹路径
-                .withNetworkMode(DockerConfigurator.networkName);
+                .withNetworkMode(NetworkConfigurator.networkName);
 
         /* CPU restriction */
         if(parameters.cpuRestrictType == DockerNodeParameters.CpuRestrictType.ROUGH){

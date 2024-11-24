@@ -1,9 +1,11 @@
 package org.teq.layer;
 
 import org.apache.commons.lang3.SerializationUtils;
+import org.teq.configurator.SimulatorConfigurator;
 import org.teq.node.AbstractDockerNode;
 import org.teq.node.DockerNodeParameters;
 
+import javax.print.DocFlavor;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,13 +20,15 @@ public class Layer {
     private AbstractDockerNode functionNode;
     private String layerName;
     private List<DockerNodeParameters> paramList = new ArrayList<>();
+    private List<String> nodeNameList = new ArrayList<>();
     private int nodeCount;
-    Layer(AbstractDockerNode functionNode,int nodeCount){
+    public Layer(AbstractDockerNode functionNode, int nodeCount){
         this.functionNode = functionNode;
         this.layerName = "layer" + layerCount++;
         this.nodeCount = nodeCount;
         for(int i = 0; i < nodeCount; i++) {
             paramList.add(SerializationUtils.clone(functionNode.parameters));
+            nodeNameList.add(layerName + "-" + SimulatorConfigurator.classNamePrefix + i);
         }
     }
     public void setLayerName(String layerName){
@@ -33,11 +37,23 @@ public class Layer {
     public void changeNodeParameter(int index,DockerNodeParameters parameters){
         paramList.set(index, parameters);
     }
+    public void changeNodeName(int index,String nodeName){
+        nodeNameList.set(index, nodeName);
+    }
     public AbstractDockerNode getFunctionNode(){
         return functionNode;
     }
     public DockerNodeParameters getNodeParameter(int index){
         return paramList.get(index);
+    }
+    public String getNodeName(int index){
+        return nodeNameList.get(index);
+    }
+    public int getNodeCount(){
+        return nodeCount;
+    }
+    public String getLayerName(){
+        return layerName;
     }
 
 }

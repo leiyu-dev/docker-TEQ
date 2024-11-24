@@ -5,6 +5,7 @@ import org.teq.configurator.DockerConfigurator;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.*;
+import org.teq.configurator.NetworkConfigurator;
 
 
 public class DockerNetworkController {
@@ -18,14 +19,14 @@ public class DockerNetworkController {
         String[] env = {
                 "NODE_ID=" + containerId
         };
-        ExposedPort exposedPort = ExposedPort.tcp(8888);
-        Ports.Binding hostPortBinding = Ports.Binding.bindPort(8888);
-        PortBinding portBinding = new PortBinding(hostPortBinding, exposedPort);
+//        ExposedPort exposedPort = ExposedPort.tcp(8888);
+//        Ports.Binding hostPortBinding = Ports.Binding.bindPort(8888);
+//        PortBinding portBinding = new PortBinding(hostPortBinding, exposedPort);
         Volume volume = new Volume(DockerConfigurator.volumePath);
         HostConfig hostConfig = HostConfig.newHostConfig()
                 .withBinds(new Bind(DockerConfigurator.hostPath, volume))  // 本地文件夹路径
-                .withNetworkMode(DockerConfigurator.networkName)
-                .withPortBindings(portBinding);
+                .withNetworkMode(NetworkConfigurator.networkName);
+//                .withPortBindings(portBinding);
         String[] command = {
             "bash", "-c",
             "chmod -R 777 " + DockerConfigurator.volumePath + "&& bash "+ DockerConfigurator.volumePath + "/" + DockerConfigurator.startScriptName
@@ -35,7 +36,7 @@ public class DockerNetworkController {
         CreateContainerResponse container =  dockerClient.createContainerCmd(imageName)
                 .withCmd(command)
                 .withName(networkHostName)
-                .withExposedPorts(exposedPort)
+//                .withExposedPorts(exposedPort)
                 .withHostConfig(hostConfig)
                 .withEnv(env)
                 .exec();
