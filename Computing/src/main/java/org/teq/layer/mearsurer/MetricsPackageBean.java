@@ -1,29 +1,21 @@
 package org.teq.layer.mearsurer;
 
-import org.bouncycastle.asn1.eac.PackedDate;
-
 import java.io.Serializable;
+import java.util.UUID;
 
-public class PackageBean implements Serializable {
+public class MetricsPackageBean implements Serializable {
     static private long instanceCount = 0;
-    private long id;
+    private final UUID id;
     private Object object;
 
-    public PackageBean(long id, Object object) {
-        this.id = id;
+    public MetricsPackageBean(Object object) {
+        this.id = UUID.randomUUID();
         this.object = object;
         instanceCount++;
     }
 
-    public PackageBean(Object object){
-        this(instanceCount, object);
-    }
-
-    public long getId() {
+    public UUID getId() {
         return id;
-    }
-    public void setId(long id) {
-        this.id = id;
     }
     public Object getObject() {
         return object;

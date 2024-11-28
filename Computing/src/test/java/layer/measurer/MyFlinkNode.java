@@ -3,13 +3,10 @@ package layer.measurer;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.bouncycastle.util.Pack;
 import org.teq.layer.mearsurer.MeasuredFlinkNode;
-import org.teq.layer.mearsurer.PackageBean;
-import org.teq.node.AbstractFlinkNode;
+import org.teq.layer.mearsurer.MetricsPackageBean;
 import org.teq.node.DockerNodeParameters;
-import org.teq.simulator.docker.DockerRuntimeData;
-import org.teq.utils.connector.CommonDataSender;
+import org.teq.presetlayers.PackageBean;
 
 public class MyFlinkNode extends MeasuredFlinkNode {
 
@@ -24,18 +21,19 @@ public class MyFlinkNode extends MeasuredFlinkNode {
         StreamExecutionEnvironment env = getEnv();
         String filePath = "./file.txt";
         DataStream<String> input = env.readTextFile(filePath);
-        var output = input.map(new MapFunction<String, PackageBean>() {
+        var output = input.map(new MapFunction<String, MetricsPackageBean>() {
             int count = 0;
             @Override
-            public PackageBean map(String value) throws Exception {
-                beginProcess(count, value.length());
+            public MetricsPackageBean map(String value) throws Exception {
+                var packageBean = new MetricsPackageBean(value);
+                beginProcess(packageBean.getId(),value.length());
                 Thread.sleep(500);
-                return new PackageBean(count++, value);
+                return packageBean;
             }
-        }).map(new MapFunction<PackageBean,String>(){
+        }).map(new MapFunction<MetricsPackageBean,String>(){
             @Override
-            public String map(PackageBean value) throws Exception {
-                finishProcess(value.getId());
+            public String map(MetricsPackageBean value) throws Exception {
+                finishProcess(value.getId(),0);
                 return value.getObject().toString();
             }
         });

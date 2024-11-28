@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * 这个类使用于stand-alone的环境
  * 作为服务器端Websocket ，接收来自其他层级的数据，发送给数据源
+ * need to add .returns(TypeInformation.of(T.type)) or it will cause Exception in Flink
  */
 public class CommonDataReceiver<T> implements SourceFunction<T> {
     private static final Logger logger = LogManager.getLogger(CommonDataReceiver.class);

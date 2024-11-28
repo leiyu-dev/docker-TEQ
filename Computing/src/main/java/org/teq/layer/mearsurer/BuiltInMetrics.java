@@ -1,19 +1,21 @@
 package org.teq.layer.mearsurer;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 public class BuiltInMetrics implements Serializable {
-    private long id;
-    private String fromNode;
+    private UUID id;
+    private long fromNodeId;
+    private long toNodeId;
     private double packageLength;//unit: kb
     private double memoryUsage;//unit Mb
     private double cpuUsage;//unit: %
     private long timestampIn;
     private long timestampOut;
-    public void setId(long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
-    public long getId() {
+    public UUID getId() {
         return id;
     }
     public void setPackageLength(double packageLength) {
@@ -47,12 +49,17 @@ public class BuiltInMetrics implements Serializable {
         return timestampOut;
     }
 
-    public void setFromNode(String fromNode) {
-        this.fromNode = fromNode;
+    public long getFromNodeId() {
+        return fromNodeId;
     }
-
-    public String getFromNode() {
-        return fromNode;
+    public void setFromNodeId(long fromNodeId) {
+        this.fromNodeId = fromNodeId;
+    }
+    public long getToNodeId() {
+        return toNodeId;
+    }
+    public void setToNodeId(long toNodeId) {
+        this.toNodeId = toNodeId;
     }
 
     @Override
@@ -64,7 +71,8 @@ public class BuiltInMetrics implements Serializable {
                 ", cpuUsage=" + cpuUsage +
                 ", timestampIn=" + timestampIn +
                 ", timestampOut=" + timestampOut +
-                ", fromNode='" + fromNode + '\'' +
+                ", fromNodeId=" + fromNodeId +
+                ", toNodeId=" + toNodeId +
                 '}';
     }
 }
