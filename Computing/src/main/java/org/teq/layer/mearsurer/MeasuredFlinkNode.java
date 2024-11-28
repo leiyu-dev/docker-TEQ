@@ -14,12 +14,13 @@ import org.teq.utils.connector.CommonDataSender;
 import java.lang.management.ManagementFactory;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
     private static final Logger logger = LogManager.getLogger(MeasuredFlinkNode.class);
-    abstract public void dataProcess();
+    abstract public void dataProcess() throws Exception;
     private static final BlockingQueue<BuiltInMetrics> queue = new LinkedBlockingQueue<>();
     public MeasuredFlinkNode(){
         super(new DockerNodeParameters());
@@ -52,9 +53,9 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
                 NetworkConfigurator.metricsPortBegin + getNodeID(), 100000, 1000));
     }
 
-    static Map<Long,BuiltInMetrics> metricsMap = new HashMap<>();
+    static Map<UUID,BuiltInMetrics> metricsMap = new HashMap<>();
     // call this when finish every data process (usually means finish an object processing)
-    static public void beginProcess(long dataId,int packageLength){
+    static public void beginProcess(UUID dataId,int packageLength){
         logger.debug("Begin process data: " + dataId);
         BuiltInMetrics metrics = new BuiltInMetrics() ;
         metrics.setTimestampIn(System.nanoTime());
@@ -63,19 +64,23 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
         metrics.setMemoryUsage(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
         metrics.setCpuUsage(ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage());
         metrics.setPackageLength(packageLength);
-        metrics.setFromNode(getNodeName());
+        metrics.setFromNodeId(getNodeID());
         logger.debug("Begin metrics: " + metrics);
         metricsMap.put(dataId,metrics);
     }
-    static public void finishProcess(long dataId){
+    static public void finishProcess(UUID dataId, long toNodeId){
         BuiltInMetrics metrics = metricsMap.get(dataId);
         metrics.setTimestampOut(System.nanoTime());
-        StreamExecutionEnvironment env = getEnv();
+        metrics.setToNodeId(toNodeId);
         logger.info("Finish metrics: " + metrics);
         queue.offer(metrics);
     }
     public void flinkProcess(){
         initConnect();
-        dataProcess();
+        try {
+            dataProcess();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
