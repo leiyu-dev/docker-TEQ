@@ -25,5 +25,4 @@ public class utils {
             logger.error("Error in writing string into file " + filename);
         }
     }
-
 }

@@ -2,6 +2,7 @@ package org.teq.node;
 
 public abstract class AbstractDockerNode implements Node{
     public DockerNodeParameters parameters;
+    public AbstractDockerNode(){this.parameters = new DockerNodeParameters();}
     public AbstractDockerNode(DockerNodeParameters parameters){
         this.parameters = parameters;
     }

@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.teq.simulator.Simulator;
 import org.teq.utils.connector.CommonDataReceiver;
 
-public class Main {
+public class CommonTest {
     public static void main(String[] args) throws Exception {
         Simulator simulator = new Simulator(new NetworkHostNode());
         for(int i=1;i<=5;i++){

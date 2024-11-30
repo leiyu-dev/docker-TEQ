@@ -62,8 +62,12 @@ public class Simulator {
     }
     private class SimulatorLayer{
         public String layerName;
-        SimulatorLayer(String layerName){
+        public int nodeIdBegin;
+        public int nodeIdEnd;
+        SimulatorLayer(String layerName,int nodeIdBegin,int nodeIdEnd){
             this.layerName = layerName;
+            this.nodeIdBegin = nodeIdBegin;
+            this.nodeIdEnd = nodeIdEnd;
         }
     }
     private List<SimulatorNode> nodes = new ArrayList<>();
@@ -73,13 +77,14 @@ public class Simulator {
         StringBuilder nodeNameContent = new StringBuilder();
         String layerNodeNameFile = DockerConfigurator.dataFolderPath + "/" + layer.getLayerName() + "/" +
                 DockerConfigurator.nodeNameFileName;
+        int nodeIdBegin = numberOfNodes;
         for(int i = 0; i < nodeCount; i++){
             AbstractDockerNode node = layer.getFunctionNode();
             node.parameters = layer.getNodeParameter(i);
-            nodeNameContent.append(layer.getNodeName(i)).append("\n");
+            nodeNameContent.append(SimulatorConfigurator.classNamePrefix).append(layer.getNodeName(i)).append("\n");
             addNode(node,layer.getNodeName(i));
         }
-        layers.add(new SimulatorLayer(layer.getLayerName()));
+        layers.add(new SimulatorLayer(layer.getLayerName(),nodeIdBegin,numberOfNodes-1));
         utils.writeStringToFile(layerNodeNameFile,nodeNameContent.toString());
     }
 
@@ -97,7 +102,7 @@ public class Simulator {
         else {
             nodeName = SimulatorConfigurator.classNamePrefix + nodeName;
         }
-        logger.debug("add node" + nodeName);
+        logger.debug("add node " + nodeName);
         addNodeToStartClass(clazz.getName());
         nodes.add(new SimulatorNode(node.parameters,nodeName,nodeType,numberOfNodes));
         numberOfNodes++;
@@ -175,7 +180,6 @@ public class Simulator {
     }
 
     private void addNodeToStartClass(String nodeClassName) {
-//        startClassImportContent += "import " + packageName + "." + nodeClassName + ";\n";
         startClassSwitchContent += "            case " + numberOfNodes + " :\n" +
                 "                node = new " + nodeClassName + "();\n" +
                 "                break;\n";
@@ -235,9 +239,10 @@ public class Simulator {
         String layerNamePath = DockerConfigurator.dataFolderPath + "/" + DockerConfigurator.layerNameFileName;
         StringBuilder layerNameContent = new StringBuilder();
         for(SimulatorLayer layer : layers){
-            layerNameContent.append(layer.layerName).append("\n");
+            layerNameContent.append(layer.layerName).append(",").append(layer.nodeIdBegin).append(",").append(layer.nodeIdEnd).append("\n");
         }
         utils.writeStringToFile(layerNamePath,layerNameContent.toString());
+        logger.info("Layer name file saved as " + layerNamePath);
     }
 
     private void cleanUp() {

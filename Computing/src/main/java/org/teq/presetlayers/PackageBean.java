@@ -7,36 +7,19 @@ public class PackageBean extends MetricsPackageBean {
     public PackageBean(Object object) {
         super(object);
     }
-    private String src;
-    private String target;
+
     private InfoType type;
     public PackageBean(String src, String target, InfoType type, Object object) {
-        super(object);
-        this.src = src;
-        this.target = target;
+        this(src,target,0,type,object);
+    }
+    public PackageBean(String src, String target, int targetPort, InfoType type, Object object) {
+        super(src,target,targetPort,object);
         this.type = type;
-    }
-
-    public String getSrc() {
-        return src;
-    }
-
-    public String getTarget() {
-        return target;
     }
 
     public InfoType getType() {
         return type;
     }
-
-    public void setSrc(String src) {
-        this.src = src;
-    }
-
-    public void setTarget(String target) {
-        this.target = target;
-    }
-
     public void setType(InfoType object) {
         this.type = object;
     }
@@ -44,11 +27,11 @@ public class PackageBean extends MetricsPackageBean {
     public String toString() {
         return "PackageBean{" +
                 "id='" + getId() + '\'' +
-                ", src='" + src + '\'' +
-                ", target='" + target + '\'' +
+                ", src='" + getSrc() + '\'' +
+                ", target='" + getTarget() + '\'' +
+                ", targetPort=" + getTargetPort() +
                 ", type=" + type +
                 ", object=" + getObject() +
                 '}';
     }
-
 }

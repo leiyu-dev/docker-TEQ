@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.teq.configurator.NetworkConfigurator;
 import org.teq.layer.mearsurer.BuiltInMetrics;
 import org.teq.node.AbstractFlinkNode;
-import org.teq.simulator.docker.DockerRuntimeData;
+import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.CommonDataReceiver;
 import org.teq.utils.connector.CommonDataSender;
 

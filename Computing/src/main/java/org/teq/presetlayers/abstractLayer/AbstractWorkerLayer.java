@@ -18,7 +18,7 @@ import org.teq.configurator.unserializable.DevicePrefixName;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.WorkerTask;
 import org.teq.presetlayers.utils.PhysicalPartition;
-import org.teq.simulator.docker.DockerRuntimeData;
+import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.*;
 
 public abstract class AbstractWorkerLayer extends MeasuredFlinkNode implements WorkerTask  {
@@ -31,34 +31,21 @@ public abstract class AbstractWorkerLayer extends MeasuredFlinkNode implements W
 
     @Override
     public void dataProcess() throws Exception {
-        int workerNum = ExecutorParameters.workersNum;
         int maxNumRetries = ExecutorParameters.maxNumRetries;
         int retryInterval = ExecutorParameters.retryInterval;
         StreamExecutionEnvironment env = getEnv();
-        DataStream<PackageBean> FromCenter = env.addSource(new CommonDataReceiver<PackageBean>(ExecutorParameters.fromCenterToWorkerPort, PackageBean.class))
+        DataStream<PackageBean> FromCenter = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorParameters.fromCenterToWorkerPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
-        DataStream<PackageBean> FromCod =  env.addSource(new CommonDataReceiver<PackageBean>(ExecutorParameters.fromCodToWorkerPort, PackageBean.class))
+
+        DataStream<PackageBean> FromCod =  env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorParameters.fromCodToWorkerPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
+
         DataStream<PackageBean> info = FromCenter.union(FromCod);
-        DataStream<PackageBean> transformedWorkers = measureWorkerLayerRecord(info, workerNum);
-        // 按照现在workers的target 来切分为两个流发给Cod 和 Center
-        OutputTag<PackageBean> outputTag = new OutputTag<>(DevicePrefixName.Center.getName()){};
-        SingleOutputStreamOperator<PackageBean> cod = transformedWorkers.process(new ProcessFunction<PackageBean, PackageBean>() {
-            @Override
-            public void processElement(PackageBean brokerBean, Context context, Collector<PackageBean> collector) throws Exception {
-                if (brokerBean.getTarget().contains(DevicePrefixName.Center.getName())) {
-                    context.output(outputTag, brokerBean);
-                } else {
-                    collector.collect(brokerBean);
-                }
-            }
-        }).setParallelism(1);
-        DataStream<PackageBean> center = cod.getSideOutput(outputTag);
-        //TODO: Send To The True Cod and Center
-        DataStreamSink ToCod = cod.addSink(new CommonDataSender<>("localhost", ExecutorParameters.fromWorkerToCodPort ,maxNumRetries,retryInterval)).setParallelism(1);
-        DataStreamSink ToCenter = center.addSink(new CommonDataSender<>("localhost", ExecutorParameters.fromWorkerToCenterPort, maxNumRetries,retryInterval)).setParallelism(1);
+        DataStream<PackageBean> transformedWorkers = measureWorkerLayerRecord(info);
+
+        DataStreamSink sink = transformedWorkers.addSink(new TargetedDataSender<>(maxNumRetries,retryInterval));
     }
-    public DataStream<PackageBean> measureWorkerLayerRecord(DataStream<PackageBean> stream, int workerNum) {
+    public DataStream<PackageBean> measureWorkerLayerRecord(DataStream<PackageBean> stream) {
         DataStream<PackageBean> inputMap = stream.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
@@ -66,23 +53,24 @@ public abstract class AbstractWorkerLayer extends MeasuredFlinkNode implements W
                 logger.debug("Worker Layer received data: {}", packageBean);
                 return packageBean;
             }
-        }).setParallelism(1);
-
-
-        // 按照target keyBy到多个输出流（worker)
-        KeyedStream<PackageBean, Integer> workers = PhysicalPartition.partitionByTarget(DevicePrefixName.Worker.getName(), workerNum,inputMap);
-
-
+        });
         // 处理逻辑
-        DataStream<PackageBean> transformedWorkers = transform(workers);
+        DataStream<PackageBean> transformedWorkers = transform(inputMap);
         return transformedWorkers.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()));
+
+                if(DockerRuntimeData.getLayerNameByNodeName(packageBean.getTarget()).equals(ExecutorParameters.dataCenterLayerName))
+                    packageBean.setTargetPort(ExecutorParameters.fromWorkerToCenterPort);
+                else
+                    packageBean.setTargetPort(ExecutorParameters.fromWorkerToCodPort);
+                packageBean.setSrc(getNodeName());
                 logger.debug("Worker Layer send data: {}", packageBean);
+
+                finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()));
                 return packageBean;
             }
-        }).setParallelism(1);
+        });
     }
 }
 

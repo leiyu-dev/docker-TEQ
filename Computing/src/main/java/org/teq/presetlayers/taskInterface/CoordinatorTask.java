@@ -10,4 +10,11 @@ public interface CoordinatorTask {
      * @return
      */
     DataStream<PackageBean> Routing(DataStream<PackageBean> info);
+
+    /**
+     * this interface is used to define your send back rule (to the EndDeviceLayer)
+     * @param backInfo
+     * @return
+     */
+    DataStream<PackageBean> SendBack(DataStream<PackageBean> backInfo);
 }

@@ -12,6 +12,7 @@ public class DefaultDockerNode extends AbstractDockerNode{
 
     @Override
     public void process() {
+        System.out.println("this node is " + getNodeID() + " " + getNodeName());
         System.out.println("Starting DefaultDockerNode");
     }
 }

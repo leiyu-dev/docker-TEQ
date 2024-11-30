@@ -1,4 +1,4 @@
-package org.teq.simulator.docker;
+package org.teq.utils;
 
 import org.teq.configurator.DockerConfigurator;
 import org.teq.layer.Layer;
@@ -19,15 +19,27 @@ public class DockerRuntimeData {
     static private Map<String,Long> nodeNameMap;
 
     static private List<String> layerList;
-    private static int i;
+    static private List<Integer>layerBeginList;
+    static private List<Integer>layerEndList;
 
-    public DockerRuntimeData(){};
+    static public void initRuntimeData(){
+
+    }
     static public List<String> getLayerList(){
         if(layerList != null) return layerList;
         layerList = new ArrayList<>();
+        layerBeginList = new ArrayList<>();
+        layerEndList = new ArrayList<>();
         Path path = Paths.get(DockerConfigurator.dataFolderName + "/" + DockerConfigurator.layerNameFileName);
         try {
-            layerList = Files.readAllLines(path);
+            List<String>rawLayerList = Files.readAllLines(path);
+            for(String rawLayerString : rawLayerList){
+                if(rawLayerString.isEmpty())break;
+                String[] result = rawLayerString.split(",");
+                layerList.add(result[0]);
+                layerBeginList.add(Integer.parseInt(result[1]));
+                layerEndList.add(Integer.parseInt(result[2]));
+            }
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -39,6 +51,8 @@ public class DockerRuntimeData {
         Path path = Paths.get(DockerConfigurator.dataFolderName + "/" + layerName + "/" + DockerConfigurator.nodeNameFileName);
         try {
             nodeNameListLayer = Files.readAllLines(path);
+            if(nodeNameListLayer.get(nodeNameListLayer.size()-1).isEmpty())
+                nodeNameListLayer.remove(nodeNameListLayer.size()-1);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -47,11 +61,12 @@ public class DockerRuntimeData {
     }
     static public List<String> getNodeNameList() {
         if(nodeNameList != null)return nodeNameList;
-        nodeNameList = new ArrayList<>();
         nodeNameMap = new HashMap<>();
         Path path = Paths.get(DockerConfigurator.dataFolderName + "/" + DockerConfigurator.nodeNameFileName);
         try {
             nodeNameList = Files.readAllLines(path);
+            if(nodeNameList.get(nodeNameList.size()-1).isEmpty())
+                nodeNameList.remove(nodeNameList.size()-1);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -91,5 +106,28 @@ public class DockerRuntimeData {
             e.printStackTrace();
             return null;
         }
+    }
+    static public String getLayerNameByNodeName(String nodeName){
+        long nodeId = getNodeIdByName(nodeName);
+        if(layerList==null)getLayerList();
+        for(int i=0; i<layerList.size(); i++){
+            if(layerBeginList.get(i)<=nodeId && nodeId<=layerEndList.get(i))
+                return layerList.get(i);
+        }
+        return null;
+    }
+
+    /**
+     *  @return -1 if the node is not in that layer or the layer does not exist
+     */
+    static public int getNodeRankInLayer(String nodeName,String layerName){
+        List<String>nodes = getNodeNameListByLayerName(layerName);
+        if (nodes != null) {
+            for(int i=0; i<nodes.size(); i++){
+                if(nodes.get(i).equals(nodeName))
+                    return i;
+            }
+        }
+        return -1;
     }
 }

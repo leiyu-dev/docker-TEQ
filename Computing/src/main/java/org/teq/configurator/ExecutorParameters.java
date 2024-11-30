@@ -1,56 +1,31 @@
 package org.teq.configurator;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class ExecutorParameters {
-    private static String defaultConfigFilePath = "./Computing/src/main/resources/";
-    private static String fileName;
-    public static String file;
-    public static int fromEndToCodPort;
-    public static int fromCodToWorkerPort;
-    public static int fromWorkerToCenterPort;
-    public static int fromCenterToWorkerPort;
-    public static int fromWorkerToCodPort;
-    public static int fromCodToEndPort;
+    public static String endDeviceLayerName = "EndDeviceLayer";
+    public static String coordinatorLayerName = "CoordinatorLayer";
+    public static String workerLayerName = "WorkerLayer";
+    public static String dataCenterLayerName = "DataCenterLayer";
+    public static int fromEndToCodPort = 10000;
+    public static int fromCodToWorkerPort = 10001;
+    public static int fromWorkerToCenterPort = 10002;
+    public static int fromCenterToWorkerPort = 10003;
+    public static int fromWorkerToCodPort = 10004;
+    public static int fromCodToEndPort = 10005;
 
-    public static boolean openWebUI;
-    public static int endDeviceLayerPort;
-    public static int coordinatorLayerPort;
-    public static int workerLayerPort;
-    public static int dataCenterLayerPort;
-
-    public static int endDevicesNum;
-    public static int workersNum;
-    public static int dataCenterNum;
-
-    public static int maxNumRetries;
-    public static int retryInterval;
-
-    public static int sinkToMeasurerPort;
+    public static int maxNumRetries = 10;
+    public static int retryInterval = 100;
 
     @Override
     public String toString() {
         return "ExecutorParameters{" +
-                "defaultConfigFilePath='" + defaultConfigFilePath + '\'' +
-                ", fileName='" + fileName + '\'' +
-                ", file='" + file + '\'' +
                 ", fromEndToCodPort=" + fromEndToCodPort +
                 ", fromCodToWorkerPort=" + fromCodToWorkerPort +
                 ", fromWorkerToCenterPort=" + fromWorkerToCenterPort +
                 ", fromCenterToWorkerPort=" + fromCenterToWorkerPort +
                 ", fromWorkerToCodPort=" + fromWorkerToCodPort +
                 ", fromCodToEndPort=" + fromCodToEndPort +
-                ", openWebUI=" + openWebUI +
-                ", endDeviceLayerPort=" + endDeviceLayerPort +
-                ", coordinatorLayerPort=" + coordinatorLayerPort +
-                ", workerLayerPort=" + workerLayerPort +
-                ", dataCenterLayerPort=" + dataCenterLayerPort +
-                ", endDevicesNum=" + endDevicesNum +
-                ", workersNum=" + workersNum +
-                ", dataCenterNum=" + dataCenterNum +
                 ", maxNumRetries=" + maxNumRetries +
                 ", retryInterval=" + retryInterval +
-                ", sinkToMeasurerPort=" + sinkToMeasurerPort +
                 '}';
     }
 }

@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.teq.configurator.NetworkConfigurator;
 import org.teq.node.AbstractFlinkNode;
 import org.teq.node.DockerNodeParameters;
-import org.teq.simulator.docker.DockerRuntimeData;
+import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.CommonDataSender;
 
 import java.lang.management.ManagementFactory;
@@ -72,7 +72,7 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
         BuiltInMetrics metrics = metricsMap.get(dataId);
         metrics.setTimestampOut(System.nanoTime());
         metrics.setToNodeId(toNodeId);
-        logger.info("Finish metrics: " + metrics);
+        logger.debug("Finish metrics: " + metrics);
         queue.offer(metrics);
     }
     public void flinkProcess(){

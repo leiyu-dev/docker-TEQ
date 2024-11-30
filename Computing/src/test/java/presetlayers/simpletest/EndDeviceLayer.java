@@ -3,9 +3,11 @@ package presetlayers.simpletest;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.teq.configurator.unserializable.InfoType;
 import org.teq.presetlayers.abstractLayer.AbstractEndDeviceLayer;
 import org.teq.configurator.ExecutorParameters;
 import org.teq.presetlayers.PackageBean;
+import org.teq.utils.DockerRuntimeData;
 
 public class EndDeviceLayer extends AbstractEndDeviceLayer {
     @Override
@@ -13,20 +15,17 @@ public class EndDeviceLayer extends AbstractEndDeviceLayer {
         String filePath = "./file.txt";
         StreamExecutionEnvironment env = getEnv();
         DataStream<String> input = env.readTextFile(filePath);
-        return input.map(new MapFunction<String, PackageBean>() {
-            @Override
-            public PackageBean map(String value) throws Exception {
-                return new PackageBean(value);
-            }
-        });
+        return input.map((MapFunction<String, PackageBean>) value -> new PackageBean(getNodeName(),
+                DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.coordinatorLayerName).get(0),
+                InfoType.Data,value));
     }
     @Override
     public DataStream<PackageBean> Computing(DataStream<PackageBean> packages) {
-        return null;
+        return packages;//do nothing here
     }
 
     @Override
     public void Store(DataStream<PackageBean> respond) {
-
+        respond.print();
     }
 }

@@ -12,39 +12,38 @@ import org.teq.layer.mearsurer.MeasuredFlinkNode;
 import org.teq.configurator.ExecutorParameters;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.CoordinatorTask;
-import org.teq.simulator.docker.DockerRuntimeData;
+import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.CommonDataReceiver;
 import org.teq.utils.connector.CommonDataSender;
+import org.teq.utils.connector.MultiThreadDataReceiver;
+import org.teq.utils.connector.TargetedDataSender;
 //import org.apache.log4j.PropertyConfigurator;
 
 
 public abstract class AbstractCoordinatorLayer extends MeasuredFlinkNode implements CoordinatorTask {
-    protected String logConfigFilePath; // 每个实例的日志配置文件路径都不一样
-    public void setLogFilePath(String path) {
-        logConfigFilePath = path;
-    }
     private static final Logger logger = LogManager.getLogger(AbstractEndDeviceLayer.class);
 
     public AbstractCoordinatorLayer(){}
 
-    public void execute() throws Exception {
+    @Override
+    public void dataProcess() throws Exception {
         int maxNumRetries = ExecutorParameters.maxNumRetries;
         int retryInterval = ExecutorParameters.retryInterval;
-        // PropertyConfigurator.configure(logConfigFilePath);
         StreamExecutionEnvironment env = getEnv();
-        DataStream<PackageBean> FromEnd = env.addSource(new CommonDataReceiver<PackageBean>(ExecutorParameters.fromEndToCodPort, PackageBean.class))
-                .returns(TypeInformation.of(PackageBean.class));
-        DataStream<PackageBean> FromWorker = env.addSource(new CommonDataReceiver<PackageBean>(ExecutorParameters.fromWorkerToCodPort, PackageBean.class))
-                .returns(TypeInformation.of(PackageBean.class));
-        DataStream<PackageBean> routedInfo = measureCoordinatorRecord(FromEnd);
-        DataStreamSink<PackageBean> ToEnd = FromWorker.addSink(new CommonDataSender("localhost", ExecutorParameters.fromCodToEndPort, maxNumRetries,retryInterval)).setParallelism(1);
-        logger.info("CoordinatorLayer: ToEnd port is {}", ExecutorParameters.fromCodToEndPort);
-        DataStreamSink<PackageBean> ToWorker = routedInfo.addSink(new CommonDataSender("localhost",ExecutorParameters.fromCodToWorkerPort, maxNumRetries,retryInterval)).setParallelism(1);
-        logger.info("CoordinatorLayer: ToWorker port is {}", ExecutorParameters.fromCodToWorkerPort);
-        env.executeAsync();
 
+        DataStream<PackageBean> FromEnd = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorParameters.fromEndToCodPort, PackageBean.class))
+                .returns(TypeInformation.of(PackageBean.class));
+        DataStream<PackageBean> routedToWorker = measureToWorkerRecord(FromEnd);
+
+        DataStream<PackageBean> FromWorker = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorParameters.fromWorkerToCodPort, PackageBean.class))
+                .returns(TypeInformation.of(PackageBean.class));
+        DataStream<PackageBean> routedToEnd = measureToEndRecord(FromWorker);
+
+
+        DataStreamSink<PackageBean> ToEnd = routedToEnd.addSink(new TargetedDataSender<>(maxNumRetries,retryInterval)).setParallelism(1);
+        DataStreamSink<PackageBean> ToWorker = routedToWorker.addSink(new TargetedDataSender<>(maxNumRetries,retryInterval)).setParallelism(1);
     }
-    public DataStream<PackageBean> measureCoordinatorRecord(DataStream<PackageBean> stream){
+    public DataStream<PackageBean> measureToWorkerRecord(DataStream<PackageBean> stream){
         DataStream<PackageBean> inputMap = stream.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
@@ -52,15 +51,39 @@ public abstract class AbstractCoordinatorLayer extends MeasuredFlinkNode impleme
                 logger.debug("Coordinator Layer received data from End Device: {}", packageBean);
                 return packageBean;
             }
-        }).setParallelism(1);
+        });
         DataStream<PackageBean> routedMap = Routing(inputMap);
         return routedMap.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
+                packageBean.setSrc(getNodeName());
+                packageBean.setTargetPort(ExecutorParameters.fromCodToWorkerPort);
                 finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()));
                 logger.debug("Coordinator Layer sent data to Worker: {}", packageBean);
                 return packageBean;
             }
-        }).setParallelism(1);
+        });
+    }
+
+    public DataStream<PackageBean> measureToEndRecord(DataStream<PackageBean> stream){
+        DataStream<PackageBean> inputMap = stream.map(new MapFunction<PackageBean, PackageBean>() {
+            @Override
+            public PackageBean map(PackageBean packageBean) throws Exception {
+                beginProcess(packageBean.getId(), JSON.toJSONString(packageBean).length() * 2);
+                logger.debug("Coordinator Layer received data from End Device: {}", packageBean);
+                return packageBean;
+            }
+        });
+        DataStream<PackageBean> routedMap = SendBack(inputMap);
+        return routedMap.map(new MapFunction<PackageBean, PackageBean>() {
+            @Override
+            public PackageBean map(PackageBean packageBean) throws Exception {
+                packageBean.setSrc(getNodeName());
+                packageBean.setTargetPort(ExecutorParameters.fromCodToEndPort);
+                finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()));
+                logger.debug("Coordinator Layer sent data to Worker: {}", packageBean);
+                return packageBean;
+            }
+        });
     }
 }

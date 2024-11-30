@@ -28,11 +28,18 @@ public class Layer {
         this.nodeCount = nodeCount;
         for(int i = 0; i < nodeCount; i++) {
             paramList.add(SerializationUtils.clone(functionNode.parameters));
-            nodeNameList.add(layerName + "-" + SimulatorConfigurator.classNamePrefix + i);
+            nodeNameList.add(layerName + "-" + i);
         }
     }
-    public void setLayerName(String layerName){
+    public Layer(AbstractDockerNode functionNode, int nodeCount, String layerName){
         this.layerName = layerName;
+        this.functionNode = functionNode;
+        layerCount++;
+        this.nodeCount = nodeCount;
+        for(int i = 0; i < nodeCount; i++) {
+            paramList.add(SerializationUtils.clone(functionNode.parameters));
+            nodeNameList.add(layerName + "-" + i);
+        }
     }
     public void changeNodeParameter(int index,DockerNodeParameters parameters){
         paramList.set(index, parameters);
