@@ -17,8 +17,8 @@ public class ExecutorParameters implements InDockerConfig{
     public static int fromWorkerToCodPort = 10004;
     public static int fromCodToEndPort = 10005;
 
-    public static int maxNumRetries = 10;
-    public static int retryInterval = 100;
+    public static int maxNumRetries = 100;
+    public static int retryInterval = 1000;
 
     @Override
     public void getFromProperties(String configFile) {

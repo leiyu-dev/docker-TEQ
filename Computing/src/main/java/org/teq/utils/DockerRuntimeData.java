@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class DockerRuntimeData {
     static private List<String> nodeNameList;
-    static private Map<String,Long> nodeNameMap;
+    static private Map<String,Integer> nodeNameMap;
 
     static private List<String> layerList;
     static private List<Integer>layerBeginList;
@@ -24,12 +24,16 @@ public class DockerRuntimeData {
     static public void initRuntimeData(){
 
     }
+    static Path getPathByEnvironment(String path){
+        if(utils.isInDocker())return Path.of(path);
+        return Path.of(SimulatorConfigurator.hostPath + "/" + path);
+    }
     static public List<String> getLayerList(){
         if(layerList != null) return layerList;
         layerList = new ArrayList<>();
         layerBeginList = new ArrayList<>();
         layerEndList = new ArrayList<>();
-        Path path = Paths.get(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.layerNameFileName);
+        Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.layerNameFileName);
         try {
             List<String>rawLayerList = Files.readAllLines(path);
             for(String rawLayerString : rawLayerList){
@@ -47,7 +51,7 @@ public class DockerRuntimeData {
     }
     static public List<String> getNodeNameListByLayerName(String layerName){
         List<String> nodeNameListLayer;
-        Path path = Paths.get(SimulatorConfigurator.dataFolderName + "/" + layerName + "/" + SimulatorConfigurator.nodeNameFileName);
+        Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + layerName + "/" + SimulatorConfigurator.nodeNameFileName);
         try {
             nodeNameListLayer = Files.readAllLines(path);
             if(nodeNameListLayer.get(nodeNameListLayer.size()-1).isEmpty())
@@ -61,7 +65,7 @@ public class DockerRuntimeData {
     static public List<String> getNodeNameList() {
         if(nodeNameList != null)return nodeNameList;
         nodeNameMap = new HashMap<>();
-        Path path = Paths.get(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.nodeNameFileName);
+        Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.nodeNameFileName);
         try {
             nodeNameList = Files.readAllLines(path);
             if(nodeNameList.get(nodeNameList.size()-1).isEmpty())
@@ -71,21 +75,22 @@ public class DockerRuntimeData {
             return null;
         }
         for(int i=0 ; i<nodeNameList.size() ; i++){
-            nodeNameMap.put(nodeNameList.get(i), (long) i);
+            nodeNameMap.put(nodeNameList.get(i),  i);
         }
         return nodeNameList;
     }
     static public String getNodeNameById(int nodeId){
+        if(nodeId == -1)return "Sink";
         if(nodeNameList == null)getNodeNameList();
         return nodeNameList.get(nodeId);
     }
-    static public long getNodeIdByName(String nodeName){
+    static public int getNodeIdByName(String nodeName){
         if(nodeNameMap == null)getNodeNameList();
         return nodeNameMap.get(nodeName);
     }
     static public String getHostIp(){
         String hostIp;
-        Path path = Paths.get(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.hostIpFileName);
+        Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.hostIpFileName);
         try {
             hostIp = Files.readAllLines(path).get(0);
         } catch (IOException e) {

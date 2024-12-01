@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public class MetricsPackageBean implements Serializable {
     static private long instanceCount = 0;
-    private final UUID id;
+    private UUID id;
     private Object object;
 
     /* src, targetPort and target are used to send messages between different nodes*/
@@ -28,6 +28,9 @@ public class MetricsPackageBean implements Serializable {
         instanceCount++;
     }
 
+    public void setId(UUID id) {
+        this.id = id;
+    }
     public UUID getId() {
         return id;
     }

@@ -25,4 +25,8 @@ public class utils {
             logger.error("Error in writing string into file " + filename);
         }
     }
+    static boolean isInDocker(){
+        String inDocker = System.getenv("IN_DOCKER");
+        return inDocker != null && inDocker.equals("1");
+    }
 }

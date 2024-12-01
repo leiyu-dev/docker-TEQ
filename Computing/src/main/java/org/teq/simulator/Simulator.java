@@ -9,6 +9,7 @@ import org.teq.node.DockerNodeParameters;
 import org.teq.simulator.docker.DockerRunner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.teq.simulator.network.AbstractNetworkHostNode;
 import org.teq.utils.utils;
 
 import java.io.*;
@@ -28,7 +29,7 @@ public class Simulator {
     private String startClassImportContent = "import org.teq.configurator.*;";
     private String startClassSwitchContent = "";
 
-    public Simulator(AbstractDockerNode networkHostNode) throws Exception {
+    public Simulator(AbstractNetworkHostNode networkHostNode) throws Exception {
         logger.info("Initializing the simulator");
         // this line use TCP connection, if you want to use TCP, uncomment this line
         // dockerRunner = new DockerRunner(DockerConfigurator.imageName,DockerConfigurator.tcpPort);

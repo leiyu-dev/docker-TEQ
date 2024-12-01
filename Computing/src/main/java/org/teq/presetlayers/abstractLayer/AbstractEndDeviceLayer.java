@@ -73,7 +73,7 @@ public abstract class AbstractEndDeviceLayer extends MeasuredFlinkNode implement
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
                 packageBean.setSrc(getNodeName());
-                finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()));
+                endProcess(packageBean.getId());
                 logger.debug("End Device Layer send data to Coordinator: {}", packageBean);
                 return packageBean;
             }

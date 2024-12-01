@@ -16,7 +16,8 @@ public class DockerNetworkController {
     void createNetworkHostContainer(String imageName,String networkHostName,int containerId) {
         this.networkHostName = networkHostName;
         String[] env = {
-                "NODE_ID=" + containerId
+                "NODE_ID=" + containerId,
+                "IN_DOCKER=1",
         };
 //        ExposedPort exposedPort = ExposedPort.tcp(8888);
 //        Ports.Binding hostPortBinding = Ports.Binding.bindPort(8888);

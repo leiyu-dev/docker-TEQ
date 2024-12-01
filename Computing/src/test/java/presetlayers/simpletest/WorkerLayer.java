@@ -17,7 +17,7 @@ public class WorkerLayer extends AbstractWorkerLayer {
                 if(DockerRuntimeData.getLayerNameByNodeName(value.getSrc()).equals(ExecutorParameters.dataCenterLayerName)){
                     value.setTarget(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.coordinatorLayerName).get(0));
                 } else{ //coordinator
-                    Thread.sleep(getNodeID()* 10L);
+                    Thread.sleep(getNodeID()* 100L);
                     value.setTarget(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.dataCenterLayerName).get(0));
                 }
                 return value;

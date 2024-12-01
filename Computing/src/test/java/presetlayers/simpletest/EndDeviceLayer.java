@@ -26,6 +26,13 @@ public class EndDeviceLayer extends AbstractEndDeviceLayer {
 
     @Override
     public void Store(DataStream<PackageBean> respond) {
-        respond.print();
+        respond.map(new MapFunction<PackageBean, PackageBean>() {
+
+            @Override
+            public PackageBean map(PackageBean value) throws Exception {
+                System.out.println(value.getObject());
+                return value;
+            }
+        });
     }
 }

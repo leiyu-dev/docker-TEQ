@@ -94,14 +94,16 @@ public class MultiThreadDataReceiver<T> implements SourceFunction<T> {
      */
     private void handleClient(Socket clientSocket, SourceContext<T> ctx) {
         try (BufferedReader bufferedReader = new BufferedReader(
-                new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8))) {
-            String readline;
-            while (isRunning && (readline = bufferedReader.readLine()) != null) {
-                logger.info("Received data from " + clientSocket.toString() + ": " + readline);
-                T data = JSON.parseObject(readline, typeClass);
-                // 使用 synchronized 确保线程安全
-                synchronized (ctx.getCheckpointLock()) {
-                    ctx.collect(data);
+            new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8))) {
+            while (isRunning) {
+                String readline;
+                while((readline = bufferedReader.readLine()) != null){
+                    logger.info("Received data from " + clientSocket.toString() + ": " + readline);
+                    T data = JSON.parseObject(readline, typeClass);
+                    // 使用 synchronized 确保线程安全
+                    synchronized (ctx.getCheckpointLock()) {
+                        ctx.collect(data);
+                    }
                 }
             }
         } catch (IOException e) {
@@ -109,6 +111,7 @@ public class MultiThreadDataReceiver<T> implements SourceFunction<T> {
                 logger.error("Error reading from client " + clientSocket.toString(), e);
             }
         } finally {
+            System.out.println("closed connection:" + isRunning);
             // 移除并关闭客户端连接
             clientSockets.remove(clientSocket);
             try {

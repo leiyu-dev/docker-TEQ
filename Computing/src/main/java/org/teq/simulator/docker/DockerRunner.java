@@ -144,6 +144,7 @@ public class DockerRunner {
         String[] env = {
             "NODE_ID=" + containerId,
             "NODE_NAME=" + containerName,
+            "IN_DOCKER=1",
         };
         CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
                 .withHostConfig(hostConfig)  // 传递 HostConfig（包含挂载信息）

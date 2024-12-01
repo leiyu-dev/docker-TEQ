@@ -8,13 +8,14 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.teq.node.AbstractFlinkNode;
+import org.teq.simulator.network.AbstractNetworkHostNode;
 import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.CommonDataReceiver;
 import org.teq.utils.connector.CommonDataSender;
 
-public class NetworkHostNode extends AbstractFlinkNode{
+public class NetworkHostNode extends AbstractNetworkHostNode {
     @Override
-    public void flinkProcess() {
+    public void dataProcess() {
         StreamExecutionEnvironment env = getEnv();
         List<DataStream<String>>streams = new ArrayList<>();
         DockerRuntimeData data = new DockerRuntimeData();
@@ -31,6 +32,6 @@ public class NetworkHostNode extends AbstractFlinkNode{
         for(int i=1;i<nodeCount;i++){
             mergedStream = mergedStream.union(streams.get(i));
         }
-        DataStreamSink sink = mergedStream.addSink(new CommonDataSender<>(data.getHostIp(),8888,10000,1000));
+        DataStreamSink sink = mergedStream.addSink(new CommonDataSender<>(data.getHostIp(),9999,10000,1000));
     }
 }

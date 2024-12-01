@@ -5,11 +5,11 @@ import java.util.UUID;
 
 public class BuiltInMetrics implements Serializable {
     private UUID id;
-    private long fromNodeId;
-    private long toNodeId;
-    private double packageLength;//unit: kb
-    private double memoryUsage;//unit Mb
-    private double cpuUsage;//unit: %
+    private int fromNodeId;
+    private int toNodeId;
+    private double packageLength;//unit: B
+    private double memoryUsage;//unit: B
+    private double cpuUsage;//unit: 1 means 100%
     private long timestampIn;
     private long timestampOut;
     public void setId(UUID id) {
@@ -49,16 +49,16 @@ public class BuiltInMetrics implements Serializable {
         return timestampOut;
     }
 
-    public long getFromNodeId() {
+    public int getFromNodeId() {
         return fromNodeId;
     }
-    public void setFromNodeId(long fromNodeId) {
+    public void setFromNodeId(int fromNodeId) {
         this.fromNodeId = fromNodeId;
     }
-    public long getToNodeId() {
+    public int getToNodeId() {
         return toNodeId;
     }
-    public void setToNodeId(long toNodeId) {
+    public void setToNodeId(int toNodeId) {
         this.toNodeId = toNodeId;
     }
 

@@ -1,15 +1,9 @@
 package org.teq.configurator;
 
-import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.Properties;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
@@ -42,10 +36,10 @@ public class SimulatorConfigurator implements InDockerConfig {
     public static String networkSubnet = "10.0.0.0/16";
     public static String networkGateway = "10.0.0.2";
     public static int metricsPortBegin = 50000;
-    public static int HostReceiverPort = 8888;
-    public static int NetworkHostNodeSenderPort = 8888;
+    public static int MetricsReceiverPort = 8888;
     public static String classNamePrefix = "teq_node_";
     public static boolean cleanUpAfterSimulation = false;
+
 
 
     @Override
@@ -77,8 +71,7 @@ public class SimulatorConfigurator implements InDockerConfig {
             networkSubnet = props.getProperty("networkSubnet", networkSubnet);
             networkGateway = props.getProperty("networkGateway", networkGateway);
             metricsPortBegin = Integer.parseInt(props.getProperty("metricsPortBegin", String.valueOf(metricsPortBegin)));
-            HostReceiverPort = Integer.parseInt(props.getProperty("HostReceiverPort", String.valueOf(HostReceiverPort)));
-            NetworkHostNodeSenderPort = Integer.parseInt(props.getProperty("NetworkHostNodeSenderPort", String.valueOf(NetworkHostNodeSenderPort)));
+            MetricsReceiverPort = Integer.parseInt(props.getProperty("HostReceiverPort", String.valueOf(MetricsReceiverPort)));
             classNamePrefix = props.getProperty("classNamePrefix", classNamePrefix);
             cleanUpAfterSimulation = Boolean.parseBoolean(props.getProperty("cleanUpAfterSimulation", String.valueOf(cleanUpAfterSimulation)));
         } catch (IOException e) {
@@ -115,8 +108,7 @@ public class SimulatorConfigurator implements InDockerConfig {
             props.setProperty("networkSubnet", networkSubnet);
             props.setProperty("networkGateway", networkGateway);
             props.setProperty("metricsPortBegin", String.valueOf(metricsPortBegin));
-            props.setProperty("HostReceiverPort", String.valueOf(HostReceiverPort));
-            props.setProperty("NetworkHostNodeSenderPort", String.valueOf(NetworkHostNodeSenderPort));
+            props.setProperty("HostReceiverPort", String.valueOf(MetricsReceiverPort));
             props.setProperty("classNamePrefix", classNamePrefix);
             props.setProperty("cleanUpAfterSimulation", String.valueOf(cleanUpAfterSimulation));
 
