@@ -4,7 +4,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.teq.configurator.NetworkConfigurator;
+import org.teq.configurator.SimulatorConfigurator;
 import org.teq.layer.mearsurer.BuiltInMetrics;
 import org.teq.node.AbstractFlinkNode;
 import org.teq.utils.DockerRuntimeData;
@@ -26,7 +26,7 @@ public class NetworkHostNode extends AbstractFlinkNode{
             System.out.println(nodeName);
         }
         for(int i=1;i<=nodeCount;i++){
-            DataStream<BuiltInMetrics> stream = env.addSource(new CommonDataReceiver<>(NetworkConfigurator.metricsPortBegin + i, BuiltInMetrics.class))
+            DataStream<BuiltInMetrics> stream = env.addSource(new CommonDataReceiver<>(SimulatorConfigurator.metricsPortBegin + i, BuiltInMetrics.class))
                     .returns(TypeInformation.of(BuiltInMetrics.class));
             streams.add(stream);
         }

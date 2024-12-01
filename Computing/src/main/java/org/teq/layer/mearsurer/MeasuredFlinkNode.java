@@ -5,7 +5,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.teq.configurator.NetworkConfigurator;
+import org.teq.configurator.SimulatorConfigurator;
 import org.teq.node.AbstractFlinkNode;
 import org.teq.node.DockerNodeParameters;
 import org.teq.utils.DockerRuntimeData;
@@ -50,7 +50,7 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
             }
         });
         metricsDataStream.addSink(new CommonDataSender<>(DockerRuntimeData.getNetworkHostNodeName(),
-                NetworkConfigurator.metricsPortBegin + getNodeID(), 100000, 1000));
+                SimulatorConfigurator.metricsPortBegin + getNodeID(), 100000, 1000));
     }
 
     static Map<UUID,BuiltInMetrics> metricsMap = new HashMap<>();

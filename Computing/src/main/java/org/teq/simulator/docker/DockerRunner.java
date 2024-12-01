@@ -7,8 +7,6 @@ import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
-import org.teq.configurator.DockerConfigurator;
-import org.teq.configurator.NetworkConfigurator;
 import org.teq.configurator.SimulatorConfigurator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +28,7 @@ public class DockerRunner {
                 .exec();
 
         for (Container container : containers) {
-            if (container.getNames()[0].startsWith("/"+SimulatorConfigurator.classNamePrefix)) {
+            if (container.getNames()[0].startsWith("/"+ SimulatorConfigurator.classNamePrefix)) {
                 dockerClient.removeContainerCmd(container.getId()).withForce(true).exec();
                 System.out.println("Deleted container: " + container.getId());
             }
@@ -39,7 +37,7 @@ public class DockerRunner {
     private void deleteNetwork(){
         var networks = dockerClient.listNetworksCmd().exec();
         String networkId = networks.stream()
-                .filter(network -> network.getName().equals(NetworkConfigurator.networkName))
+                .filter(network -> network.getName().equals(SimulatorConfigurator.networkName))
                 .map(network -> network.getId())
                 .findFirst()
                 .orElse(null);
@@ -69,13 +67,13 @@ public class DockerRunner {
         deleteNetwork();
         dockerNetworkController = new DockerNetworkController(dockerClient);
         CreateNetworkResponse network = dockerClient.createNetworkCmd()
-                .withName(NetworkConfigurator.networkName)
+                .withName(SimulatorConfigurator.networkName)
                 .withDriver("bridge") // 使用桥接网络
-                .withIpam(new Ipam().withConfig(new Config().withSubnet(NetworkConfigurator.networkSubnet).withGateway(NetworkConfigurator.networkGateway)))
+                .withIpam(new Ipam().withConfig(new Config().withSubnet(SimulatorConfigurator.networkSubnet).withGateway(SimulatorConfigurator.networkGateway)))
                 .exec();
         Network teqNetwork = dockerClient.inspectNetworkCmd().withNetworkId(network.getId()).exec();
         String gateway = teqNetwork.getIpam().getConfig().get(0).getGateway();
-        utils.writeStringToFile(DockerConfigurator.dataFolderPath + "/" + DockerConfigurator.hostIpFileName, gateway);
+        utils.writeStringToFile(SimulatorConfigurator.dataFolderPath + "/" + SimulatorConfigurator.hostIpFileName, gateway);
         logger.info("Gateway: " + gateway);
         logger.info("Create network" + network.getId());
     }
@@ -116,10 +114,10 @@ public class DockerRunner {
 
     public void runContainer(String containerName, int containerId, DockerNodeParameters parameters){
         logger.info("Running container " + containerName);
-        Volume volume = new Volume(DockerConfigurator.volumePath);
+        Volume volume = new Volume(SimulatorConfigurator.volumePath);
         HostConfig hostConfig = HostConfig.newHostConfig()
-                .withBinds(new Bind(DockerConfigurator.hostPath, volume))  // 本地文件夹路径
-                .withNetworkMode(NetworkConfigurator.networkName);
+                .withBinds(new Bind(SimulatorConfigurator.hostPath, volume))  // 本地文件夹路径
+                .withNetworkMode(SimulatorConfigurator.networkName);
 
         /* CPU restriction */
         if(parameters.cpuRestrictType == DockerNodeParameters.CpuRestrictType.ROUGH){
@@ -141,7 +139,7 @@ public class DockerRunner {
 
         String[] command = {
             "bash", "-c",
-            "chmod -R 777 " + DockerConfigurator.volumePath + "&& bash "+ DockerConfigurator.volumePath + "/" + DockerConfigurator.startScriptName
+            "chmod -R 777 " + SimulatorConfigurator.volumePath + "&& bash "+ SimulatorConfigurator.volumePath + "/" + SimulatorConfigurator.startScriptName
         };
         String[] env = {
             "NODE_ID=" + containerId,
@@ -156,7 +154,7 @@ public class DockerRunner {
                 .exec();
 
         dockerClient.startContainerCmd(container.getId()).exec();
-        if(DockerConfigurator.getStdout){
+        if(SimulatorConfigurator.getStdout){
             LogContainerCmd logContainerCmd = dockerClient.logContainerCmd(container.getId())
                     .withStdOut(true)  // 获取标准输出
                     .withStdErr(true)  // 获取标准错误

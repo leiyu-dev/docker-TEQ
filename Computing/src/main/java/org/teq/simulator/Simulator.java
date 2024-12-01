@@ -1,7 +1,5 @@
 package org.teq.simulator;
 
-import org.teq.configurator.DockerConfigurator;
-import org.teq.configurator.NetworkConfigurator;
 import org.teq.configurator.SimulatorConfigurator;
 import org.teq.layer.Layer;
 import org.teq.node.AbstractDockerNode;
@@ -36,10 +34,10 @@ public class Simulator {
 
         // this line use default connection
         // if you want to use default connection(DOCKER_HOST,Unix Socket(linux),npipe(windows)), uncomment this line
-        dockerRunner = new DockerRunner(DockerConfigurator.imageName);
+        dockerRunner = new DockerRunner(SimulatorConfigurator.imageName);
 
         //Add the network host node to the node list
-        String networkHostName = NetworkConfigurator.networkHostName;
+        String networkHostName = SimulatorConfigurator.networkHostName;
         addNode(networkHostNode, networkHostName,NodeType.network);
 
         logger.info("Initializing success");
@@ -75,8 +73,8 @@ public class Simulator {
     public void addLayer(Layer layer){
         int nodeCount = layer.getNodeCount();
         StringBuilder nodeNameContent = new StringBuilder();
-        String layerNodeNameFile = DockerConfigurator.dataFolderPath + "/" + layer.getLayerName() + "/" +
-                DockerConfigurator.nodeNameFileName;
+        String layerNodeNameFile = SimulatorConfigurator.dataFolderPath + "/" + layer.getLayerName() + "/" +
+                SimulatorConfigurator.nodeNameFileName;
         int nodeIdBegin = numberOfNodes;
         for(int i = 0; i < nodeCount; i++){
             AbstractDockerNode node = layer.getFunctionNode();
@@ -171,9 +169,9 @@ public class Simulator {
         logger.info("Writing start script to file...");
         String scriptContent = "#!/bin/bash\n" +
                 "cd \"$(dirname \"${BASH_SOURCE[0]}\")\"\n" +
-                "java -cp ./lib/*:. " + DockerConfigurator.StartPackageName + "." + DockerConfigurator.StartClassName + "\n";
+                "java -cp ./lib/*:. " + SimulatorConfigurator.StartPackageName + "." + SimulatorConfigurator.StartClassName + "\n";
 
-        String fileName = DockerConfigurator.hostPath + "/" + DockerConfigurator.startScriptName;
+        String fileName = SimulatorConfigurator.hostPath + "/" + SimulatorConfigurator.startScriptName;
 
         utils.writeStringToFile(fileName,scriptContent);
         logger.info("Start script saved as " + fileName);
@@ -191,9 +189,9 @@ public class Simulator {
                 "                break;\n";
 
         logger.info("Writing start class to file...");
-        String classContent = "package " + DockerConfigurator.StartPackageName + ";\n" +
+        String classContent = "package " + SimulatorConfigurator.StartPackageName + ";\n" +
                 startClassImportContent +
-                "public class "+ DockerConfigurator.StartClassName +"{\n" +
+                "public class "+ SimulatorConfigurator.StartClassName +"{\n" +
                 "    public static void main(String[] args) {\n" +
                 "        " + AbstractDockerNode.class.getName() + " node;\n" +
                 "       switch (Integer.parseInt(System.getenv(\"NODE_ID\"))) {\n" +
@@ -203,9 +201,9 @@ public class Simulator {
                 "    }\n" +
                 "}\n";
 
-        String fileName = DockerConfigurator.hostPath + "/" +
-                DockerConfigurator.StartPackageName.replace(".","/") + "/" +
-                DockerConfigurator.StartClassName + ".java";
+        String fileName = SimulatorConfigurator.hostPath + "/" +
+                SimulatorConfigurator.StartPackageName.replace(".","/") + "/" +
+                SimulatorConfigurator.StartClassName + ".java";
 
         utils.writeStringToFile(fileName,classContent);
         logger.info("start class saved as" + fileName);
@@ -218,7 +216,7 @@ public class Simulator {
 
         // 使用编译器编译文件
         int result = compiler.run(null, null, null,"-classpath",
-                DockerConfigurator.hostPath + "/", fileName);
+                SimulatorConfigurator.hostPath + "/", fileName);
         if (result == 0) {
             logger.info(fileName + " compiled successfully");
         } else {
@@ -228,7 +226,7 @@ public class Simulator {
     }
 
     private void writeRuntimeData(){
-        String nodeNameFilePath = DockerConfigurator.dataFolderPath + "/" + DockerConfigurator.nodeNameFileName;
+        String nodeNameFilePath = SimulatorConfigurator.dataFolderPath + "/" + SimulatorConfigurator.nodeNameFileName;
         StringBuilder nodeNameContent = new StringBuilder();
         for(SimulatorNode node : nodes){
             nodeNameContent.append(node.nodeName).append("\n");
@@ -236,7 +234,7 @@ public class Simulator {
         utils.writeStringToFile(nodeNameFilePath,nodeNameContent.toString());
         logger.info("Node name file saved as " + nodeNameFilePath);
 
-        String layerNamePath = DockerConfigurator.dataFolderPath + "/" + DockerConfigurator.layerNameFileName;
+        String layerNamePath = SimulatorConfigurator.dataFolderPath + "/" + SimulatorConfigurator.layerNameFileName;
         StringBuilder layerNameContent = new StringBuilder();
         for(SimulatorLayer layer : layers){
             layerNameContent.append(layer.layerName).append(",").append(layer.nodeIdBegin).append(",").append(layer.nodeIdEnd).append("\n");

@@ -1,7 +1,6 @@
 package org.teq.utils;
 
-import org.teq.configurator.DockerConfigurator;
-import org.teq.layer.Layer;
+import org.teq.configurator.SimulatorConfigurator;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -30,7 +29,7 @@ public class DockerRuntimeData {
         layerList = new ArrayList<>();
         layerBeginList = new ArrayList<>();
         layerEndList = new ArrayList<>();
-        Path path = Paths.get(DockerConfigurator.dataFolderName + "/" + DockerConfigurator.layerNameFileName);
+        Path path = Paths.get(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.layerNameFileName);
         try {
             List<String>rawLayerList = Files.readAllLines(path);
             for(String rawLayerString : rawLayerList){
@@ -48,7 +47,7 @@ public class DockerRuntimeData {
     }
     static public List<String> getNodeNameListByLayerName(String layerName){
         List<String> nodeNameListLayer;
-        Path path = Paths.get(DockerConfigurator.dataFolderName + "/" + layerName + "/" + DockerConfigurator.nodeNameFileName);
+        Path path = Paths.get(SimulatorConfigurator.dataFolderName + "/" + layerName + "/" + SimulatorConfigurator.nodeNameFileName);
         try {
             nodeNameListLayer = Files.readAllLines(path);
             if(nodeNameListLayer.get(nodeNameListLayer.size()-1).isEmpty())
@@ -62,7 +61,7 @@ public class DockerRuntimeData {
     static public List<String> getNodeNameList() {
         if(nodeNameList != null)return nodeNameList;
         nodeNameMap = new HashMap<>();
-        Path path = Paths.get(DockerConfigurator.dataFolderName + "/" + DockerConfigurator.nodeNameFileName);
+        Path path = Paths.get(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.nodeNameFileName);
         try {
             nodeNameList = Files.readAllLines(path);
             if(nodeNameList.get(nodeNameList.size()-1).isEmpty())
@@ -86,7 +85,7 @@ public class DockerRuntimeData {
     }
     static public String getHostIp(){
         String hostIp;
-        Path path = Paths.get(DockerConfigurator.dataFolderName + "/" + DockerConfigurator.hostIpFileName);
+        Path path = Paths.get(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.hostIpFileName);
         try {
             hostIp = Files.readAllLines(path).get(0);
         } catch (IOException e) {
@@ -98,7 +97,7 @@ public class DockerRuntimeData {
     static public String getNetworkHostNodeName(){
         String networkHostName;
         try (BufferedReader reader = new BufferedReader(new FileReader(
-                DockerConfigurator.dataFolderName + "/" + DockerConfigurator.nodeNameFileName))) {
+                SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.nodeNameFileName))) {
             networkHostName = reader.readLine();
             return networkHostName;
         } catch (IOException e) {

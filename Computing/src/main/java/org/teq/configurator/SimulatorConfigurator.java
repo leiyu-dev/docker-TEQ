@@ -1,6 +1,71 @@
 package org.teq.configurator;
 
-public class SimulatorConfigurator {
+import com.alibaba.fastjson.JSON;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
+import java.io.File;
+import java.lang.reflect.Field;
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+public class SimulatorConfigurator implements InDockerConfig {
+    public static String volumePath = "/var/lib/teq";
+    public static String volumeFolderName = "docker";
+    public static String startScriptName = "run.sh";
+    public static String StartPackageName = "starter";
+    public static String StartClassName = "RunNode";
+    public static String imageName = "teq:1.0";
+    public static int tcpPort = 2375;
+
+    public static String projectPath = System.getProperty("user.dir");
+    public static String hostPath = projectPath + "/" + volumeFolderName;
+    public static String dataFolderName = "data";
+    public static String dataFolderPath = hostPath + "/" + dataFolderName;
+    public static boolean getStdout = false;
+
+    public static String nodeNameFileName = "NodeName.txt";
+    public static String layerNameFileName = "LayerName.txt";
+    public static String hostIpFileName = "HostIp.txt";
+    public static String defaultLayerNamePrefix = "layer";
+
+    /**
+     *   WARNING: the networkHostName is only used in Simulator to generate the true networkHostNodeName,
+     *   do not use it as host name in DataSender
+     */
+    public static String networkHostName = "NetworkHost";
+    public static String networkName = "teq-network";
+    public static String networkSubnet = "10.0.0.0/16";
+    public static String networkGateway = "10.0.0.2";
+    public static int metricsPortBegin = 50000;
+    public static int HostReceiverPort = 8888;
+    public static int NetworkHostNodeSenderPort = 8888;
     public static String classNamePrefix = "teq_node_";
     public static boolean cleanUpAfterSimulation = false;
+
+
+    @Override
+    public void getFromProperties(String configFile) {
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        try {
+            // Parse YAML and map it to a temporary object
+            ExecutorParameters loaded = mapper.readValue(new File(configFile), ExecutorParameters.class);
+
+            // Use reflection to dynamically assign values to static fields
+            for (var field : ExecutorParameters.class.getDeclaredFields()) {
+                if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                    field.setAccessible(true);
+                    field.set(null, field.get(loaded));
+                }
+            }
+            System.out.println("Configuration loaded successfully from: " + configFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void saveToProperties(String configFile) {
+        String now = JSON.toJSONString(new SimulatorConfigurator());
+        System.out.println(now);
+    }
 }
