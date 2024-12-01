@@ -6,7 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Properties;
+
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class SimulatorConfigurator implements InDockerConfig {
     public static String volumePath = "/var/lib/teq";
@@ -45,27 +50,80 @@ public class SimulatorConfigurator implements InDockerConfig {
 
     @Override
     public void getFromProperties(String configFile) {
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
-            // Parse YAML and map it to a temporary object
-            ExecutorParameters loaded = mapper.readValue(new File(configFile), ExecutorParameters.class);
+            Properties props = new Properties();
+            props.load(new FileInputStream(configFile));
+            volumePath = props.getProperty("volumePath", volumePath);
+            volumeFolderName = props.getProperty("volumeFolderName", volumeFolderName);
+            startScriptName = props.getProperty("startScriptName", startScriptName);
+            StartPackageName = props.getProperty("StartPackageName", StartPackageName);
+            StartClassName = props.getProperty("StartClassName", StartClassName);
+            imageName = props.getProperty("imageName", imageName);
+            tcpPort = Integer.parseInt(props.getProperty("tcpPort", String.valueOf(tcpPort)));
 
-            // Use reflection to dynamically assign values to static fields
-            for (var field : ExecutorParameters.class.getDeclaredFields()) {
-                if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
-                    field.setAccessible(true);
-                    field.set(null, field.get(loaded));
-                }
-            }
-            System.out.println("Configuration loaded successfully from: " + configFile);
-        } catch (Exception e) {
-            e.printStackTrace();
+            projectPath = props.getProperty("projectPath", projectPath);
+            hostPath = props.getProperty("hostPath", hostPath);
+            dataFolderName = props.getProperty("dataFolderName", dataFolderName);
+            dataFolderPath = props.getProperty("dataFolderPath", dataFolderPath);
+            getStdout = Boolean.parseBoolean(props.getProperty("getStdout", String.valueOf(getStdout)));
+
+            nodeNameFileName = props.getProperty("nodeNameFileName", nodeNameFileName);
+            layerNameFileName = props.getProperty("layerNameFileName", layerNameFileName);
+            hostIpFileName = props.getProperty("hostIpFileName", hostIpFileName);
+            defaultLayerNamePrefix = props.getProperty("defaultLayerNamePrefix", defaultLayerNamePrefix);
+
+            networkHostName = props.getProperty("networkHostName", networkHostName);
+            networkName = props.getProperty("networkName", networkName);
+            networkSubnet = props.getProperty("networkSubnet", networkSubnet);
+            networkGateway = props.getProperty("networkGateway", networkGateway);
+            metricsPortBegin = Integer.parseInt(props.getProperty("metricsPortBegin", String.valueOf(metricsPortBegin)));
+            HostReceiverPort = Integer.parseInt(props.getProperty("HostReceiverPort", String.valueOf(HostReceiverPort)));
+            NetworkHostNodeSenderPort = Integer.parseInt(props.getProperty("NetworkHostNodeSenderPort", String.valueOf(NetworkHostNodeSenderPort)));
+            classNamePrefix = props.getProperty("classNamePrefix", classNamePrefix);
+            cleanUpAfterSimulation = Boolean.parseBoolean(props.getProperty("cleanUpAfterSimulation", String.valueOf(cleanUpAfterSimulation)));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
     @Override
     public void saveToProperties(String configFile) {
-        String now = JSON.toJSONString(new SimulatorConfigurator());
-        System.out.println(now);
+        try (FileOutputStream fos = new FileOutputStream(configFile)) {
+            Properties props = new Properties();
+
+            props.setProperty("volumePath", volumePath);
+            props.setProperty("volumeFolderName", volumeFolderName);
+            props.setProperty("startScriptName", startScriptName);
+            props.setProperty("StartPackageName", StartPackageName);
+            props.setProperty("StartClassName", StartClassName);
+            props.setProperty("imageName", imageName);
+            props.setProperty("tcpPort", String.valueOf(tcpPort));
+
+            props.setProperty("projectPath", projectPath);
+            props.setProperty("hostPath", hostPath);
+            props.setProperty("dataFolderName", dataFolderName);
+            props.setProperty("dataFolderPath", dataFolderPath);
+            props.setProperty("getStdout", String.valueOf(getStdout));
+
+            props.setProperty("nodeNameFileName", nodeNameFileName);
+            props.setProperty("layerNameFileName", layerNameFileName);
+            props.setProperty("hostIpFileName", hostIpFileName);
+            props.setProperty("defaultLayerNamePrefix", defaultLayerNamePrefix);
+
+            props.setProperty("networkHostName", networkHostName);
+            props.setProperty("networkName", networkName);
+            props.setProperty("networkSubnet", networkSubnet);
+            props.setProperty("networkGateway", networkGateway);
+            props.setProperty("metricsPortBegin", String.valueOf(metricsPortBegin));
+            props.setProperty("HostReceiverPort", String.valueOf(HostReceiverPort));
+            props.setProperty("NetworkHostNodeSenderPort", String.valueOf(NetworkHostNodeSenderPort));
+            props.setProperty("classNamePrefix", classNamePrefix);
+            props.setProperty("cleanUpAfterSimulation", String.valueOf(cleanUpAfterSimulation));
+
+            props.store(fos, "Simulator Configurator");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

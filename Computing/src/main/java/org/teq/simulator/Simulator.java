@@ -1,5 +1,6 @@
 package org.teq.simulator;
 
+import org.teq.configurator.ExecutorParameters;
 import org.teq.configurator.SimulatorConfigurator;
 import org.teq.layer.Layer;
 import org.teq.node.AbstractDockerNode;
@@ -24,7 +25,7 @@ public class Simulator {
     private int numberOfNodes = 0;
     private final DockerRunner dockerRunner;
 
-    private String startClassImportContent = "";
+    private String startClassImportContent = "import org.teq.configurator.*;";
     private String startClassSwitchContent = "";
 
     public Simulator(AbstractDockerNode networkHostNode) throws Exception {
@@ -108,7 +109,11 @@ public class Simulator {
 
     public void start() throws Exception {
         logger.info("Starting the simulation");
-
+        utils.writeStringToFile(SimulatorConfigurator.dataFolderPath + "/config/configs","here are the configs");
+        var conf1 = new ExecutorParameters();
+        conf1.saveToProperties(SimulatorConfigurator.dataFolderPath + "/config/ExecutorParameters.properties");
+        var conf2 = new SimulatorConfigurator();
+        conf2.saveToProperties(SimulatorConfigurator.dataFolderPath + "/config/SimulatorConfigurator.properties");
         runAssembleScript();
         writeStartScriptToFile();
         writeStartClassToFile();
@@ -193,6 +198,10 @@ public class Simulator {
                 startClassImportContent +
                 "public class "+ SimulatorConfigurator.StartClassName +"{\n" +
                 "    public static void main(String[] args) {\n" +
+                "        var conf1 = new ExecutorParameters();\n" +
+                "        conf1.getFromProperties(SimulatorConfigurator.dataFolderName + \"/config/ExecutorParameters.properties\");\n" +
+                "        var conf2 = new SimulatorConfigurator();\n" +
+                "        conf2.getFromProperties(SimulatorConfigurator.dataFolderName + \"/config/SimulatorConfigurator.properties\");\n" +
                 "        " + AbstractDockerNode.class.getName() + " node;\n" +
                 "       switch (Integer.parseInt(System.getenv(\"NODE_ID\"))) {\n" +
                 startClassSwitchContent +
