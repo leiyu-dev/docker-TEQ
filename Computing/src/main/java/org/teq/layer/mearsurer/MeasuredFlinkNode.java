@@ -52,9 +52,9 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
             public void cancel() {
                 isRunning = false;
             }
-        });
+        }).setParallelism(1);
         metricsDataStream.addSink(new CommonDataSender<>(DockerRuntimeData.getNetworkHostNodeName(),
-                SimulatorConfigurator.metricsPortBegin + getNodeID(), 100000, 1000));
+                SimulatorConfigurator.metricsPortBegin + getNodeID(), 100000, 1000)).setParallelism(1);
     }
 
     static Map<UUID,BuiltInMetrics> metricsMap = new HashMap<>();

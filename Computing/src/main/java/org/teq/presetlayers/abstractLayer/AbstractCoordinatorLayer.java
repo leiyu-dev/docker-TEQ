@@ -51,7 +51,7 @@ public abstract class AbstractCoordinatorLayer extends MeasuredFlinkNode impleme
                 logger.debug("Coordinator Layer received data from End Device: {}", packageBean);
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
         DataStream<PackageBean> routedMap = Routing(inputMap);
         return routedMap.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
@@ -62,7 +62,7 @@ public abstract class AbstractCoordinatorLayer extends MeasuredFlinkNode impleme
                 logger.debug("Coordinator Layer sent data to Worker: {}", packageBean);
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
     }
 
     public DataStream<PackageBean> measureToEndRecord(DataStream<PackageBean> stream){
@@ -73,7 +73,7 @@ public abstract class AbstractCoordinatorLayer extends MeasuredFlinkNode impleme
                 logger.debug("Coordinator Layer received data from End Device: {}", packageBean);
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
         DataStream<PackageBean> routedMap = SendBack(inputMap);
         return routedMap.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
@@ -84,6 +84,6 @@ public abstract class AbstractCoordinatorLayer extends MeasuredFlinkNode impleme
                 logger.debug("Coordinator Layer sent data to Worker: {}", packageBean);
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
     }
 }

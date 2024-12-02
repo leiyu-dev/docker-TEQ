@@ -53,7 +53,7 @@ public abstract class AbstractWorkerLayer extends MeasuredFlinkNode implements W
                 logger.debug("Worker Layer received data: {}", packageBean);
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
         // 处理逻辑
         DataStream<PackageBean> transformedWorkers = transform(inputMap);
         return transformedWorkers.map(new MapFunction<PackageBean, PackageBean>() {
@@ -70,7 +70,7 @@ public abstract class AbstractWorkerLayer extends MeasuredFlinkNode implements W
                 finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()));
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
     }
 }
 

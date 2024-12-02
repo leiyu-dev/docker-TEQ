@@ -38,7 +38,7 @@ public abstract class AbstractDataCenterLayer extends MeasuredFlinkNode implemen
                 logger.debug("DataCenterLayer: Received data from Worker: {}", packageBean);
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
         DataStream<PackageBean> modifiedMap = transform(inputMap);
         return modifiedMap.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
@@ -49,6 +49,6 @@ public abstract class AbstractDataCenterLayer extends MeasuredFlinkNode implemen
                 logger.debug("DataCenterLayer: Sent data to Worker: {}", packageBean);
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
     }
 }

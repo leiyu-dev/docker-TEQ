@@ -26,7 +26,6 @@ public abstract class AbstractFlinkNode extends AbstractDockerNode {
 
     static public void initEnvironment(){
         env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(1);
     }
 
     static public void startEnvironment(){

@@ -67,7 +67,7 @@ public abstract class AbstractEndDeviceLayer extends MeasuredFlinkNode implement
                 logger.debug("End Device Layer received data from Sensor: {}", packageBean);
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
         Store(inputMap);
         inputMap.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
@@ -77,6 +77,6 @@ public abstract class AbstractEndDeviceLayer extends MeasuredFlinkNode implement
                 logger.debug("End Device Layer send data to Coordinator: {}", packageBean);
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
     }
 }

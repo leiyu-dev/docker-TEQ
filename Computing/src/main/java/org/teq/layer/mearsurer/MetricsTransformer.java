@@ -45,6 +45,7 @@ public class MetricsTransformer {
 
                 @Override
                 public BuiltInMetrics map(BuiltInMetrics value) throws Exception {
+                    logger.info("trying to add metrics:" + value.toString());
                     if(!metricsMap.containsKey(value.getId())) {
                         Set<BuiltInMetrics> set = new TreeSet<>(Comparator.comparingLong(BuiltInMetrics::getTimestampIn));
                         set.add(value);
@@ -59,7 +60,7 @@ public class MetricsTransformer {
                     }
                     return value;
                 }
-            });
+            }).setParallelism(1);
             try {
                 env.setParallelism(1);
                 env.execute();
