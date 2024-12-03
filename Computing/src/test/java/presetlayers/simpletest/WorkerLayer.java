@@ -17,7 +17,7 @@ public class WorkerLayer extends AbstractWorkerLayer {
                 if(DockerRuntimeData.getLayerNameByNodeName(value.getSrc()).equals(ExecutorParameters.dataCenterLayerName)){
                     value.setTarget(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.coordinatorLayerName).get(0));
                 } else{ //coordinator
-                    Thread.sleep(getNodeID()* 100L);
+                    Thread.sleep(1000);
                     value.setTarget(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.dataCenterLayerName).get(0));
                 }
                 return value;
@@ -25,3 +25,6 @@ public class WorkerLayer extends AbstractWorkerLayer {
         });
     }
 }
+//tc qdisc add dev eth0 root netem delay 1000ms
+//teq_node_EndDeviceLayer-0
+//docker run --privileged --cap-add=NET_ADMIN --sysctl net.ipv6.conf.all.disable_ipv6=0 --network teq-network -it teq:1.1 test /bin/bash

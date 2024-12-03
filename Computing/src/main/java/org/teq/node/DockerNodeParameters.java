@@ -22,15 +22,13 @@ public class DockerNodeParameters implements Serializable {
     public int cpuCoreNumber = 1;//number of cores
 
     /*roughly restrict the cpu speed,using the percentage of the cpu usage rate*/
-    public double cpuUsageRate = 0.5;//percentage of the cpu usage rate, 0.5 means 50%, it can be larger than 1(means using more than 1 core)
+    public double cpuUsageRate = 8;//percentage of the cpu usage rate, 0.5 means 50%, it can be larger than 1(means using more than 1 core)
 
     /*restrict the memory size of the node*/
-    public double memorySize = 2;//GB
+    public double memorySize = 8;//GB
 
     /*restrict the network bandwidth of the node*/
-    public double networkInBandwidth = 100;//Kbps
-    public double networkInLatency = 0;//ms
-    public double networkOutBandwidth = 100;//Kbps
+    public double networkOutBandwidth = 1024;//kbps
     public double networkOutLatency = 0;//ms
 
     @Override
@@ -40,8 +38,6 @@ public class DockerNodeParameters implements Serializable {
                 "cpuCoreNumber: " + cpuCoreNumber + "\n" +
                 "cpuUsageRate: " + cpuUsageRate + "\n" +
                 "memorySize: " + memorySize + "\n" +
-                "networkInBandwidth: " + networkInBandwidth + "\n" +
-                "networkInLatency: " + networkInLatency + "\n" +
                 "networkOutBandwidth: " + networkOutBandwidth + "\n" +
                 "networkOutLatency: " + networkOutLatency + "\n";
     }

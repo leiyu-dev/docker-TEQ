@@ -18,6 +18,7 @@ public class CoordinatorLayer extends AbstractCoordinatorLayer {
             public PackageBean map(PackageBean packageBean) throws Exception {
                 int sensorId = DockerRuntimeData.getNodeRankInLayer(packageBean.getSrc(),ExecutorParameters.endDeviceLayerName); // value: 0 - 15
                 packageBean.setTarget(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.workerLayerName).get(sensorId / workerNum)); // worker0,1,2,3
+                Thread.sleep(1000);
                 return packageBean;
             }
         });
@@ -29,6 +30,7 @@ public class CoordinatorLayer extends AbstractCoordinatorLayer {
             @Override
             public PackageBean map(PackageBean value) throws Exception {
                 value.setTarget(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.endDeviceLayerName).get(0));
+                Thread.sleep(1000);
                 return value;
             }
         });

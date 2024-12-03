@@ -1,4 +1,4 @@
-package org.teq.layer.mearsurer;
+package org.teq.mearsurer;
 
 import java.io.Serializable;
 import java.util.UUID;

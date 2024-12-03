@@ -15,6 +15,7 @@ import com.github.dockerjava.api.model.Network.Ipam;
 import com.github.dockerjava.api.model.Network.Ipam.Config;
 import org.teq.utils.utils;
 
+import java.util.Collections;
 import java.util.List;
 
 public class DockerRunner {
@@ -135,17 +136,30 @@ public class DockerRunner {
         hostConfig = hostConfig.withMemory((long) parameters.memorySize * 1024 * 1024 * 1024)
                 .withMemorySwap((long) parameters.memorySize * 1024 * 1024 * 1024);
 
+        /* Network restriction */
+        hostConfig = hostConfig
+                .withPrivileged(true)
+                .withCapAdd(Capability.NET_ADMIN)
+                .withSysctls(Collections.singletonMap("net.ipv6.conf.all.disable_ipv6", "0"));
+
 
 
         String[] command = {
             "bash", "-c",
-            "chmod -R 777 " + SimulatorConfigurator.volumePath + "&& bash "+ SimulatorConfigurator.volumePath + "/" + SimulatorConfigurator.startScriptName
+            "chmod -R 777 " + SimulatorConfigurator.volumePath + " && " +
+            "tc qdisc add dev eth0 root handle 1: htb default 1 && " +
+            "tc class add dev eth0 parent 1: classid 1:1 htb rate " + parameters.networkOutBandwidth + "kbps ceil " + parameters.networkOutBandwidth + "kbps && " +
+            "tc qdisc add dev eth0 parent 1:1 handle 10: netem delay "+ parameters.networkOutLatency +"ms && " +
+            "tc class add dev eth0 parent 1: classid 1:2 htb rate 100mbit ceil 100mbit && " +
+            "tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 match ip tos 0x10 0xff flowid 1:2 && " +
+            "bash "+ SimulatorConfigurator.volumePath + "/" + SimulatorConfigurator.startScriptName
         };
         String[] env = {
             "NODE_ID=" + containerId,
             "NODE_NAME=" + containerName,
             "IN_DOCKER=1",
         };
+
         CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
                 .withHostConfig(hostConfig)  // 传递 HostConfig（包含挂载信息）
                 .withName(containerName)  // 容器名称

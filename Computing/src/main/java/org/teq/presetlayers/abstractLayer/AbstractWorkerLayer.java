@@ -5,19 +5,12 @@ import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
-import org.apache.flink.streaming.api.datastream.KeyedStream;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.ProcessFunction;
-import org.apache.flink.util.Collector;
-import org.apache.flink.util.OutputTag;
 import org.apache.logging.log4j.*;
 import org.teq.configurator.ExecutorParameters;
-import org.teq.layer.mearsurer.MeasuredFlinkNode;
-import org.teq.configurator.unserializable.DevicePrefixName;
+import org.teq.mearsurer.MeasuredFlinkNode;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.WorkerTask;
-import org.teq.presetlayers.utils.PhysicalPartition;
 import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.*;
 
@@ -28,6 +21,14 @@ public abstract class AbstractWorkerLayer extends MeasuredFlinkNode implements W
     }
     private static final Logger logger = LogManager.getLogger(AbstractEndDeviceLayer.class);
 
+    private DataStream<PackageBean> FromCenter;
+    private DataStream<PackageBean> FromCod;
+    public DataStream<PackageBean> getFromCenterStream() {
+        return FromCenter;
+    }
+    public DataStream<PackageBean> getFromCodStream() {
+        return FromCod;
+    }
 
     @Override
     public void dataProcess() throws Exception {
@@ -53,7 +54,7 @@ public abstract class AbstractWorkerLayer extends MeasuredFlinkNode implements W
                 logger.debug("Worker Layer received data: {}", packageBean);
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
         // 处理逻辑
         DataStream<PackageBean> transformedWorkers = transform(inputMap);
         return transformedWorkers.map(new MapFunction<PackageBean, PackageBean>() {
@@ -70,7 +71,7 @@ public abstract class AbstractWorkerLayer extends MeasuredFlinkNode implements W
                 finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()));
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
     }
 }
 

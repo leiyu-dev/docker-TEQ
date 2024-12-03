@@ -1,13 +1,9 @@
 package presetlayers.simpletest;
 
-import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.teq.layer.Layer;
-import org.teq.layer.mearsurer.MetricsTransformer;
+import org.teq.mearsurer.MetricsTransformer;
 import org.teq.node.DockerNodeParameters;
 import org.teq.simulator.Simulator;
-import org.teq.utils.connector.CommonDataReceiver;
 
 public class PresetSimpleTest {
     public static void main(String[] args) throws Exception {

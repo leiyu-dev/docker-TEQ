@@ -4,7 +4,7 @@ package layer.measurer;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.teq.layer.mearsurer.BuiltInMetrics;
+import org.teq.mearsurer.BuiltInMetrics;
 import org.teq.simulator.Simulator;
 import org.teq.utils.connector.CommonDataReceiver;
 

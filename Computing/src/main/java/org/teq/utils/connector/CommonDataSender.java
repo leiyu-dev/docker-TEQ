@@ -28,11 +28,13 @@ public class CommonDataSender<T> extends RichSinkFunction<T> {
     protected BufferedWriter bufferedWriter;
     private int maxNumRetries;
     private int retryInterval;
-    public CommonDataSender(String hostName, int port, int maxNumRetries, int retryInterval){//retry interval in milliseconds
+    private boolean toHost;
+    public CommonDataSender(String hostName, int port, int maxNumRetries, int retryInterval, boolean toHost){//retry interval in milliseconds
         this.hostName = hostName;
         this.port = port;
         this.maxNumRetries = maxNumRetries;
         this.retryInterval = retryInterval;
+        this.toHost = toHost;
     }
 
     @Override
@@ -54,6 +56,9 @@ public class CommonDataSender<T> extends RichSinkFunction<T> {
         client.connect(new InetSocketAddress(hostName, port));
         client.setKeepAlive(true);
         client.setTcpNoDelay(true);
+        if(toHost){
+            client.setTrafficClass(0x10);
+        }
         logger.info("Connected to socket server at " + hostName + ":" + port);
         bufferedWriter = new BufferedWriter(new OutputStreamWriter(client.getOutputStream(), StandardCharsets.UTF_8));
     }

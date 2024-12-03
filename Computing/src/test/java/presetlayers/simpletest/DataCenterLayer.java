@@ -13,6 +13,7 @@ public class DataCenterLayer extends AbstractDataCenterLayer {
             @Override
             public PackageBean map(PackageBean value) throws Exception {
                 value.setTarget(value.getSrc());
+                Thread.sleep(1000);
                 return value;
             }
         });

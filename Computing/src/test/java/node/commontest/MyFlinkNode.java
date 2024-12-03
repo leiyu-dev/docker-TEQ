@@ -21,7 +21,7 @@ public class MyFlinkNode extends AbstractFlinkNode{
         String filePath = "./file.txt";
         DataStream<String> input = env.readTextFile(filePath);
         input.print();
-        input.addSink(new CommonDataSender<>(DockerRuntimeData.getNetworkHostNodeName(), 9000+getNodeID(), 1000000, 1000));
+        input.addSink(new CommonDataSender<>(DockerRuntimeData.getNetworkHostNodeName(), 9000+getNodeID(), 1000000, 1000,true));
         System.out.println("Hello World from " + this.getClass().getName());
     }
 }

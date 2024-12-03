@@ -9,13 +9,11 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 //import org.apache.log4j.PropertyConfigurator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.teq.layer.mearsurer.MeasuredFlinkNode;
+import org.teq.mearsurer.MeasuredFlinkNode;
 import org.teq.configurator.ExecutorParameters;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.EndDeviceTask;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.CommonDataReceiver;
-import org.teq.utils.connector.CommonDataSender;
 import org.teq.utils.connector.MultiThreadDataReceiver;
 import org.teq.utils.connector.TargetedDataSender;
 
@@ -28,11 +26,12 @@ public abstract class AbstractEndDeviceLayer extends MeasuredFlinkNode implement
     @Override
     public void dataProcess() throws Exception {
         StreamExecutionEnvironment env = getEnv();
-        DataStream<PackageBean> infoStream = getSource();
-        DataStream<PackageBean> computedStream = measureDataStream(infoStream);
-
+        DataStream<PackageBean> fromSensor = getSource();
         DataStream<PackageBean> response = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorParameters.fromCodToEndPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
+
+
+        DataStream<PackageBean> computedStream = measureDataStream(fromSensor);
         measureResponseDataStream(response);
 
         DataStreamSink<PackageBean> ToCod = computedStream.addSink(new TargetedDataSender<>(ExecutorParameters.maxNumRetries, ExecutorParameters.retryInterval)).setParallelism(1);
@@ -67,7 +66,7 @@ public abstract class AbstractEndDeviceLayer extends MeasuredFlinkNode implement
                 logger.debug("End Device Layer received data from Sensor: {}", packageBean);
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
         Store(inputMap);
         inputMap.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
@@ -77,6 +76,6 @@ public abstract class AbstractEndDeviceLayer extends MeasuredFlinkNode implement
                 logger.debug("End Device Layer send data to Coordinator: {}", packageBean);
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
     }
 }

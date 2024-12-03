@@ -1,4 +1,4 @@
-package org.teq.layer.mearsurer;
+package org.teq.mearsurer;
 
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -6,14 +6,10 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.teq.simulator.Simulator;
 import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.CommonDataReceiver;
 
-import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class MetricsTransformer {
     private static final Logger logger = LogManager.getLogger(MetricsTransformer.class);
@@ -36,7 +32,7 @@ public class MetricsTransformer {
             System.out.println("===============");
         }
     }
-    class MetricsReceiver implements Runnable{
+    static class MetricsReceiver implements Runnable{
         @Override
         public void run() {
             var env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -45,6 +41,7 @@ public class MetricsTransformer {
 
                 @Override
                 public BuiltInMetrics map(BuiltInMetrics value) throws Exception {
+                    logger.info("receive: "+value);
                     if(!metricsMap.containsKey(value.getId())) {
                         Set<BuiltInMetrics> set = new TreeSet<>(Comparator.comparingLong(BuiltInMetrics::getTimestampIn));
                         set.add(value);

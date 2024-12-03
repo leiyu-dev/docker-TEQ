@@ -17,11 +17,17 @@ public class EndDeviceLayer extends AbstractEndDeviceLayer {
         DataStream<String> input = env.readTextFile(filePath);
         return input.map((MapFunction<String, PackageBean>) value -> new PackageBean(getNodeName(),
                 DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.coordinatorLayerName).get(0),
-                InfoType.Data,value));
+                InfoType.Data,value)).name("Data Source");
     }
     @Override
     public DataStream<PackageBean> Computing(DataStream<PackageBean> packages) {
-        return packages;//do nothing here
+        return packages.map(new MapFunction<PackageBean, PackageBean>() {
+            @Override
+            public PackageBean map(PackageBean value) throws Exception {
+                Thread.sleep(1000);
+                return value;
+            }
+        });
     }
 
     @Override
@@ -33,6 +39,6 @@ public class EndDeviceLayer extends AbstractEndDeviceLayer {
                 System.out.println(value.getObject());
                 return value;
             }
-        });
+        }).name("Store");
     }
 }

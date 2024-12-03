@@ -13,7 +13,7 @@ public class SimulatorConfigurator implements InDockerConfig {
     public static String startScriptName = "run.sh";
     public static String StartPackageName = "starter";
     public static String StartClassName = "RunNode";
-    public static String imageName = "teq:1.0";
+    public static String imageName = "teq:1.1";
     public static int tcpPort = 2375;
 
     public static String projectPath = System.getProperty("user.dir");

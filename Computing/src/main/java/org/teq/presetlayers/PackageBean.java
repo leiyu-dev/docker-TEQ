@@ -1,9 +1,7 @@
 package org.teq.presetlayers;
 
-import org.bouncycastle.util.Pack;
 import org.teq.configurator.unserializable.InfoType;
-import org.teq.layer.mearsurer.MetricsPackageBean;
-import scala.concurrent.java8.FuturesConvertersImpl;
+import org.teq.mearsurer.MetricsPackageBean;
 
 public class PackageBean extends MetricsPackageBean {
     public PackageBean(Object object) {

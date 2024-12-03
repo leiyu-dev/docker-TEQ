@@ -32,6 +32,6 @@ public class NetworkHostNode extends AbstractNetworkHostNode {
         for(int i=1;i<nodeCount;i++){
             mergedStream = mergedStream.union(streams.get(i));
         }
-        DataStreamSink sink = mergedStream.addSink(new CommonDataSender<>(data.getHostIp(),9999,10000,1000));
+        DataStreamSink sink = mergedStream.addSink(new CommonDataSender<>(data.getHostIp(),9999,10000,1000,true));
     }
 }

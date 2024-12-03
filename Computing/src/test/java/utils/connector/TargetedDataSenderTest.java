@@ -3,9 +3,7 @@ package utils.connector;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.slf4j.ILoggerFactory;
-import org.teq.layer.mearsurer.MetricsPackageBean;
-import org.teq.presetlayers.PackageBean;
+import org.teq.mearsurer.MetricsPackageBean;
 import org.teq.utils.connector.TargetedDataSender;
 
 public class TargetedDataSenderTest {

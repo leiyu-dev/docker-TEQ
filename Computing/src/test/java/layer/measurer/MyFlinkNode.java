@@ -3,10 +3,9 @@ package layer.measurer;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.teq.layer.mearsurer.MeasuredFlinkNode;
-import org.teq.layer.mearsurer.MetricsPackageBean;
+import org.teq.mearsurer.MeasuredFlinkNode;
+import org.teq.mearsurer.MetricsPackageBean;
 import org.teq.node.DockerNodeParameters;
-import org.teq.presetlayers.PackageBean;
 
 public class MyFlinkNode extends MeasuredFlinkNode {
 

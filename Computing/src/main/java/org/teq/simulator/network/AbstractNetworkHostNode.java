@@ -5,7 +5,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.teq.configurator.SimulatorConfigurator;
-import org.teq.layer.mearsurer.BuiltInMetrics;
+import org.teq.mearsurer.BuiltInMetrics;
 import org.teq.node.AbstractFlinkNode;
 import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.CommonDataReceiver;
@@ -33,7 +33,7 @@ public abstract class AbstractNetworkHostNode extends AbstractFlinkNode {
         for(int i=1;i<nodeCount;i++){
             mergedStream = mergedStream.union(streams.get(i));
         }
-        DataStreamSink sink = mergedStream.addSink(new CommonDataSender<>(DockerRuntimeData.getHostIp(),SimulatorConfigurator.MetricsReceiverPort,10000,1000));
+        DataStreamSink sink = mergedStream.addSink(new CommonDataSender<>(DockerRuntimeData.getHostIp(),SimulatorConfigurator.MetricsReceiverPort,10000,1000,true)).setParallelism(1);
         dataProcess();
     }
     abstract public void dataProcess();

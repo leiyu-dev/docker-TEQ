@@ -4,11 +4,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.alibaba.fastjson.JSON;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.util.SerializableObject;
-import org.teq.layer.mearsurer.MetricsPackageBean;
+import org.teq.mearsurer.MetricsPackageBean;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -16,7 +15,6 @@ import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

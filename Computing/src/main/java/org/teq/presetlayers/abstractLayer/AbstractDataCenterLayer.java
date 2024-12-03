@@ -8,13 +8,11 @@ import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.teq.layer.mearsurer.MeasuredFlinkNode;
+import org.teq.mearsurer.MeasuredFlinkNode;
 import org.teq.configurator.ExecutorParameters;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.DataCenterTask;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.CommonDataReceiver;
-import org.teq.utils.connector.CommonDataSender;
 import org.teq.utils.connector.MultiThreadDataReceiver;
 import org.teq.utils.connector.TargetedDataSender;
 
@@ -38,7 +36,7 @@ public abstract class AbstractDataCenterLayer extends MeasuredFlinkNode implemen
                 logger.debug("DataCenterLayer: Received data from Worker: {}", packageBean);
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
         DataStream<PackageBean> modifiedMap = transform(inputMap);
         return modifiedMap.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
@@ -49,6 +47,6 @@ public abstract class AbstractDataCenterLayer extends MeasuredFlinkNode implemen
                 logger.debug("DataCenterLayer: Sent data to Worker: {}", packageBean);
                 return packageBean;
             }
-        });
+        }).setParallelism(1);
     }
 }
