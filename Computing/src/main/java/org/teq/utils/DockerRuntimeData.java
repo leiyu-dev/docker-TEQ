@@ -7,97 +7,112 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DockerRuntimeData {
-    static private List<String> nodeNameList;
-    static private Map<String,Integer> nodeNameMap;
-    static private Map<String,Integer> layerNameMap;
+    private static volatile List<String> nodeNameList;
+    private static final Map<String, Integer> nodeNameMap = new ConcurrentHashMap<>();
+    private static final Map<String, Integer> layerNameMap = new ConcurrentHashMap<>();
+    private static volatile List<String> layerList;
+    private static volatile List<Integer> layerBeginList;
+    private static volatile List<Integer> layerEndList;
 
-    static private List<String> layerList;
-    static private List<Integer>layerBeginList;
-    static private List<Integer>layerEndList;
-
-    static public void initRuntimeData(){
-
+    public static void initRuntimeData() {
+        // Thread-safe initialization logic, if required
     }
-    static Path getPathByEnvironment(String path){
-        if(utils.isInDocker())return Path.of(path);
+
+    private static Path getPathByEnvironment(String path) {
+        if (utils.isInDocker()) return Path.of(path);
         return Path.of(SimulatorConfigurator.hostPath + "/" + path);
     }
-    static public List<String> getLayerList(){
-        if(layerList != null) return layerList;
-        layerList = new ArrayList<>();
-        layerBeginList = new ArrayList<>();
-        layerEndList = new ArrayList<>();
-        layerNameMap = new HashMap<>();
-        Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.layerNameFileName);
-        try {
-            List<String>rawLayerList = Files.readAllLines(path);
-            for(String rawLayerString : rawLayerList){
-                if(rawLayerString.isEmpty())break;
-                String[] result = rawLayerString.split(",");
-                layerList.add(result[0]);
-                layerBeginList.add(Integer.parseInt(result[1]));
-                layerEndList.add(Integer.parseInt(result[2]));
+
+    public static synchronized List<String> getLayerList() {
+        if (layerList != null) return layerList;
+
+        synchronized (DockerRuntimeData.class) {
+            if (layerList == null) {
+                layerList = Collections.synchronizedList(new ArrayList<>());
+                layerBeginList = Collections.synchronizedList(new ArrayList<>());
+                layerEndList = Collections.synchronizedList(new ArrayList<>());
+
+                Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.layerNameFileName);
+                try {
+                    List<String> rawLayerList = Files.readAllLines(path);
+                    for (String rawLayerString : rawLayerList) {
+                        if (rawLayerString.isEmpty()) break;
+                        String[] result = rawLayerString.split(",");
+                        layerList.add(result[0]);
+                        layerBeginList.add(Integer.parseInt(result[1]));
+                        layerEndList.add(Integer.parseInt(result[2]));
+                    }
+                    for (int i = 0; i < layerList.size(); i++) {
+                        layerNameMap.put(layerList.get(i), i);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+                }
             }
-            for(int i=0 ; i<layerList.size() ; i++){
-                layerNameMap.put(layerList.get(i),  i);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
         }
+
         return layerList;
     }
-    static public List<String> getNodeNameListByLayerName(String layerName){
+
+    public static List<String> getNodeNameListByLayerName(String layerName) {
         List<String> nodeNameListLayer;
         Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + layerName + "/" + SimulatorConfigurator.nodeNameFileName);
         try {
             nodeNameListLayer = Files.readAllLines(path);
-            if(nodeNameListLayer.get(nodeNameListLayer.size()-1).isEmpty())
-                nodeNameListLayer.remove(nodeNameListLayer.size()-1);
+            if (nodeNameListLayer.get(nodeNameListLayer.size() - 1).isEmpty())
+                nodeNameListLayer.remove(nodeNameListLayer.size() - 1);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
         return nodeNameListLayer;
     }
-    static public List<String> getNodeNameList() {
-        if(nodeNameList != null)return nodeNameList;
-        nodeNameMap = new HashMap<>();
-        Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.nodeNameFileName);
-        try {
-            nodeNameList = Files.readAllLines(path);
-            if(nodeNameList.get(nodeNameList.size()-1).isEmpty())
-                nodeNameList.remove(nodeNameList.size()-1);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+
+    public static synchronized List<String> getNodeNameList() {
+        if (nodeNameList != null) return nodeNameList;
+
+        synchronized (DockerRuntimeData.class) {
+            if (nodeNameList == null) {
+                Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.nodeNameFileName);
+                try {
+                    nodeNameList = Collections.synchronizedList(Files.readAllLines(path));
+                    if (nodeNameList.get(nodeNameList.size() - 1).isEmpty())
+                        nodeNameList.remove(nodeNameList.size() - 1);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+                for (int i = 0; i < nodeNameList.size(); i++) {
+                    nodeNameMap.put(nodeNameList.get(i), i);
+                }
+            }
         }
-        for(int i=0 ; i<nodeNameList.size() ; i++){
-            nodeNameMap.put(nodeNameList.get(i),  i);
-        }
+
         return nodeNameList;
     }
-    static public String getNodeNameById(int nodeId){
-        if(nodeId == -1)return "Sink";
-        if(nodeNameList == null)getNodeNameList();
+
+    public static String getNodeNameById(int nodeId) {
+        if (nodeId == -1) return "Sink";
+        if (nodeNameList == null) getNodeNameList();
         return nodeNameList.get(nodeId);
     }
-    static public int getNodeIdByName(String nodeName){
-        if(nodeNameMap == null)getNodeNameList();
+
+    public static int getNodeIdByName(String nodeName) {
+        if (nodeNameMap.isEmpty()) getNodeNameList();
         return nodeNameMap.get(nodeName);
     }
-    static public int getLayerIdByName(String layerName){
-        if(layerNameMap == null)getLayerList();
+
+    public static int getLayerIdByName(String layerName) {
+        if (layerNameMap.isEmpty()) getLayerList();
         return layerNameMap.get(layerName);
     }
-    static public String getHostIp(){
+
+    public static String getHostIp() {
         String hostIp;
         Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.hostIpFileName);
         try {
@@ -108,7 +123,8 @@ public class DockerRuntimeData {
         }
         return hostIp;
     }
-    static public String getNetworkHostNodeName(){
+
+    public static String getNetworkHostNodeName() {
         String networkHostName;
         try (BufferedReader reader = new BufferedReader(new FileReader(
                 SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.nodeNameFileName))) {
@@ -120,24 +136,25 @@ public class DockerRuntimeData {
             return null;
         }
     }
-    static public String getLayerNameByNodeName(String nodeName){
+
+    public static String getLayerNameByNodeName(String nodeName) {
         long nodeId = getNodeIdByName(nodeName);
-        if(layerList==null)getLayerList();
-        for(int i=0; i<layerList.size(); i++){
-            if(layerBeginList.get(i)<=nodeId && nodeId<=layerEndList.get(i))
+        if (layerList == null) getLayerList();
+        for (int i = 0; i < layerList.size(); i++) {
+            if (layerBeginList.get(i) <= nodeId && nodeId <= layerEndList.get(i))
                 return layerList.get(i);
         }
         return null;
     }
 
     /**
-     *  @return -1 if the node is not in that layer or the layer does not exist
+     * @return -1 if the node is not in that layer or the layer does not exist
      */
-    static public int getNodeRankInLayer(String nodeName,String layerName){
-        List<String>nodes = getNodeNameListByLayerName(layerName);
+    public static int getNodeRankInLayer(String nodeName, String layerName) {
+        List<String> nodes = getNodeNameListByLayerName(layerName);
         if (nodes != null) {
-            for(int i=0; i<nodes.size(); i++){
-                if(nodes.get(i).equals(nodeName))
+            for (int i = 0; i < nodes.size(); i++) {
+                if (nodes.get(i).equals(nodeName))
                     return i;
             }
         }

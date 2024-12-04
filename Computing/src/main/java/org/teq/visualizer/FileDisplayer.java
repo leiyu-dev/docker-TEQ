@@ -36,7 +36,7 @@ public class FileDisplayer extends MetricsDisplayer{
                 parentDir.mkdirs();
             }
             try {
-                FileOutputStream fos = new FileOutputStream(nodeNameFile);
+                FileOutputStream fos = new FileOutputStream(nodeNameFile,false);
                 fileOutputStreamList.add(new Pair<>(file,fos));
                 logger.info("Create file: " + file.getAbsolutePath());
             } catch (FileNotFoundException e) {
@@ -59,15 +59,15 @@ public class FileDisplayer extends MetricsDisplayer{
                         BlockingQueue xQueue = chart.getxAxis();
                         BlockingQueue yQueue = chart.getyAxis();
                         if(xQueue.isEmpty() || yQueue.isEmpty()){
-                            if(xQueue.isEmpty())logger.info("try to display " + chart.getTitle() + " but xQueue has no data");
-                            if(yQueue.isEmpty())logger.info("try to display " + chart.getTitle() + " but yQueue has no data");
+//                            if(xQueue.isEmpty())logger.info("try to display " + chart.getTitle() + " but xQueue has no data");
+//                            if(yQueue.isEmpty())logger.info("try to display " + chart.getTitle() + " but yQueue has no data");
                             continue;
                         }
                         Object x = xQueue.take();
                         Object y = yQueue.take();
-                        String context = x.toString() + "," + y.toString() + "\n";
-                        logger.info(context);
-                        fos.write(context.getBytes());
+                        String context = x.toString() + "," + y.toString();
+//                        logger.info(context + " into " + fileOutputStreamList.get(i).first().getName());
+                        fos.write((context+"\n").getBytes());
                         fos.flush();
                     } catch (Exception e) {
                         e.printStackTrace();

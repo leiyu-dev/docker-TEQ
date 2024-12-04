@@ -41,3 +41,4 @@ build/
 **/*.class
 docker/*
 Computing/logs/*
+statistics/*

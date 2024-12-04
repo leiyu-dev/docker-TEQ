@@ -18,7 +18,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public class MetricsTransformer {
-    private  BlockingQueue<Double> timeQueue = new ArrayBlockingQueue<>(100);
     private static final Logger logger = LogManager.getLogger(MetricsTransformer.class);
     private Simulator simulator;
     private final MetricsDisplayer metricsDisplayer;
@@ -100,32 +99,61 @@ public class MetricsTransformer {
         dockerRunner.beginDockerMetricsCollection(cpuUsageQueueList, memoryUsageQueueList);
 
         for (int i = 0; i < layerList.size(); i++) {
-            metricsDisplayer.addChart(new Chart(timeQueue, cpuUsageLayerList.get(i), "time/s", "cpu usage/%", layerList.get(i) + " cpu usage"));
-            metricsDisplayer.addChart(new Chart(timeQueue, memoryUsageLayerList.get(i), "time/s", "memory usage/MB", layerList.get(i) + " memory usage"));
+            metricsDisplayer.addChart(new Chart(getTimeQueue(), cpuUsageLayerList.get(i), "time/s", "cpu usage/%", layerList.get(i) + " cpu usage"));
+            metricsDisplayer.addChart(new Chart(getTimeQueue(), memoryUsageLayerList.get(i), "time/s", "memory usage/MB", layerList.get(i) + " memory usage"));
         }
 
         Thread thread = new Thread(() ->{
             while (true) {
 
+                List<Integer>nodeCountList = new ArrayList<>();
+                for (int i = 0; i < layerList.size(); i++) {
+                    nodeCountList.add(0);
+                }
+                List<Double>cpuUsageLayerListSum = new ArrayList<>();
+                List<Double>memoryUsageLayerListSum = new ArrayList<>();
+                for (int i = 0; i < layerList.size(); i++) {
+                    cpuUsageLayerListSum.add(0.0);
+                    memoryUsageLayerListSum.add(0.0);
+                }
+
                 for (int i = 0; i < nodeList.size(); i++) {
                     try {
-                        logger.info("try to take from queue");
-                        double cpuUsage = (cpuUsageQueueList.get(i).take());
-                        double memoryUsage = (memoryUsageQueueList.get(i).take());
-                        logger.info("take from queue");
-                        String nodeName = nodeList.get(i);
-                        int layerIndex = DockerRuntimeData.getLayerIdByName(
-                                DockerRuntimeData.getLayerNameByNodeName(nodeName));
-                        cpuUsageLayerList.get(layerIndex).put(cpuUsage);
-                        memoryUsageLayerList.get(layerIndex).put(memoryUsage);
+                        while(!cpuUsageQueueList.get(i).isEmpty()) {
+//                        logger.info("try to take from queue");
+                            double cpuUsage = (cpuUsageQueueList.get(i).take());
+                            double memoryUsage = (memoryUsageQueueList.get(i).take());
+//                        logger.info("take from queue");
+                            String nodeName = nodeList.get(i);
+                            String layerName = DockerRuntimeData.getLayerNameByNodeName(nodeName);
+                            if (layerName == null) { // network node or other user defined node
+                                continue;
+                            }
+                            int layerIndex = DockerRuntimeData.getLayerIdByName(layerName);
+                            nodeCountList.set(layerIndex, nodeCountList.get(layerIndex) + 1);
+                            cpuUsageLayerListSum.set(layerIndex, cpuUsageLayerListSum.get(layerIndex) + cpuUsage);
+                            memoryUsageLayerListSum.set(layerIndex, memoryUsageLayerListSum.get(layerIndex) + memoryUsage);
+                        }
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
                 }
 
+                for (int i = 0; i < layerList.size(); i++) {
+                    if (nodeCountList.get(i) == 0) {
+                        logger.info("no node data in layer " + layerList.get(i));
+                        continue;
+                    }
+                    try {
+                        cpuUsageLayerList.get(i).put(cpuUsageLayerListSum.get(i) / nodeCountList.get(i));
+                        memoryUsageLayerList.get(i).put(memoryUsageLayerListSum.get(i) / nodeCountList.get(i));
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
 
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(3000);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -134,8 +162,8 @@ public class MetricsTransformer {
         thread.start();
     }
 
-    public void beginTransform() throws Exception {
-        //add a thread to add an element into timeQueue every second:
+    public BlockingQueue<Double> getTimeQueue() {
+        BlockingQueue<Double> timeQueue = new ArrayBlockingQueue<>(100);
         Thread threadTime = new Thread(new Thread(){
             double time = 0;
             @Override
@@ -156,8 +184,12 @@ public class MetricsTransformer {
             }
         });
         threadTime.start();
-        beginMonitor();
+        return timeQueue;
+    }
 
+    public void beginTransform() throws Exception {
+        //add a thread to add an element into timeQueue every second:
+        beginMonitor();
         Thread threadReceiver = new Thread(new MetricsReceiver());
         threadReceiver.start();
 
