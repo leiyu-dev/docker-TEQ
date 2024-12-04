@@ -154,6 +154,7 @@ public class MetricsTransformer {
                 }
             }
         });
+        threadTime.start();
 
         Thread threadReceiver = new Thread(new MetricsReceiver());
         threadReceiver.start();

@@ -277,6 +277,7 @@ public class DockerRunner {
                 throw new RuntimeException(e);
             }
         });
+        getterThread.start();
     }
 
     public void cleanUp(){

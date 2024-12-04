@@ -41,6 +41,8 @@ public class SimulatorConfigurator implements InDockerConfig {
     public static boolean cleanUpAfterSimulation = false;
 
 
+    public static int displayInterval = 500;
+
 
     @Override
     public void getFromProperties(String configFile) {
