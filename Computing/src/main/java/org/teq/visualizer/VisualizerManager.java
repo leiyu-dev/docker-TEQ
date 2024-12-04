@@ -1,4 +1,4 @@
-package org.teq.layer.visualizer;
+package org.teq.visualizer;
 
 public class VisualizerManager {
 }

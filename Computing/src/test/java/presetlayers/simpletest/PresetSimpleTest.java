@@ -4,6 +4,8 @@ import org.teq.layer.Layer;
 import org.teq.mearsurer.MetricsTransformer;
 import org.teq.node.DockerNodeParameters;
 import org.teq.simulator.Simulator;
+import org.teq.visualizer.FileDisplayer;
+import org.teq.visualizer.MetricsDisplayer;
 
 public class PresetSimpleTest {
     public static void main(String[] args) throws Exception {
@@ -30,7 +32,9 @@ public class PresetSimpleTest {
         simulator.addLayer(dataCenterLayer);
 
         simulator.start();
-        MetricsTransformer transformer = new MetricsTransformer();
+
+        FileDisplayer fileDisplayer = new FileDisplayer();
+        MetricsTransformer transformer = new MetricsTransformer(simulator, fileDisplayer);
         transformer.beginTransform();
     }
 }

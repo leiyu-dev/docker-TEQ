@@ -7,16 +7,22 @@ import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
+import javassist.bytecode.analysis.ControlFlow;
 import org.teq.configurator.SimulatorConfigurator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.teq.node.DockerNodeParameters;
 import com.github.dockerjava.api.model.Network.Ipam;
 import com.github.dockerjava.api.model.Network.Ipam.Config;
+import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.utils;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class DockerRunner {
     private static final Logger logger = LogManager.getLogger(DockerRunner.class);
@@ -210,6 +216,67 @@ public class DockerRunner {
 //                }
 //            }
 //        }
+    }
+
+    public void beginDockerMetricsCollection(List<BlockingQueue<Double>>cpuQueueList, List<BlockingQueue<Double>>memoryQueueList){
+        Thread getterThread =  new Thread(()->{
+            List<String>nodeList = DockerRuntimeData.getNodeNameList();
+            for(int i = 0; i < nodeList.size(); i++){
+                String containerName = nodeList.get(i);
+                StatsCmd statsCmd = dockerClient.statsCmd(containerName);
+                BlockingQueue<Double>cpuQueue = cpuQueueList.get(i);
+                BlockingQueue<Double>memoryQueue = memoryQueueList.get(i);
+
+                statsCmd.exec(new ResultCallback<Statistics>() {
+
+                    @Override
+                    public void close() throws IOException {
+                    }
+
+                    @Override
+                    public void onStart(Closeable closeable) {
+                    }
+
+                    @Override
+                    public void onNext(Statistics stats) {
+                        // 计算 CPU 使用率
+                        double cpuDelta = stats.getCpuStats().getCpuUsage().getTotalUsage() -
+                                stats.getPreCpuStats().getCpuUsage().getTotalUsage();
+                        double systemCpuDelta = stats.getCpuStats().getSystemCpuUsage() -
+                                stats.getPreCpuStats().getSystemCpuUsage();
+                        double cpuUsage = (cpuDelta / systemCpuDelta) * stats.getCpuStats().getOnlineCpus();
+
+                        // 获取内存使用情况
+                        long memoryUsageRaw = stats.getMemoryStats().getUsage();
+
+                        //into GB
+                        double memoryUsage = memoryUsageRaw / 1024 / 1024 / 1024.0;
+
+
+                        try {
+                            cpuQueue.put(cpuUsage);
+                            memoryQueue.put(memoryUsage);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+
+                    }
+
+                    @Override
+                    public void onError(Throwable throwable) {
+                    }
+
+                    @Override
+                    public void onComplete() {
+                    }
+                });
+            }
+            try {
+                TimeUnit.SECONDS.sleep(1);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public void cleanUp(){

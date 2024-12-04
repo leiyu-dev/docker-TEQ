@@ -25,7 +25,9 @@ public class Simulator {
     private static final Logger logger = LogManager.getLogger(Simulator.class);
     private int numberOfNodes = 0;
     private final DockerRunner dockerRunner;
-
+    public DockerRunner getDockerRunner() {
+        return dockerRunner;
+    }
     private String startClassImportContent = "import org.teq.configurator.*;";
     private String startClassSwitchContent = "";
 

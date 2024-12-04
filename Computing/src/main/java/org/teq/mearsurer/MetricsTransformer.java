@@ -6,14 +6,28 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.teq.simulator.Simulator;
+import org.teq.simulator.docker.DockerRunner;
 import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.CommonDataReceiver;
+import org.teq.visualizer.Chart;
+import org.teq.visualizer.MetricsDisplayer;
 
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 public class MetricsTransformer {
-    private static final Logger logger = LogManager.getLogger(MetricsTransformer.class);
-    private static final Map<UUID,Set<BuiltInMetrics>> metricsMap = new HashMap<>();
+    private  BlockingQueue<Double> timeQueue;
+    private final Logger logger = LogManager.getLogger(MetricsTransformer.class);
+    private final Map<UUID,Set<BuiltInMetrics>> metricsMap = new HashMap<>();
+
+    private Simulator simulator;
+    private final MetricsDisplayer metricsDisplayer;
+    public MetricsTransformer(Simulator simulator, MetricsDisplayer metricsDisplayer) {
+        this.simulator = simulator;
+        this.metricsDisplayer = metricsDisplayer;
+    }
     static void finishStream(Set<BuiltInMetrics>set){
         List<BuiltInMetrics>list = new ArrayList<>(set);
         BuiltInMetrics first = list.get(0);
@@ -32,7 +46,7 @@ public class MetricsTransformer {
             System.out.println("===============");
         }
     }
-    static class MetricsReceiver implements Runnable{
+    class MetricsReceiver implements Runnable{
         @Override
         public void run() {
             var env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -65,8 +79,85 @@ public class MetricsTransformer {
             }
         }
     }
+    class NodeMonitor implements Runnable{
+        private List<BlockingQueue<Double>> cpuUsageQueueList;
+        private List<BlockingQueue<Double>> memoryUsageQueueList;
+        private List<String>nodeList;
+        private List<String>layerList;
+
+        @Override
+        public void run() {
+            nodeList = DockerRuntimeData.getNodeNameList();
+            layerList = DockerRuntimeData.getLayerList();
+            cpuUsageQueueList = new ArrayList<>();
+            memoryUsageQueueList = new ArrayList<>();
+            for(int i=0; i<nodeList.size(); i++) {
+                cpuUsageQueueList.add(new ArrayBlockingQueue<>(100));
+                memoryUsageQueueList.add(new ArrayBlockingQueue<>(100));
+            }
+            List<BlockingQueue<Double>> cpuUsageLayerList = new ArrayList<>();//for each layer
+            List<BlockingQueue<Double>> memoryUsageLayerList = new ArrayList<>();
+            for(int i=0; i<layerList.size(); i++) {
+                cpuUsageLayerList.add(new ArrayBlockingQueue<>(100));
+                memoryUsageLayerList.add(new ArrayBlockingQueue<>(100));
+            }
+
+            DockerRunner dockerRunner = simulator.getDockerRunner();
+            dockerRunner.beginDockerMetricsCollection(cpuUsageQueueList,memoryUsageQueueList);
+
+            for(int i=0; i<layerList.size();i++){
+                metricsDisplayer.addChart(new Chart(timeQueue,cpuUsageLayerList.get(i),"time/s","cpu usage/%",layerList.get(i)+" cpu usage"));
+                metricsDisplayer.addChart(new Chart(timeQueue,memoryUsageLayerList.get(i),"time/s","memory usage/MB",layerList.get(i)+" memory usage"));
+            }
+
+            while(true){
+
+                for(int i=0; i<nodeList.size(); i++) {
+                    try {
+                        double cpuUsage = (cpuUsageQueueList.get(i).take());
+                        double memoryUsage = (memoryUsageQueueList.get(i).take());
+                        String nodeName = nodeList.get(i);
+                        int layerIndex = DockerRuntimeData.getLayerIdByName(
+                            DockerRuntimeData.getLayerNameByNodeName(nodeName));
+                        cpuUsageLayerList.get(layerIndex).put(cpuUsage);
+                        memoryUsageLayerList.get(layerIndex).put(memoryUsage);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+        }
+    }
+
     public void beginTransform() throws Exception {
-        Thread thread = new Thread(new MetricsReceiver());
-        thread.start();
+        //add a thread to add an element into timeQueue every second:
+        Thread threadTime = new Thread(new Thread(){
+            double time = 0;
+            @Override
+            public void run() {
+                while(true) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    time++;
+                    timeQueue.add(time);
+                }
+            }
+        });
+
+        Thread threadReceiver = new Thread(new MetricsReceiver());
+        threadReceiver.start();
+
+
     }
 }

@@ -16,6 +16,7 @@ import java.util.Map;
 public class DockerRuntimeData {
     static private List<String> nodeNameList;
     static private Map<String,Integer> nodeNameMap;
+    static private Map<String,Integer> layerNameMap;
 
     static private List<String> layerList;
     static private List<Integer>layerBeginList;
@@ -33,6 +34,7 @@ public class DockerRuntimeData {
         layerList = new ArrayList<>();
         layerBeginList = new ArrayList<>();
         layerEndList = new ArrayList<>();
+        layerNameMap = new HashMap<>();
         Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.layerNameFileName);
         try {
             List<String>rawLayerList = Files.readAllLines(path);
@@ -42,6 +44,9 @@ public class DockerRuntimeData {
                 layerList.add(result[0]);
                 layerBeginList.add(Integer.parseInt(result[1]));
                 layerEndList.add(Integer.parseInt(result[2]));
+            }
+            for(int i=0 ; i<layerList.size() ; i++){
+                layerNameMap.put(layerList.get(i),  i);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -87,6 +92,10 @@ public class DockerRuntimeData {
     static public int getNodeIdByName(String nodeName){
         if(nodeNameMap == null)getNodeNameList();
         return nodeNameMap.get(nodeName);
+    }
+    static public int getLayerIdByName(String layerName){
+        if(layerNameMap == null)getLayerList();
+        return layerNameMap.get(layerName);
     }
     static public String getHostIp(){
         String hostIp;
