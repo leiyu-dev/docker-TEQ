@@ -59,6 +59,8 @@ public class FileDisplayer extends MetricsDisplayer{
                         BlockingQueue xQueue = chart.getxAxis();
                         BlockingQueue yQueue = chart.getyAxis();
                         if(xQueue.isEmpty() || yQueue.isEmpty()){
+                            if(xQueue.isEmpty())logger.info("try to display " + chart.getTitle() + " but xQueue has no data");
+                            if(yQueue.isEmpty())logger.info("try to display " + chart.getTitle() + " but yQueue has no data");
                             continue;
                         }
                         Object x = xQueue.take();

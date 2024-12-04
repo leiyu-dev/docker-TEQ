@@ -7,6 +7,7 @@ import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.core.InvocationBuilder;
 import javassist.bytecode.analysis.ControlFlow;
 import org.teq.configurator.SimulatorConfigurator;
 import org.apache.logging.log4j.LogManager;
@@ -19,14 +20,21 @@ import org.teq.utils.utils;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class DockerRunner {
     private static final Logger logger = LogManager.getLogger(DockerRunner.class);
     private DockerClient dockerClient;
+
+    public DockerClient getDockerClient() {
+        return dockerClient;
+    }
+
     private String imageName;
     private String networkHostName;
     private void deleteAllContainers() {
@@ -224,9 +232,8 @@ public class DockerRunner {
             for(int i = 0; i < nodeList.size(); i++){
                 String containerName = nodeList.get(i);
                 StatsCmd statsCmd = dockerClient.statsCmd(containerName);
-                BlockingQueue<Double>cpuQueue = cpuQueueList.get(i);
-                BlockingQueue<Double>memoryQueue = memoryQueueList.get(i);
-
+                AtomicReferenceArray<Statistics> lastStats = new AtomicReferenceArray<>(nodeList.size());
+                int finalI = i;
                 statsCmd.exec(new ResultCallback<Statistics>() {
 
                     @Override
@@ -239,11 +246,21 @@ public class DockerRunner {
 
                     @Override
                     public void onNext(Statistics stats) {
+                        try {
+                            TimeUnit.SECONDS.sleep(1);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        Statistics lastStat = lastStats.get(finalI);
+                        lastStats.set(finalI, stats);
+                        if(lastStat == null){
+                            return;
+                        }
                         // 计算 CPU 使用率
                         double cpuDelta = stats.getCpuStats().getCpuUsage().getTotalUsage() -
-                                stats.getPreCpuStats().getCpuUsage().getTotalUsage();
+                                lastStat.getCpuStats().getCpuUsage().getTotalUsage();
                         double systemCpuDelta = stats.getCpuStats().getSystemCpuUsage() -
-                                stats.getPreCpuStats().getSystemCpuUsage();
+                                lastStat.getCpuStats().getSystemCpuUsage();
                         double cpuUsage = (cpuDelta / systemCpuDelta) * stats.getCpuStats().getOnlineCpus();
 
                         // 获取内存使用情况
@@ -251,9 +268,12 @@ public class DockerRunner {
 
                         //into GB
                         double memoryUsage = memoryUsageRaw / 1024 / 1024 / 1024.0;
-
+//                        logger.info(containerName + " Memory usage: " + memoryUsage + "GB");
+//                        logger.info(containerName + " CPU usage: " + cpuUsage);
 
                         try {
+                            BlockingQueue<Double>cpuQueue = cpuQueueList.get(finalI);
+                            BlockingQueue<Double>memoryQueue = memoryQueueList.get(finalI);
                             cpuQueue.put(cpuUsage);
                             memoryQueue.put(memoryUsage);
                         } catch (InterruptedException e) {
@@ -270,11 +290,6 @@ public class DockerRunner {
                     public void onComplete() {
                     }
                 });
-            }
-            try {
-                TimeUnit.SECONDS.sleep(1);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
             }
         });
         getterThread.start();

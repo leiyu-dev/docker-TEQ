@@ -18,10 +18,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public class MetricsTransformer {
-    private  BlockingQueue<Double> timeQueue;
-    private final Logger logger = LogManager.getLogger(MetricsTransformer.class);
-    private final Map<UUID,Set<BuiltInMetrics>> metricsMap = new HashMap<>();
-
+    private  BlockingQueue<Double> timeQueue = new ArrayBlockingQueue<>(100);
+    private static final Logger logger = LogManager.getLogger(MetricsTransformer.class);
     private Simulator simulator;
     private final MetricsDisplayer metricsDisplayer;
     public MetricsTransformer(Simulator simulator, MetricsDisplayer metricsDisplayer) {
@@ -52,7 +50,7 @@ public class MetricsTransformer {
             var env = StreamExecutionEnvironment.getExecutionEnvironment();
             DataStream<BuiltInMetrics> stream = env.addSource(new CommonDataReceiver<BuiltInMetrics>( 8888,BuiltInMetrics.class)).returns(TypeInformation.of(BuiltInMetrics.class));
             stream.map(new MapFunction<BuiltInMetrics, BuiltInMetrics>() {
-
+                Map<UUID,Set<BuiltInMetrics>> metricsMap = new HashMap<>();
                 @Override
                 public BuiltInMetrics map(BuiltInMetrics value) throws Exception {
                     logger.info("receive: "+value);
@@ -79,46 +77,45 @@ public class MetricsTransformer {
             }
         }
     }
-    class NodeMonitor implements Runnable{
-        private List<BlockingQueue<Double>> cpuUsageQueueList;
-        private List<BlockingQueue<Double>> memoryUsageQueueList;
-        private List<String>nodeList;
-        private List<String>layerList;
+    public void beginMonitor() {
+        List<String>nodeList = DockerRuntimeData.getNodeNameList();
+        List<String>layerList = DockerRuntimeData.getLayerList();
 
-        @Override
-        public void run() {
-            nodeList = DockerRuntimeData.getNodeNameList();
-            layerList = DockerRuntimeData.getLayerList();
-            cpuUsageQueueList = new ArrayList<>();
-            memoryUsageQueueList = new ArrayList<>();
-            for(int i=0; i<nodeList.size(); i++) {
-                cpuUsageQueueList.add(new ArrayBlockingQueue<>(100));
-                memoryUsageQueueList.add(new ArrayBlockingQueue<>(100));
-            }
-            List<BlockingQueue<Double>> cpuUsageLayerList = new ArrayList<>();//for each layer
-            List<BlockingQueue<Double>> memoryUsageLayerList = new ArrayList<>();
-            for(int i=0; i<layerList.size(); i++) {
-                cpuUsageLayerList.add(new ArrayBlockingQueue<>(100));
-                memoryUsageLayerList.add(new ArrayBlockingQueue<>(100));
-            }
+        List<BlockingQueue<Double>> cpuUsageQueueList = new ArrayList<>();
+        List<BlockingQueue<Double>> memoryUsageQueueList = new ArrayList<>();
 
-            DockerRunner dockerRunner = simulator.getDockerRunner();
-            dockerRunner.beginDockerMetricsCollection(cpuUsageQueueList,memoryUsageQueueList);
+        for (int i = 0; i < nodeList.size(); i++) {
+            cpuUsageQueueList.add(new ArrayBlockingQueue<>(100));
+            memoryUsageQueueList.add(new ArrayBlockingQueue<>(100));
+        }
 
-            for(int i=0; i<layerList.size();i++){
-                metricsDisplayer.addChart(new Chart(timeQueue,cpuUsageLayerList.get(i),"time/s","cpu usage/%",layerList.get(i)+" cpu usage"));
-                metricsDisplayer.addChart(new Chart(timeQueue,memoryUsageLayerList.get(i),"time/s","memory usage/MB",layerList.get(i)+" memory usage"));
-            }
+        List<BlockingQueue<Double>> cpuUsageLayerList = new ArrayList<>();//for each layer
+        List<BlockingQueue<Double>> memoryUsageLayerList = new ArrayList<>();
+        for (int i = 0; i < layerList.size(); i++) {
+            cpuUsageLayerList.add(new ArrayBlockingQueue<>(100));
+            memoryUsageLayerList.add(new ArrayBlockingQueue<>(100));
+        }
 
-            while(true){
+        DockerRunner dockerRunner = simulator.getDockerRunner();
+        dockerRunner.beginDockerMetricsCollection(cpuUsageQueueList, memoryUsageQueueList);
 
-                for(int i=0; i<nodeList.size(); i++) {
+        for (int i = 0; i < layerList.size(); i++) {
+            metricsDisplayer.addChart(new Chart(timeQueue, cpuUsageLayerList.get(i), "time/s", "cpu usage/%", layerList.get(i) + " cpu usage"));
+            metricsDisplayer.addChart(new Chart(timeQueue, memoryUsageLayerList.get(i), "time/s", "memory usage/MB", layerList.get(i) + " memory usage"));
+        }
+
+        Thread thread = new Thread(() ->{
+            while (true) {
+
+                for (int i = 0; i < nodeList.size(); i++) {
                     try {
+                        logger.info("try to take from queue");
                         double cpuUsage = (cpuUsageQueueList.get(i).take());
                         double memoryUsage = (memoryUsageQueueList.get(i).take());
+                        logger.info("take from queue");
                         String nodeName = nodeList.get(i);
                         int layerIndex = DockerRuntimeData.getLayerIdByName(
-                            DockerRuntimeData.getLayerNameByNodeName(nodeName));
+                                DockerRuntimeData.getLayerNameByNodeName(nodeName));
                         cpuUsageLayerList.get(layerIndex).put(cpuUsage);
                         memoryUsageLayerList.get(layerIndex).put(memoryUsage);
                     } catch (InterruptedException e) {
@@ -133,8 +130,8 @@ public class MetricsTransformer {
                     throw new RuntimeException(e);
                 }
             }
-
-        }
+        });
+        thread.start();
     }
 
     public void beginTransform() throws Exception {
@@ -150,11 +147,16 @@ public class MetricsTransformer {
                         throw new RuntimeException(e);
                     }
                     time++;
-                    timeQueue.add(time);
+                    try {
+                        timeQueue.put(time);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         });
         threadTime.start();
+        beginMonitor();
 
         Thread threadReceiver = new Thread(new MetricsReceiver());
         threadReceiver.start();

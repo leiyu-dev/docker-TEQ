@@ -31,7 +31,7 @@ public class Simulator {
     private String startClassImportContent = "import org.teq.configurator.*;";
     private String startClassSwitchContent = "";
 
-    public Simulator(AbstractNetworkHostNode networkHostNode) throws Exception {
+    public Simulator(AbstractNetworkHostNode networkHostNode){
         logger.info("Initializing the simulator");
         // this line use TCP connection, if you want to use TCP, uncomment this line
         // dockerRunner = new DockerRunner(DockerConfigurator.imageName,DockerConfigurator.tcpPort);

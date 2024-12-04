@@ -36,5 +36,6 @@ public class PresetSimpleTest {
         FileDisplayer fileDisplayer = new FileDisplayer();
         MetricsTransformer transformer = new MetricsTransformer(simulator, fileDisplayer);
         transformer.beginTransform();
+        fileDisplayer.display();
     }
 }
