@@ -6,6 +6,7 @@ import org.teq.node.DockerNodeParameters;
 import org.teq.simulator.Simulator;
 import org.teq.visualizer.FileDisplayer;
 import org.teq.visualizer.MetricsDisplayer;
+import org.teq.visualizer.SocketDisplayer;
 
 public class PresetSimpleTest {
     public static void main(String[] args) throws Exception {
@@ -33,7 +34,7 @@ public class PresetSimpleTest {
 
         simulator.start();
 
-        FileDisplayer fileDisplayer = new FileDisplayer();
+        SocketDisplayer fileDisplayer = new SocketDisplayer();
         MetricsTransformer transformer = new MetricsTransformer(simulator, fileDisplayer);
         transformer.beginTransform();
         fileDisplayer.display();

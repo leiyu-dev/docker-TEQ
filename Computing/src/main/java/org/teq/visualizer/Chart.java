@@ -61,4 +61,13 @@ public class Chart{
     public void setTitle(String title) {
         this.title = title;
     }
+
+    //json format
+    public String toString(){
+        return "{\n" +
+                "  \"xLabel\": \"" + xLabel + "\",\n" +
+                "  \"yLabel\": \"" + yLabel + "\",\n" +
+                "  \"title\": \"" + title + "\"\n" +
+                "}";
+    }
 }

@@ -37,6 +37,7 @@ public class SimulatorConfigurator implements InDockerConfig {
     public static String networkGateway = "10.0.0.2";
     public static int metricsPortBegin = 50000;
     public static int MetricsReceiverPort = 8888;
+    public static int restfulPort = 8889;
     public static String classNamePrefix = "teq_node_";
     public static boolean cleanUpAfterSimulation = false;
 

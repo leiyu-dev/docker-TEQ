@@ -24,6 +24,7 @@ public class FlinkTest {
         a = a.map(new MapFunction<String, String>() {
             @Override
             public String map(String s) throws Exception {
+                Thread.sleep(1000000000);
                 return s + "11";
             }
         });

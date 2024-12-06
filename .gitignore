@@ -42,3 +42,6 @@ build/
 docker/*
 Computing/logs/*
 statistics/*
+Computing/src/main/resources/config
+Computing/src/main/resources/config.json
+Computing/src/main/resources/config.properties
