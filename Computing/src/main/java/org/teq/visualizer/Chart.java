@@ -1,13 +1,20 @@
 package org.teq.visualizer;
 
+import com.alibaba.fastjson.annotation.JSONField;
+
 import java.util.concurrent.BlockingQueue;
 
 public class Chart{
-
+    @JSONField(serialize = false)
     private BlockingQueue<Object>xAxis;
+
+    @JSONField(serialize = false)
     private BlockingQueue<Object>yAxis;
+    @JSONField(serialize = true)
     private String xLabel;
+    @JSONField(serialize = true)
     private String yLabel;
+    @JSONField(serialize = true)
     private String title;
 
     public Chart(BlockingQueue xAxis, BlockingQueue yAxis, String xLabel, String yLabel, String title){
@@ -22,6 +29,7 @@ public class Chart{
      * it is the user's duty to ensure that two BlockingQueues have the same size at any time,
      * otherwise the program will crash
      */
+    @JSONField(serialize = false)
     public BlockingQueue<Object> getxAxis() {
         return xAxis;
     }
@@ -30,6 +38,7 @@ public class Chart{
         this.xAxis = xAxis;
     }
 
+    @JSONField(serialize = false)
     public BlockingQueue<Object> getyAxis() {
         return yAxis;
     }
@@ -65,9 +74,9 @@ public class Chart{
     //json format
     public String toString(){
         return "{\n" +
-                "  \"xLabel\": \"" + xLabel + "\",\n" +
-                "  \"yLabel\": \"" + yLabel + "\",\n" +
-                "  \"title\": \"" + title + "\"\n" +
+                "  \"xLabel\": \"" + getxLabel() + "\",\n" +
+                "  \"yLabel\": \"" + getyLabel() + "\",\n" +
+                "  \"title\": \"" + getTitle() + "\"\n" +
                 "}";
     }
 }

@@ -1,26 +1,22 @@
-<script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-    <el-container style="height: 100vh; border: 1px solid #dcdfe6;">
+  <el-container style="height: 100vh; border: 1px solid #dcdfe6;">
     <!-- 顶部导航栏 -->
-    <el-header style="background-color: #cc33ff; color: #fff; display: flex; align-items: center;">
+    <el-header style="background-color: #4da6ec; color: #fff; display: flex; align-items: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 10;">
       <el-icon style="margin-right: 10px;">
         <i class="el-icon-menu"></i>
       </el-icon>
       <span style="font-size: 18px; font-weight: bold;">Teq Dashboard</span>
     </el-header>
-    <el-container>
+
+    <el-container style="margin-top: 60px;">
       <!-- 左侧边栏 -->
-      <el-aside width="220px" style="background-color: #cc66ff; color: #fff;">
+      <el-aside width="220px" style="position: fixed; top: 60px; left: 0; bottom: 0; background-color: rgb(121.3, 187.1, 255); color: #fff; z-index: 9;">
         <el-menu
-          :default-active="'1'"
-          class="el-menu-vertical-demo"
-          background-color="#cc66ff"
-          text-color="#fff"
-          active-text-color="#660099"
+            :default-active="'1'"
+            class="el-menu-vertical-demo"
+            background-color="rgb(121.3, 187.1, 255)"
+            text-color="#fff"
+            active-text-color="#fff"
         >
           <el-menu-item index="1">
             <i class="el-icon-s-home"></i>
@@ -49,12 +45,9 @@ import HelloWorld from './components/HelloWorld.vue'
       </el-aside>
 
       <!-- 主内容区域 -->
-      <el-main>
+      <el-main style="margin-left: 220px;">
         <router-view />
       </el-main>
     </el-container>
   </el-container>
 </template>
-
-<style>
-</style>

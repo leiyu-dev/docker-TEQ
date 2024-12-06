@@ -1,34 +1,53 @@
 package org.teq.visualizer;
 
+import com.alibaba.fastjson.JSON;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.teq.configurator.SimulatorConfigurator;
 
 import static spark.Spark.*;
-import java.util.HashMap;
-import spark.Filter;
-import spark.Request;
-import spark.Response;
-import spark.Spark;
-import java.io.FileOutputStream;
+
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
 public class SocketDisplayer extends MetricsDisplayer{
     private static final Logger logger = LogManager.getLogger(SocketDisplayer.class);
-    class ChartData{
-        String chartName;
-        String xData;
-        String yData;
+
+    class ChartData implements Serializable {
+        private String chartName;
+        private String xData;
+        private String yData;
         public ChartData(String chartName, String xData, String yData){
-            this.chartName = chartName;
-            this.xData = xData;
-            this.yData = yData;
+            this.setChartName(chartName);
+            this.setxData(xData);
+            this.setyData(yData);
         }
-        //to json
-        public String toString(){
-            return "{\"chartName\":\"" + chartName + "\",\"xData\":\"" + xData + "\",\"yData\":\"" + yData + "\"}";
+
+
+        public String getChartName() {
+            return chartName;
+        }
+
+        public void setChartName(String chartName) {
+            this.chartName = chartName;
+        }
+
+        public String getxData() {
+            return xData;
+        }
+
+        public void setxData(String xData) {
+            this.xData = xData;
+        }
+
+        public String getyData() {
+            return yData;
+        }
+
+        public void setyData(String yData) {
+            this.yData = yData;
         }
     }
     List<Chart> chartList = new ArrayList<>();
@@ -41,6 +60,7 @@ public class SocketDisplayer extends MetricsDisplayer{
 
     @Override
     public void display() {
+        logger.error(JSON.toJSONString(chartList));
         port(SimulatorConfigurator.restfulPort);
         options("/*",
                 (request, response) -> {
@@ -66,13 +86,7 @@ public class SocketDisplayer extends MetricsDisplayer{
 
         get("/chart", (req, res) -> {
             res.type("application/json");
-            logger.error("get chart!!");
-            String chart = "[";
-            for (Chart c : chartList) {
-                chart += c.toString() + ",";
-            }
-            chart += "]";
-            return chart;
+            return JSON.toJSONString(chartList);
         });
         get("/data", (req, res) -> {
             List<ChartData>dataList = new ArrayList<>();
@@ -96,11 +110,7 @@ public class SocketDisplayer extends MetricsDisplayer{
                     e.printStackTrace();
                 }
             }
-            String dataString = "[";
-            for(ChartData data : dataList){
-                dataString += data.toString() + ",";
-            }
-            dataString += "]";
+            String dataString = JSON.toJSONString(dataList);
             return dataString;
         });
     }

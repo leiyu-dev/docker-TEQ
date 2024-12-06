@@ -8,7 +8,7 @@ import org.teq.configurator.SimulatorConfigurator;
 public class FlinkTest {
     public static void main(String[] args) {
         Configuration conf = new Configuration();
-        conf.setInteger(RestOptions.PORT, 8081);
+        conf.setInteger(RestOptions.PORT, 8777);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
         String filePath = SimulatorConfigurator.hostPath + "/file.txt";
         DataStream<String> input = env.readTextFile(filePath);

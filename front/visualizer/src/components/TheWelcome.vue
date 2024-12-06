@@ -1,34 +1,46 @@
 <template>
   <div>
-    <div v-for="(chartOption, index) in chartOptions"
-    :key="index"
-    :ref="'chart'+index"></div>
+    <el-space wrap :size="30">
+      <el-card v-for="(chartOption, index) in chartOptions" >
+        <template #header>
+          <div class="card-header">
+            <span>{{ chartTitle[index] }}</span>
+          </div>
+        </template>
+        <div
+        :key="index"
+        :ref="'chart'+index"
+        class="charts"></div>
+      </el-card>
+    </el-space>
     <el-button @click="updateData">更新数据</el-button>
   </div>
 </template>
 
 <script>
 import * as echarts from 'echarts';
-import axios from 'axios';
 export default {
   name: 'EChartsExample',
   data(){
     return {
       chartOptions : [],
       chartData : [],
-      chartCount: 0
+      chartCount: 0,
+      chartMap: null,
+      chartList: [],
+      intervalId: null,
+      chartTitle: []
     }
   },
   mounted() {
+    this.chartMap = new Map()
     fetch('http://localhost:8889/chart').then(v=>v.json()).then((response) => {
       const chartList = response;
       for(let rawChart of chartList){
         this.chartData.push([]);
         let options = {
-          title: {
-            text: rawChart.title
-          },
           xAxis: {
+            type: 'category',
             name: rawChart.xLabel
           },
           yAxis: {
@@ -37,53 +49,71 @@ export default {
           series: [
             {
               type: 'line',
-              data: this.chartData[this.chartCount]
+              data: this.chartData[this.chartCount],
+              // symbol: 'none'
             }
           ]
         }
+
+        console.log(options)
         this.chartOptions.push(options);
+        this.chartMap.set(rawChart.title, this.chartCount);
+        this.chartTitle.push(rawChart.title);
         this.chartCount++;
-        const chart = echarts.init(this.$refs.chart + this.chartCount);
-        chart.setOption(options);
-        window.addEventListener('resize', () => {
-          chart.resize();
-        });
+
       }
+      this.$nextTick(() => {
+        this.chartOptions.forEach((option, index) => {
+          const chartRef = this.$refs['chart' + index][0];
+          console.log(chartRef)
+          if (chartRef) {
+            const chart = echarts.init(chartRef);
+            chart.setOption(option);
+            this.chartList.push(chart)
+
+            // 添加 resize 事件
+            window.addEventListener('resize', () => {
+              chart.resize();
+            });
+          } else {
+            console.error(`Chart ref "chart${index}" is undefined`);
+          }
+        });
+      });
     });
   },
   methods: {
-    updateData() {
-      const socket = new WebSocket('ws://localhost:');
-      const chart = echarts.init(this.$refs.chart);
-      const options = {
-        title: {
-          text: 'ECharts 示例',
-        },
-        tooltip: {},
-        xAxis: {
-          type: 'category',
-          data: ['苹果', '香蕉', '橙子', '葡萄'],
-        },
-        yAxis: {
-          type: 'value',
-        },
-        series: [
-          {
-            name: '销量',
-            type: 'bar',
-            data: [10, 30, 50, 20],
-          },
-        ],
-      };
-      chart.setOption(options);
+    async fetchData(){
+      fetch('http://localhost:8889/data').then(v => v.json()).then((response) => {
+        //response: [{chartName: "..",xData: "1", yData: "2"}, ...]
+        for(let rawData of response){
+          let chartIndex = this.chartMap.get(rawData.chartName);
+          this.chartData[chartIndex].push([rawData.xData, rawData.yData]);
+        }
+        for(let i=0; i<this.chartList.length; i++){
+          let chart = this.chartList[i];
+          chart.setOption({
+            series: [
+              {
+                data: this.chartData[i]
+              }
+            ]
+          });
+        }
+      })
     },
+    updateData() {
+      this.intervalId = setInterval(() => {
+        this.fetchData();
+      }, 1000);
+    }
   }
 };
 </script>
 
-<style scoped>
-.chart-container {
-  width: 100%;
-  height: 400px;
+<style>
+.charts {
+  width: 600px;
+  height: 300px;
 }
 </style>
