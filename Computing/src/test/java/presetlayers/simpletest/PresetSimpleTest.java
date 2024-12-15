@@ -11,7 +11,7 @@ public class PresetSimpleTest {
 
         DockerNodeParameters param = new DockerNodeParameters();
         param.cpuUsageRate = 0.5;
-        EndDeviceLayer end = new EndDeviceLayer();
+        EndDeviceNode end = new EndDeviceNode();
         end.setParameters(param);
         CoordinatorNode coor = new CoordinatorNode();
         coor.setParameters(param);

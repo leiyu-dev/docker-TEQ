@@ -28,6 +28,15 @@ public class MetricsPackageBean implements Serializable {
         instanceCount++;
     }
 
+    public MetricsPackageBean(UUID id, String src, String target, int targetPort,Object object) {
+        this.id = id;
+        this.object = object;
+        this.src = src;
+        this.target = target;
+        this.targetPort = targetPort;
+        instanceCount++;
+    }
+
     public void setId(UUID id) {
         this.id = id;
     }

@@ -9,15 +9,20 @@ import org.teq.configurator.ExecutorParameters;
 import org.teq.presetlayers.PackageBean;
 import org.teq.utils.DockerRuntimeData;
 
-public class EndDeviceLayer extends AbstractEndDeviceNode {
+public class EndDeviceNode extends AbstractEndDeviceNode {
     @Override
     protected DataStream<PackageBean> getSource() {
         String filePath = "./file.txt";
         StreamExecutionEnvironment env = getEnv();
-        DataStream<String> input = env.readTextFile(filePath);
-        return input.map((MapFunction<String, PackageBean>) value -> new PackageBean(getNodeName(),
-                DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.coordinatorLayerName).get(0),
-                InfoType.Data,value)).name("Data Source");
+        if(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.endDeviceLayerName).get(0).equals(getNodeName())) {//only the first end device node reads the file
+            DataStream<String> input = env.readTextFile(filePath);
+            return input.map((MapFunction<String, PackageBean>) value -> new PackageBean(getNodeName(),
+                    DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.coordinatorLayerName).get(0),
+                    InfoType.Data, value)).name("Data Source");
+        }
+        else { // return an empty data stream
+            return env.fromElements();
+        }
     }
     @Override
     public DataStream<PackageBean> Computing(DataStream<PackageBean> packages) {
