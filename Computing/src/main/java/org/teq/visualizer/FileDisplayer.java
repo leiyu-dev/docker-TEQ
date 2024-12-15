@@ -57,18 +57,26 @@ public class FileDisplayer extends MetricsDisplayer{
                     try {
                         FileOutputStream fos = fileOutputStreamList.get(i).second();
                         BlockingQueue xQueue = chart.getxAxis();
-                        BlockingQueue yQueue = chart.getyAxis();
-                        if(xQueue.isEmpty() || yQueue.isEmpty()){
-//                            if(xQueue.isEmpty())logger.info("try to display " + chart.getTitle() + " but xQueue has no data");
-//                            if(yQueue.isEmpty())logger.info("try to display " + chart.getTitle() + " but yQueue has no data");
-                            continue;
+                        List<BlockingQueue> yQueueList = chart.getyAxis();
+                        boolean canWrite = true;
+                        if (xQueue.isEmpty())continue;
+                        for(var yQueue : yQueueList) {
+                            if(yQueue.isEmpty()){
+                                canWrite = false;
+                                break;
+                            }
                         }
-                        Object x = xQueue.take();
-                        Object y = yQueue.take();
-                        String context = x.toString() + "," + y.toString();
-//                        logger.info(context + " into " + fileOutputStreamList.get(i).first().getName());
-                        fos.write((context+"\n").getBytes());
-                        fos.flush();
+                        if(canWrite){
+                            Object x = xQueue.take();
+                            StringBuilder context = new StringBuilder(x.toString() + ",");
+                            for(var yQueue : yQueueList) {
+                                Object y = yQueue.take();
+                                context.append(y).append(",");
+                            }
+                            //logger.info(context + " into " + fileOutputStreamList.get(i).first().getName());
+                            fos.write((context + "\n").getBytes());
+                            fos.flush();
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

@@ -3,9 +3,9 @@ package presetlayers.simpletest;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.teq.presetlayers.PackageBean;
-import org.teq.presetlayers.abstractLayer.AbstractDataCenterLayer;
+import org.teq.presetlayers.abstractLayer.AbstractDataCenterNode;
 
-public class DataCenterLayer extends AbstractDataCenterLayer {
+public class DataCenterNode extends AbstractDataCenterNode {
 
     @Override
     public DataStream<PackageBean> transform(DataStream<PackageBean> info) {

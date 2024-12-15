@@ -4,8 +4,6 @@ import org.teq.layer.Layer;
 import org.teq.mearsurer.MetricsTransformer;
 import org.teq.node.DockerNodeParameters;
 import org.teq.simulator.Simulator;
-import org.teq.visualizer.FileDisplayer;
-import org.teq.visualizer.MetricsDisplayer;
 import org.teq.visualizer.SocketDisplayer;
 
 public class PresetSimpleTest {
@@ -15,11 +13,11 @@ public class PresetSimpleTest {
         param.cpuUsageRate = 0.5;
         EndDeviceLayer end = new EndDeviceLayer();
         end.setParameters(param);
-        CoordinatorLayer coor = new CoordinatorLayer();
+        CoordinatorNode coor = new CoordinatorNode();
         coor.setParameters(param);
-        WorkerLayer work = new WorkerLayer();
+        WorkerNode work = new WorkerNode();
         work.setParameters(param);
-        DataCenterLayer dat = new DataCenterLayer();
+        DataCenterNode dat = new DataCenterNode();
         dat.setParameters(param);
         Layer endDeviceLayer = new Layer(end,4, "EndDeviceLayer");
         Layer coordinatorLayer = new Layer(coor,1, "CoordinatorLayer");

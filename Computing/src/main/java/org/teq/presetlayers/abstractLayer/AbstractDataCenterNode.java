@@ -16,8 +16,8 @@ import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.MultiThreadDataReceiver;
 import org.teq.utils.connector.TargetedDataSender;
 
-public abstract class AbstractDataCenterLayer extends MeasuredFlinkNode implements DataCenterTask {
-    private static final Logger logger = LogManager.getLogger(AbstractEndDeviceLayer.class);
+public abstract class AbstractDataCenterNode extends MeasuredFlinkNode implements DataCenterTask {
+    private static final Logger logger = LogManager.getLogger(AbstractEndDeviceNode.class);
     @Override
     public void dataProcess() throws Exception {
         int maxNumRetries = ExecutorParameters.maxNumRetries;

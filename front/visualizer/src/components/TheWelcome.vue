@@ -13,7 +13,6 @@
         class="charts"></div>
       </el-card>
     </el-space>
-    <el-button @click="updateData">更新数据</el-button>
   </div>
 </template>
 
@@ -24,7 +23,8 @@ export default {
   data(){
     return {
       chartOptions : [],
-      chartData : [],
+      xData : [],
+      yData : [],
       chartCount: 0,
       chartMap: null,
       chartList: [],
@@ -37,25 +37,47 @@ export default {
     fetch('http://localhost:8889/chart').then(v=>v.json()).then((response) => {
       const chartList = response;
       for(let rawChart of chartList){
-        this.chartData.push([]);
+        let seriesList = []
+        this.yData.push([]);
+        this.xData.push([]);
+        for(let i=0;i<rawChart.dataLabel.length;i++){
+          this.yData[this.chartCount].push([]);
+          let dataName = rawChart.dataLabel[i];
+          seriesList.push({
+            type: 'line',
+            data: this.yData[this.chartCount][i],
+            stack: 'Total',
+            name: dataName,
+            smooth: true,
+          })
+        }
         let options = {
           xAxis: {
             type: 'category',
-            name: rawChart.xLabel
+            boundaryGap: false,
+            name: rawChart.xLabel,
+            data: this.xData[this.chartCount]
+          },
+          tooltip: {
+            trigger: 'axis'
+          },
+          toolbox: {
+            feature: {
+              saveAsImage: {}
+            }
+          },
+
+          legend : {
+            data: rawChart.dataLabel
           },
           yAxis: {
+            type: 'value',
             name: rawChart.yLabel
           },
-          series: [
-            {
-              type: 'line',
-              data: this.chartData[this.chartCount],
-              // symbol: 'none'
-            }
-          ]
+          series:seriesList
         }
 
-        console.log(options)
+        // console.log(options)
         this.chartOptions.push(options);
         this.chartMap.set(rawChart.title, this.chartCount);
         this.chartTitle.push(rawChart.title);
@@ -65,7 +87,7 @@ export default {
       this.$nextTick(() => {
         this.chartOptions.forEach((option, index) => {
           const chartRef = this.$refs['chart' + index][0];
-          console.log(chartRef)
+          // console.log(chartRef)
           if (chartRef) {
             const chart = echarts.init(chartRef);
             chart.setOption(option);
@@ -81,32 +103,39 @@ export default {
         });
       });
     });
+    this.intervalId = setInterval(() => {
+      this.fetchData();
+    }, 1000);
   },
   methods: {
     async fetchData(){
       fetch('http://localhost:8889/data').then(v => v.json()).then((response) => {
-        //response: [{chartName: "..",xData: "1", yData: "2"}, ...]
+        //response: [{chartName: "..",xData: "1", yData: ["1","2","3","4","5"]}, ...]
         for(let rawData of response){
           let chartIndex = this.chartMap.get(rawData.chartName);
-          this.chartData[chartIndex].push([rawData.xData, rawData.yData]);
+          this.xData[chartIndex].push(rawData.xData)
+          for(let i=0;i<rawData.yData.length;i++) {
+            let yData=rawData.yData[i];
+            this.yData[chartIndex][i].push(yData);
+          }
         }
         for(let i=0; i<this.chartList.length; i++){
           let chart = this.chartList[i];
+          let seriesList = [];
+          for(let j=0; j<this.yData[i].length; j++){
+            seriesList.push({
+              data: this.yData[i][j]
+            });
+          }
           chart.setOption({
-            series: [
-              {
-                data: this.chartData[i]
-              }
-            ]
+            series:seriesList,
+            xAxis: {
+              data: this.xData[i]
+            }
           });
         }
       })
     },
-    updateData() {
-      this.intervalId = setInterval(() => {
-        this.fetchData();
-      }, 1000);
-    }
   }
 };
 </script>

@@ -18,8 +18,8 @@ import org.teq.utils.connector.MultiThreadDataReceiver;
 import org.teq.utils.connector.TargetedDataSender;
 
 
-public abstract class AbstractEndDeviceLayer extends MeasuredFlinkNode implements EndDeviceTask {
-    private static final Logger logger = LogManager.getLogger(AbstractEndDeviceLayer.class);
+public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements EndDeviceTask {
+    private static final Logger logger = LogManager.getLogger(AbstractEndDeviceNode.class);
 
     protected abstract DataStream<PackageBean> getSource();
 

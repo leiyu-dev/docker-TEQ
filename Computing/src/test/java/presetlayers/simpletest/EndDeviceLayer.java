@@ -4,12 +4,12 @@ import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.teq.configurator.unserializable.InfoType;
-import org.teq.presetlayers.abstractLayer.AbstractEndDeviceLayer;
+import org.teq.presetlayers.abstractLayer.AbstractEndDeviceNode;
 import org.teq.configurator.ExecutorParameters;
 import org.teq.presetlayers.PackageBean;
 import org.teq.utils.DockerRuntimeData;
 
-public class EndDeviceLayer extends AbstractEndDeviceLayer {
+public class EndDeviceLayer extends AbstractEndDeviceNode {
     @Override
     protected DataStream<PackageBean> getSource() {
         String filePath = "./file.txt";

@@ -18,10 +18,10 @@ import org.teq.utils.connector.TargetedDataSender;
 //import org.apache.log4j.PropertyConfigurator;
 
 
-public abstract class AbstractCoordinatorLayer extends MeasuredFlinkNode implements CoordinatorTask {
-    private static final Logger logger = LogManager.getLogger(AbstractEndDeviceLayer.class);
+public abstract class AbstractCoordinatorNode extends MeasuredFlinkNode implements CoordinatorTask {
+    private static final Logger logger = LogManager.getLogger(AbstractEndDeviceNode.class);
 
-    public AbstractCoordinatorLayer(){}
+    public AbstractCoordinatorNode(){}
 
     @Override
     public void dataProcess() throws Exception {

@@ -2,26 +2,30 @@ package org.teq.visualizer;
 
 import com.alibaba.fastjson.annotation.JSONField;
 
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
-public class Chart{
+public class Chart<X,Y>{
     @JSONField(serialize = false)
-    private BlockingQueue<Object>xAxis;
+    private BlockingQueue<X>xAxis;
 
     @JSONField(serialize = false)
-    private BlockingQueue<Object>yAxis;
+    private List<BlockingQueue<Y>> yAxis;
     @JSONField(serialize = true)
     private String xLabel;
+    @JSONField(serialize = true)
+    private List<String> dataLabel;
     @JSONField(serialize = true)
     private String yLabel;
     @JSONField(serialize = true)
     private String title;
 
-    public Chart(BlockingQueue xAxis, BlockingQueue yAxis, String xLabel, String yLabel, String title){
-        this.setxAxis((BlockingQueue<Object>) xAxis);
-        this.setyAxis((BlockingQueue<Object>) yAxis);
+    public Chart(BlockingQueue<X> xAxis, List<BlockingQueue<Y>> yAxis, String xLabel,String yLabel, List<String> dataLabel, String title){
+        this.setxAxis(xAxis);
+        this.setyAxis(yAxis);
         this.setxLabel(xLabel);
         this.setyLabel(yLabel);
+        this.setDataLabel(dataLabel);
         this.setTitle(title);
     }
 
@@ -30,20 +34,20 @@ public class Chart{
      * otherwise the program will crash
      */
     @JSONField(serialize = false)
-    public BlockingQueue<Object> getxAxis() {
+    public BlockingQueue<?> getxAxis() {
         return xAxis;
     }
 
-    public void setxAxis(BlockingQueue<Object> xAxis) {
+    public void setxAxis(BlockingQueue<X> xAxis) {
         this.xAxis = xAxis;
     }
 
     @JSONField(serialize = false)
-    public BlockingQueue<Object> getyAxis() {
+    public List<BlockingQueue<Y>> getyAxis() {
         return yAxis;
     }
 
-    public void setyAxis(BlockingQueue<Object> yAxis) {
+    public void setyAxis(List<BlockingQueue<Y>> yAxis) {
         this.yAxis = yAxis;
     }
 
@@ -55,12 +59,12 @@ public class Chart{
         this.xLabel = xLabel;
     }
 
-    public String getyLabel() {
-        return yLabel;
+    public List<String> getDataLabel() {
+        return dataLabel;
     }
 
-    public void setyLabel(String yLabel) {
-        this.yLabel = yLabel;
+    public void setDataLabel(List<String> dataLabel) {
+        this.dataLabel = dataLabel;
     }
 
     public String getTitle() {
@@ -70,13 +74,23 @@ public class Chart{
     public void setTitle(String title) {
         this.title = title;
     }
+    public String getyLabel() {
+        return yLabel;
+    }
+
+    public void setyLabel(String yLabel) {
+        this.yLabel = yLabel;
+    }
 
     //json format
     public String toString(){
         return "{\n" +
                 "  \"xLabel\": \"" + getxLabel() + "\",\n" +
                 "  \"yLabel\": \"" + getyLabel() + "\",\n" +
+                "  \"dataLabel\": \"" + getDataLabel() + "\",\n" +
                 "  \"title\": \"" + getTitle() + "\"\n" +
                 "}";
     }
+
+
 }

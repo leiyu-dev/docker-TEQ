@@ -4,10 +4,10 @@ import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.teq.configurator.ExecutorParameters;
 import org.teq.presetlayers.PackageBean;
-import org.teq.presetlayers.abstractLayer.AbstractCoordinatorLayer;
+import org.teq.presetlayers.abstractLayer.AbstractCoordinatorNode;
 import org.teq.utils.DockerRuntimeData;
 
-public class CoordinatorLayer extends AbstractCoordinatorLayer {
+public class CoordinatorNode extends AbstractCoordinatorNode {
 
 
     @Override

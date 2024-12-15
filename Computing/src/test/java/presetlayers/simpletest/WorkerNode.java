@@ -2,13 +2,12 @@ package presetlayers.simpletest;
 
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.teq.configurator.ExecutorParameters;
 import org.teq.presetlayers.PackageBean;
-import org.teq.presetlayers.abstractLayer.AbstractWorkerLayer;
+import org.teq.presetlayers.abstractLayer.AbstractWorkerNode;
 import org.teq.utils.DockerRuntimeData;
 
-public class WorkerLayer extends AbstractWorkerLayer {
+public class WorkerNode extends AbstractWorkerNode {
     @Override
     public DataStream<PackageBean> transform(DataStream<PackageBean>info) {
         return info.map(new MapFunction<PackageBean, PackageBean>() {

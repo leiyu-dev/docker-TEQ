@@ -1,12 +1,14 @@
 package org.teq.visualizer;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.teq.configurator.SimulatorConfigurator;
 
 import static spark.Spark.*;
 
+import java.io.FileOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,8 +20,8 @@ public class SocketDisplayer extends MetricsDisplayer{
     class ChartData implements Serializable {
         private String chartName;
         private String xData;
-        private String yData;
-        public ChartData(String chartName, String xData, String yData){
+        private List<String> yData;
+        public ChartData(String chartName, String xData, List<String> yData){
             this.setChartName(chartName);
             this.setxData(xData);
             this.setyData(yData);
@@ -42,11 +44,11 @@ public class SocketDisplayer extends MetricsDisplayer{
             this.xData = xData;
         }
 
-        public String getyData() {
+        public List<String> getyData() {
             return yData;
         }
 
-        public void setyData(String yData) {
+        public void setyData(List<String> yData) {
             this.yData = yData;
         }
     }
@@ -60,7 +62,7 @@ public class SocketDisplayer extends MetricsDisplayer{
 
     @Override
     public void display() {
-        logger.error(JSON.toJSONString(chartList));
+//        logger.error(JSON.toJSONString(chartList));
         port(SimulatorConfigurator.restfulPort);
         options("/*",
                 (request, response) -> {
@@ -86,7 +88,7 @@ public class SocketDisplayer extends MetricsDisplayer{
 
         get("/chart", (req, res) -> {
             res.type("application/json");
-            return JSON.toJSONString(chartList);
+            return JSON.toJSONString(chartList, SerializerFeature.DisableCircularReferenceDetect);
         });
         get("/data", (req, res) -> {
             List<ChartData>dataList = new ArrayList<>();
@@ -94,23 +96,29 @@ public class SocketDisplayer extends MetricsDisplayer{
                 Chart chart = chartList.get(i);
                 try {
                     BlockingQueue xQueue = chart.getxAxis();
-                    BlockingQueue yQueue = chart.getyAxis();
-                    while(true) {
-                        if (xQueue.isEmpty() || yQueue.isEmpty()) {
-//                            if(xQueue.isEmpty())logger.info("try to display " + chart.getTitle() + " but xQueue has no data");
-//                            if(yQueue.isEmpty())logger.info("try to display " + chart.getTitle() + " but yQueue has no data");
+                    List<BlockingQueue> yQueueList = chart.getyAxis();
+                    boolean canWrite = true;
+                    if (xQueue.isEmpty())continue;
+                    for(var yQueue : yQueueList) {
+                        if(yQueue.isEmpty()){
+                            canWrite = false;
                             break;
                         }
+                    }
+                    if(canWrite){
                         Object x = xQueue.take();
-                        Object y = yQueue.take();
-                        dataList.add(new ChartData(chart.getTitle(), x.toString(), y.toString()));
-//                        logger.info(context + " into " + fileOutputStreamList.get(i).first().getName());
+                        List<String>yList = new ArrayList<>();
+                        for(var yQueue : yQueueList) {
+                            Object y = yQueue.take();
+                            yList.add(y.toString());
+                        }
+                        dataList.add(new ChartData(chart.getTitle(), x.toString(), yList));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-            String dataString = JSON.toJSONString(dataList);
+            String dataString = JSON.toJSONString(dataList, SerializerFeature.DisableCircularReferenceDetect);
             return dataString;
         });
     }

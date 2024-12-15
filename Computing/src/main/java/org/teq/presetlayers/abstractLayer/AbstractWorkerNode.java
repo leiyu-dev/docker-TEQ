@@ -14,12 +14,12 @@ import org.teq.presetlayers.taskInterface.WorkerTask;
 import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.*;
 
-public abstract class AbstractWorkerLayer extends MeasuredFlinkNode implements WorkerTask  {
+public abstract class AbstractWorkerNode extends MeasuredFlinkNode implements WorkerTask  {
     protected String logConfigFilePath; // 每个实例的日志配置文件路径都不一样
     public void setLogFilePath(String path) {
         logConfigFilePath = path;
     }
-    private static final Logger logger = LogManager.getLogger(AbstractEndDeviceLayer.class);
+    private static final Logger logger = LogManager.getLogger(AbstractEndDeviceNode.class);
 
     private DataStream<PackageBean> FromCenter;
     private DataStream<PackageBean> FromCod;
