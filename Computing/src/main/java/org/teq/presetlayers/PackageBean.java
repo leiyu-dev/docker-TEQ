@@ -13,27 +13,16 @@ public class PackageBean extends MetricsPackageBean {
         super(object);
     }
 
-    private InfoType type;
-
     public PackageBean(String src, String target, InfoType type, Object object) {
         this(src,target,0,type,object);
     }
     public PackageBean(String src, String target, int targetPort, InfoType type, Object object) {
-        super(src,target,targetPort,object);
-        this.type = type;
+        super(src,target,targetPort,object, type);
     }
     public PackageBean(UUID id, String src, String target, int targetPort, InfoType type, Object object) {
-        super(id,src,target,targetPort,object);
-        this.type = type;
+        super(id,src,target,targetPort,object, type);
     }
 
-
-    public InfoType getType() {
-        return type;
-    }
-    public void setType(InfoType object) {
-        this.type = object;
-    }
     @Override
     public String toString() {
         return "PackageBean{" +

@@ -3,6 +3,7 @@ package layer.measurer;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.teq.configurator.unserializable.InfoType;
 import org.teq.mearsurer.MeasuredFlinkNode;
 import org.teq.mearsurer.MetricsPackageBean;
 import org.teq.node.DockerNodeParameters;
@@ -25,14 +26,15 @@ public class MyFlinkNode extends MeasuredFlinkNode {
             @Override
             public MetricsPackageBean map(String value) throws Exception {
                 var packageBean = new MetricsPackageBean(value);
-                beginProcess(packageBean.getId(),value.length());
+                beginProcess(packageBean.getId());
                 Thread.sleep(500);
                 return packageBean;
             }
         }).map(new MapFunction<MetricsPackageBean,String>(){
             @Override
             public String map(MetricsPackageBean value) throws Exception {
-                finishProcess(value.getId(),0);
+                String result = value.getObject().toString();
+                finishProcess(value.getId(),0,result.length(), InfoType.Data);
                 return value.getObject().toString();
             }
         });

@@ -28,6 +28,15 @@ public class Chart<X,Y>{
         this.setDataLabel(dataLabel);
         this.setTitle(title);
     }
+    //only one yData
+    public Chart(BlockingQueue<X> xAxis, BlockingQueue<Y> yAxis, String xLabel,String yLabel, String dataLabel, String title){
+        this.setxAxis(xAxis);
+        this.setyAxis(List.of(yAxis));
+        this.setxLabel(xLabel);
+        this.setyLabel(yLabel);
+        this.setDataLabel(List.of(dataLabel));
+        this.setTitle(title);
+    }
 
     /**
      * it is the user's duty to ensure that two BlockingQueues have the same size at any time,

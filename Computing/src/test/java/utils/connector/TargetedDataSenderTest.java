@@ -3,6 +3,7 @@ package utils.connector;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.teq.configurator.unserializable.InfoType;
 import org.teq.mearsurer.MetricsPackageBean;
 import org.teq.utils.connector.TargetedDataSender;
 
@@ -17,7 +18,7 @@ public class TargetedDataSenderTest {
             public MetricsPackageBean map(String value) throws Exception {
                 count++;
                 System.out.println("ADD a Bean to port "+(1000+count));
-                var bean = new MetricsPackageBean("localhost","localhost",1000+count,value);
+                var bean = new MetricsPackageBean("localhost","localhost",1000+count,value, InfoType.Data);
                 return bean;
             }
         }).addSink(new TargetedDataSender<MetricsPackageBean>(100, 1000));

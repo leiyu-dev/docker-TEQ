@@ -45,7 +45,7 @@ public abstract class AbstractCoordinatorNode extends MeasuredFlinkNode implemen
         DataStream<PackageBean> inputMap = stream.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                beginProcess(packageBean.getId(), JSON.toJSONString(packageBean).length() * 2);
+                beginProcess(packageBean.getId());
                 logger.debug("Coordinator Layer received data from End Device: {}", packageBean);
                 return packageBean;
             }
@@ -56,7 +56,8 @@ public abstract class AbstractCoordinatorNode extends MeasuredFlinkNode implemen
             public PackageBean map(PackageBean packageBean) throws Exception {
                 packageBean.setSrc(getNodeName());
                 packageBean.setTargetPort(ExecutorParameters.fromCodToWorkerPort);
-                finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()));
+                finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()),
+                        JSON.toJSONString(packageBean).length() * 2, packageBean.getType());
                 logger.debug("Coordinator Layer sent data to Worker: {}", packageBean);
                 return packageBean;
             }
@@ -67,7 +68,7 @@ public abstract class AbstractCoordinatorNode extends MeasuredFlinkNode implemen
         DataStream<PackageBean> inputMap = stream.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                beginProcess(packageBean.getId(), JSON.toJSONString(packageBean).length() * 2);
+                beginProcess(packageBean.getId());
                 logger.debug("Coordinator Layer received data from End Device: {}", packageBean);
                 return packageBean;
             }
@@ -78,7 +79,8 @@ public abstract class AbstractCoordinatorNode extends MeasuredFlinkNode implemen
             public PackageBean map(PackageBean packageBean) throws Exception {
                 packageBean.setSrc(getNodeName());
                 packageBean.setTargetPort(ExecutorParameters.fromCodToEndPort);
-                finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()));
+                finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()),
+                        JSON.toJSONString(packageBean).length() * 2, packageBean.getType());
                 logger.debug("Coordinator Layer sent data to Worker: {}", packageBean);
                 return packageBean;
             }

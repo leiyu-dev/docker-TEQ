@@ -32,7 +32,7 @@ public abstract class AbstractDataCenterNode extends MeasuredFlinkNode implement
         DataStream<PackageBean> inputMap = stream.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                beginProcess(packageBean.getId(), JSON.toJSONString(packageBean).length() * 2);
+                beginProcess(packageBean.getId());
                 logger.debug("DataCenterLayer: Received data from Worker: {}", packageBean);
                 return packageBean;
             }
@@ -43,7 +43,8 @@ public abstract class AbstractDataCenterNode extends MeasuredFlinkNode implement
             public PackageBean map(PackageBean packageBean) throws Exception {
                 packageBean.setTargetPort(ExecutorParameters.fromCenterToWorkerPort);
                 packageBean.setSrc(getNodeName());
-                finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()));
+                finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()),
+                        JSON.toJSONString(packageBean).length() * 2, packageBean.getType());
                 logger.debug("DataCenterLayer: Sent data to Worker: {}", packageBean);
                 return packageBean;
             }

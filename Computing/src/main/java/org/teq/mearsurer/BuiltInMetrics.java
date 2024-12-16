@@ -1,5 +1,7 @@
 package org.teq.mearsurer;
 
+import org.teq.configurator.unserializable.InfoType;
+
 import java.io.Serializable;
 import java.util.UUID;
 
@@ -8,10 +10,9 @@ public class BuiltInMetrics implements Serializable {
     private int fromNodeId;
     private int toNodeId;
     private double packageLength;//unit: B
-    private double memoryUsage;//unit: B
-    private double cpuUsage;//unit: 1 means 100%
     private long timestampIn;
     private long timestampOut;
+    private InfoType infoType;
     public void setId(UUID id) {
         this.id = id;
     }
@@ -23,18 +24,6 @@ public class BuiltInMetrics implements Serializable {
     }
     public double getPackageLength() {
         return packageLength;
-    }
-    public void setMemoryUsage(double memoryUsage) {
-        this.memoryUsage = memoryUsage;
-    }
-    public double getMemoryUsage() {
-        return memoryUsage;
-    }
-    public void setCpuUsage(double cpuUsage) {
-        this.cpuUsage = cpuUsage;
-    }
-    public double getCpuUsage() {
-        return cpuUsage;
     }
     public void setTimestampIn(long timestampIn) {
         this.timestampIn = timestampIn;
@@ -61,18 +50,24 @@ public class BuiltInMetrics implements Serializable {
     public void setToNodeId(int toNodeId) {
         this.toNodeId = toNodeId;
     }
-
+    public InfoType getInfoType() {
+        return infoType;
+    }
+    public void setInfoType(InfoType infoType) {
+        this.infoType = infoType;
+    }
     @Override
     public String toString() {
         return "BuiltInMetrics{" +
                 "id='" + id + '\'' +
                 ", packageLength=" + packageLength +
-                ", memoryUsage=" + memoryUsage +
-                ", cpuUsage=" + cpuUsage +
                 ", timestampIn=" + timestampIn +
                 ", timestampOut=" + timestampOut +
                 ", fromNodeId=" + fromNodeId +
                 ", toNodeId=" + toNodeId +
+                ", infoType=" + infoType +
                 '}';
     }
+
+
 }

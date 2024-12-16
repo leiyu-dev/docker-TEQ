@@ -9,6 +9,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 //import org.apache.log4j.PropertyConfigurator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.teq.configurator.unserializable.InfoType;
 import org.teq.mearsurer.MeasuredFlinkNode;
 import org.teq.configurator.ExecutorParameters;
 import org.teq.presetlayers.PackageBean;
@@ -41,7 +42,7 @@ public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements
         DataStream<PackageBean> inputMap = infoSteam.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                beginProcess(packageBean.getId(), JSON.toJSONString(packageBean).length() * 2);
+                beginProcess(packageBean.getId());
                 logger.debug("End Device Layer received data from Sensor: {}", packageBean);
                 return packageBean;
             }
@@ -52,7 +53,7 @@ public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements
             public PackageBean map(PackageBean packageBean) throws Exception {
                 packageBean.setSrc(getNodeName());
                 packageBean.setTargetPort(ExecutorParameters.fromEndToCodPort);
-                finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()));
+                finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()),JSON.toJSONString(packageBean).length() * 2, packageBean.getType());
                 logger.debug("End Device Layer send data to Coordinator: {}", packageBean);
                 return packageBean;
             }
@@ -62,7 +63,7 @@ public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements
         DataStream<PackageBean> inputMap = infoSteam.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                beginProcess(packageBean.getId(), JSON.toJSONString(packageBean).length() * 2);
+                beginProcess(packageBean.getId());
                 logger.debug("End Device Layer received data from Sensor: {}", packageBean);
                 return packageBean;
             }
@@ -72,7 +73,7 @@ public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
                 packageBean.setSrc(getNodeName());
-                endProcess(packageBean.getId());
+                endProcess(packageBean.getId(), JSON.toJSONString(packageBean).length() * 2, packageBean.getType());
                 logger.debug("End Device Layer send data to Coordinator: {}", packageBean);
                 return packageBean;
             }

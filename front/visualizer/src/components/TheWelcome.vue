@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-space wrap :size="30">
+    <el-space wrap :size="25">
       <el-card v-for="(chartOption, index) in chartOptions" >
         <template #header>
           <div class="card-header">
@@ -46,15 +46,21 @@ export default {
           seriesList.push({
             type: 'line',
             data: this.yData[this.chartCount][i],
+            connectNulls: true,
             stack: 'Total',
             name: dataName,
-            smooth: true,
+            // smooth: true,
           })
         }
         let options = {
+          grid: {
+            left: '30px',
+            right: '60px',
+            bottom: '3%',
+            containLabel: true
+          },
           xAxis: {
             type: 'category',
-            boundaryGap: false,
             name: rawChart.xLabel,
             data: this.xData[this.chartCount]
           },
@@ -72,6 +78,8 @@ export default {
           },
           yAxis: {
             type: 'value',
+            nameLocation: 'center',
+            nameGap: 50,
             name: rawChart.yLabel
           },
           series:seriesList
@@ -118,6 +126,7 @@ export default {
             let yData=rawData.yData[i];
             this.yData[chartIndex][i].push(yData);
           }
+          // console.log(this.yData);
         }
         for(let i=0; i<this.chartList.length; i++){
           let chart = this.chartList[i];
@@ -142,7 +151,7 @@ export default {
 
 <style>
 .charts {
-  width: 600px;
+  width: 500px;
   height: 300px;
 }
 </style>

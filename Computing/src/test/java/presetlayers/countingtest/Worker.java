@@ -45,7 +45,7 @@ public class Worker extends AbstractWorkerNode {
     @Override
     public DataStream<PackageBean> transform(DataStream<PackageBean> info) {
         return info.flatMap(new RichFlatMapFunction<PackageBean, PackageBean>() {
-            private MapState<String, Map<Long, Integer>> workerState;
+            private Map<String, Map<Long, Integer>> workerState;
             // key 表示单词
             // value 存储对应的时间间隔，比如key = 3000(s), 表示范围 3000000 - 3000999(ms)和对应单词的频数，格式是[timeInterval: frequency]
             private final String[] actionList = {"Left","Right","Forward","Back","Jump","Sit","Slip","Smile","Cry","Help"};
@@ -53,7 +53,8 @@ public class Worker extends AbstractWorkerNode {
             @Override
             public void open(Configuration parameters) throws Exception {
                 super.open(parameters);
-                workerState= getRuntimeContext().getMapState(new MapStateDescriptor<String, Map<Long,Integer>>("workerState", Types.STRING,Types.MAP(Types.LONG, Types.INT)));
+//                workerState= getRuntimeContext().getMapState(new MapStateDescriptor<String, Map<Long,Integer>>("workerState", Types.STRING,Types.MAP(Types.LONG, Types.INT)));
+                workerState = new HashMap<>();
             }
             @Override
             public void flatMap(PackageBean packageBean, Collector<PackageBean> collector) throws Exception {

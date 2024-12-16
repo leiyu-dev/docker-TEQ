@@ -268,8 +268,8 @@ public class DockerRunner {
 
                         //into GB
                         double memoryUsage = memoryUsageRaw / 1024 / 1024 / 1024.0;
-                        logger.info(containerName + " Memory usage: " + memoryUsage + "GB");
-                        logger.info(containerName + " CPU usage: " + cpuUsage);
+//                        logger.info(containerName + " Memory usage: " + memoryUsage + "GB");
+//                        logger.info(containerName + " CPU usage: " + cpuUsage);
 
                         try {
                             BlockingQueue<Double>cpuQueue = cpuQueueList.get(finalI);

@@ -27,11 +27,17 @@ public class EndDevice extends AbstractEndDeviceNode {
         CommonReader<String[]> csvReader = new CSVReader( filePath, 30);
         CommonDataSource<String[]> dataSource = new DataSetCommonPlayer<String[]>().genPlayer( 10, csvReader);
         StreamExecutionEnvironment env = getEnv();
-        return env.addSource(dataSource).
-                returns(String[].class).
-                map((MapFunction<String[], PackageBean>) s -> new PackageBean(s[14],
-                        DockerRuntimeData.getNodeNameListByLayerName(coordinatorLayerName).get(0),
-                        ExecutorParameters.fromEndToCodPort,s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s)));
+        if(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.endDeviceLayerName).get(0).equals(getNodeName())) {
+            return env.addSource(dataSource).
+                    returns(String[].class).
+                    map((MapFunction<String[], PackageBean>) s -> new PackageBean(s[14],
+                            DockerRuntimeData.getNodeNameListByLayerName(coordinatorLayerName).get(0),
+                            ExecutorParameters.fromEndToCodPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s)));
+        }
+        else {
+            //return an empty data stream
+            return env.fromElements();
+        }
     }
 
     @Override

@@ -1,10 +1,13 @@
 package org.teq.mearsurer;
 
+import org.teq.configurator.unserializable.InfoType;
+
 import java.io.Serializable;
 import java.util.UUID;
 
 public class MetricsPackageBean implements Serializable {
     static private long instanceCount = 0;
+    protected InfoType type;
     private UUID id;
     private Object object;
 
@@ -19,22 +22,24 @@ public class MetricsPackageBean implements Serializable {
         instanceCount++;
     }
 
-    public MetricsPackageBean(String src, String target, int targetPort,Object object) {
+    public MetricsPackageBean(String src, String target, int targetPort, Object object, InfoType type) {
         this.id = UUID.randomUUID();
         this.object = object;
         this.src = src;
         this.target = target;
         this.targetPort = targetPort;
         instanceCount++;
+        this.type = type;
     }
 
-    public MetricsPackageBean(UUID id, String src, String target, int targetPort,Object object) {
+    public MetricsPackageBean(UUID id, String src, String target, int targetPort, Object object, InfoType type) {
         this.id = id;
         this.object = object;
         this.src = src;
         this.target = target;
         this.targetPort = targetPort;
         instanceCount++;
+        this.type = type;
     }
 
     public void setId(UUID id) {
@@ -70,7 +75,12 @@ public class MetricsPackageBean implements Serializable {
     public void setTargetPort(int targetPort) {
         this.targetPort = targetPort;
     }
-
+    public InfoType getType() {
+        return type;
+    }
+    public void setType(InfoType object) {
+        this.type = object;
+    }
     public String toString(){
         return "PackageBean{" +
                 "id='" + id + '\'' +
@@ -78,6 +88,7 @@ public class MetricsPackageBean implements Serializable {
                 ", src='" + src + '\'' +
                 ", target='" + target + '\'' +
                 ", targetPort=" + targetPort +
+                ", type=" + type +
                 '}';
     }
 }

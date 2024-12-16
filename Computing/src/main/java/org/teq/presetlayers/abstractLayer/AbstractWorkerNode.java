@@ -50,7 +50,7 @@ public abstract class AbstractWorkerNode extends MeasuredFlinkNode implements Wo
         DataStream<PackageBean> inputMap = stream.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                beginProcess(packageBean.getId(), JSON.toJSONString(packageBean).length() * 2);
+                beginProcess(packageBean.getId());
                 logger.debug("Worker Layer received data: {}", packageBean);
                 return packageBean;
             }
@@ -60,7 +60,6 @@ public abstract class AbstractWorkerNode extends MeasuredFlinkNode implements Wo
         return transformedWorkers.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-
                 if(DockerRuntimeData.getLayerNameByNodeName(packageBean.getTarget()).equals(ExecutorParameters.dataCenterLayerName))
                     packageBean.setTargetPort(ExecutorParameters.fromWorkerToCenterPort);
                 else
@@ -68,7 +67,8 @@ public abstract class AbstractWorkerNode extends MeasuredFlinkNode implements Wo
                 packageBean.setSrc(getNodeName());
                 logger.debug("Worker Layer send data: {}", packageBean);
 
-                finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()));
+                finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()),
+                        JSON.toJSONString(packageBean).length() * 2, packageBean.getType());
                 return packageBean;
             }
         }).setParallelism(1);

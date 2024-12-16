@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.teq.configurator.SimulatorConfigurator;
+import org.teq.configurator.unserializable.InfoType;
 import org.teq.node.AbstractFlinkNode;
 import org.teq.node.DockerNodeParameters;
 import org.teq.utils.DockerRuntimeData;
@@ -88,15 +89,11 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
     }
     static Map<UUID,BuiltInMetrics> metricsMap = new HashMap<>();
     // call this when finish every data process (usually means finish an object processing)
-    static public void beginProcess(UUID dataId,int packageLength){
+    static public void beginProcess(UUID dataId){
         logger.debug("Begin process data: " + dataId);
         BuiltInMetrics metrics = new BuiltInMetrics() ;
         metrics.setTimestampIn(System.nanoTime());
         metrics.setId(dataId);
-        //FIXME: memory and cpu usage record is not accurate, need to find a better way to get memory usage
-        metrics.setMemoryUsage(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
-        metrics.setCpuUsage(1);
-        metrics.setPackageLength(packageLength);
         metrics.setFromNodeId(getNodeID());
         logger.debug("Begin metrics: " + metrics);
         metricsMap.put(dataId,metrics);
@@ -108,8 +105,10 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
      * @param dataId
      * @param toNodeId
      */
-    static public void finishProcess(UUID dataId, int toNodeId){
+    static public void finishProcess(UUID dataId, int toNodeId, int packageLength, InfoType infoType){
         BuiltInMetrics metrics = metricsMap.get(dataId);
+        metrics.setPackageLength(packageLength);
+        metrics.setInfoType(infoType);
         metrics.setTimestampOut(System.nanoTime());
         metrics.setToNodeId(toNodeId);
         logger.debug("Finish metrics: " + metrics);
@@ -122,9 +121,11 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
      * if you call this function for a stream, do not call finishProcess()
      * @param dataId
      */
-    static public void endProcess(UUID dataId){
+    static public void endProcess(UUID dataId, int packageLength, InfoType infoType){
         BuiltInMetrics metrics = metricsMap.get(dataId);
         metrics.setTimestampOut(System.nanoTime());
+        metrics.setPackageLength(packageLength);
+        metrics.setInfoType(infoType);
         metrics.setToNodeId(-1);
         logger.debug("End metrics: " + metrics);
         metricsMap.remove(dataId);
