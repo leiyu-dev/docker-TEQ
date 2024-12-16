@@ -1,17 +1,23 @@
 package org.teq.mearsurer.receiver;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.slf4j.ILoggerFactory;
 import org.teq.simulator.Simulator;
 import org.teq.simulator.docker.DockerRunner;
 import org.teq.utils.DockerRuntimeData;
 import org.teq.visualizer.Chart;
 import org.teq.visualizer.MetricsDisplayer;
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
+    private static final Logger logger = LogManager.getLogger(DockerMetricsReceiver.class);
+
     Simulator simulator;
     public DockerMetricsReceiver(MetricsDisplayer metricsDisplayer,Simulator simulator) {
         super(metricsDisplayer);
@@ -44,26 +50,32 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
         }
 
         DockerRunner dockerRunner = simulator.getDockerRunner();
-        dockerRunner.beginDockerMetricsCollection(cpuUsageQueueList, memoryUsageQueueList);
+        try {
+            dockerRunner.beginDockerMetricsCollection(cpuUsageQueueList, memoryUsageQueueList);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         metricsDisplayer.addChart(new Chart(TimeQueueGenerator.getTimeQueue(3000), cpuUsageLayerList, "time/s", "cpu usage/%",DockerRuntimeData.getLayerList(), " cpu usage"));
         metricsDisplayer.addChart(new Chart(TimeQueueGenerator.getTimeQueue(3000), memoryUsageLayerList, "time/s", "memory usage/MB",DockerRuntimeData.getLayerList(),  " memory usage"));
 
 
         Thread thread = new Thread(() ->{
+            List<Double>nodeCountList = new ArrayList<>();
+            List<Double>cpuUsageLayerListSum = new ArrayList<>();
+            List<Double>memoryUsageLayerListSum = new ArrayList<>();
+            for (int i = 0; i < layerList.size(); i++) {
+                nodeCountList.add(0.0);
+                cpuUsageLayerListSum.add(0.0);
+                memoryUsageLayerListSum.add(0.0);
+            }
             while (true) {
-
-                List<Integer>nodeCountList = new ArrayList<>();
+                //set to 0
                 for (int i = 0; i < layerList.size(); i++) {
-                    nodeCountList.add(0);
+                    nodeCountList.set(i, 0.0);
+                    cpuUsageLayerListSum.set(i, 0.0);
+                    memoryUsageLayerListSum.set(i, 0.0);
                 }
-                List<Double>cpuUsageLayerListSum = new ArrayList<>();
-                List<Double>memoryUsageLayerListSum = new ArrayList<>();
-                for (int i = 0; i < layerList.size(); i++) {
-                    cpuUsageLayerListSum.add(0.0);
-                    memoryUsageLayerListSum.add(0.0);
-                }
-
                 for (int i = 0; i < nodeList.size(); i++) {
                     try {
                         while(!cpuUsageQueueList.get(i).isEmpty()) {
@@ -91,6 +103,7 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
                         continue;
                     }
                     try {
+                        logger.info("for layer " + layerList.get(i) + "add cpu: " + cpuUsageLayerListSum.get(i) / nodeCountList.get(i) + " memory: " + memoryUsageLayerListSum.get(i) / nodeCountList.get(i));
                         cpuUsageLayerList.get(i).put(cpuUsageLayerListSum.get(i) / nodeCountList.get(i));
                         memoryUsageLayerList.get(i).put(memoryUsageLayerListSum.get(i) / nodeCountList.get(i));
                     } catch (InterruptedException e) {

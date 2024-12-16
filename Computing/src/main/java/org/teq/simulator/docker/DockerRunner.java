@@ -1,5 +1,6 @@
 package org.teq.simulator.docker;
 
+import com.alibaba.fastjson.JSONObject;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.*;
@@ -18,8 +19,13 @@ import com.github.dockerjava.api.model.Network.Ipam.Config;
 import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.utils;
 
+import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -35,6 +41,7 @@ public class DockerRunner {
         return dockerClient;
     }
 
+    private String hostPort;
     private String imageName;
     private String networkHostName;
     private void deleteAllContainers() {
@@ -99,12 +106,13 @@ public class DockerRunner {
     * @param imageName the name of the docker image
     * @param HostPort the host port
     */
-    public DockerRunner(String imageName, String HostPort){
-        logger.info("Initializing the docker runner with port" + HostPort);
+    public DockerRunner(String imageName, String hostPort){
+        logger.info("Initializing the docker runner with port" + hostPort);
         this.imageName = imageName;
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-                .withDockerHost(HostPort)  // 使用 TCP 连接
+                .withDockerHost(hostPort)  // 使用 TCP 连接
                 .build();
+        this.hostPort = hostPort;
         DockerClient dockerClient = DockerClientBuilder.getInstance(config).build();
         this.dockerClient = dockerClient;
         initDockerRunner();
@@ -118,6 +126,8 @@ public class DockerRunner {
         logger.info("Initializing the docker runner with default host");
         this.imageName = imageName;
         DockerClient dockerClient = DockerClientBuilder.getInstance().build();
+        this.hostPort = DefaultDockerClientConfig.createDefaultConfigBuilder().build().getDockerHost().toString();
+//        System.exit(0);
         this.dockerClient = dockerClient;
         initDockerRunner();
     }
@@ -226,22 +236,27 @@ public class DockerRunner {
 //        }
     }
 
+
+    //deprecated: have bug
     public void beginDockerMetricsCollection(List<BlockingQueue<Double>>cpuQueueList, List<BlockingQueue<Double>>memoryQueueList){
         Thread getterThread =  new Thread(()->{
             List<String>nodeList = DockerRuntimeData.getNodeNameList();
+//            AtomicReferenceArray<Statistics> lastStats = new AtomicReferenceArray<>(nodeList.size());
             for(int i = 0; i < nodeList.size(); i++){
                 String containerName = nodeList.get(i);
                 StatsCmd statsCmd = dockerClient.statsCmd(containerName);
-                AtomicReferenceArray<Statistics> lastStats = new AtomicReferenceArray<>(nodeList.size());
                 int finalI = i;
                 statsCmd.exec(new ResultCallback<Statistics>() {
-
                     @Override
                     public void close() throws IOException {
+
                     }
+
+                    private Statistics lastStat = null; // 独立的 lastStat
 
                     @Override
                     public void onStart(Closeable closeable) {
+
                     }
 
                     @Override
@@ -251,50 +266,106 @@ public class DockerRunner {
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
-                        Statistics lastStat = lastStats.get(finalI);
-                        lastStats.set(finalI, stats);
-                        if(lastStat == null){
+
+                        if (lastStat == null) {
+                            lastStat = stats; // 初始化上一次数据
                             return;
                         }
+
                         // 计算 CPU 使用率
-                        double cpuDelta = stats.getCpuStats().getCpuUsage().getTotalUsage() -
-                                lastStat.getCpuStats().getCpuUsage().getTotalUsage();
-                        double systemCpuDelta = stats.getCpuStats().getSystemCpuUsage() -
-                                lastStat.getCpuStats().getSystemCpuUsage();
+                        double cpuDelta = stats.getCpuStats().getCpuUsage().getTotalUsage()
+                                - lastStat.getCpuStats().getCpuUsage().getTotalUsage();
+                        double systemCpuDelta = stats.getCpuStats().getSystemCpuUsage()
+                                - lastStat.getCpuStats().getSystemCpuUsage();
                         double cpuUsage = (cpuDelta / systemCpuDelta) * stats.getCpuStats().getOnlineCpus();
 
                         // 获取内存使用情况
                         long memoryUsageRaw = stats.getMemoryStats().getUsage();
-
-                        //into GB
                         double memoryUsage = memoryUsageRaw / 1024 / 1024 / 1024.0;
-//                        logger.info(containerName + " Memory usage: " + memoryUsage + "GB");
-//                        logger.info(containerName + " CPU usage: " + cpuUsage);
 
                         try {
-                            BlockingQueue<Double>cpuQueue = cpuQueueList.get(finalI);
-                            BlockingQueue<Double>memoryQueue = memoryQueueList.get(finalI);
-                            cpuQueue.put(cpuUsage);
+                            BlockingQueue<Double> cpuQueue = cpuQueueList.get(finalI);
+                            BlockingQueue<Double> memoryQueue = memoryQueueList.get(finalI);
+                            cpuQueue.put(cpuUsage * 100);
                             memoryQueue.put(memoryUsage);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
                         }
 
+                        lastStat = stats; // 更新上一次的统计数据
                     }
 
                     @Override
                     public void onError(Throwable throwable) {
+
                     }
 
                     @Override
                     public void onComplete() {
+
                     }
                 });
-            }
+                }
         });
         getterThread.start();
     }
 
+    //TODO: use better ways
+    public void beginDockerMetricsCollectionTry(List<BlockingQueue<Double>>cpuQueueList, List<BlockingQueue<Double>>memoryQueueList) throws Exception {
+        Thread getterThread =  new Thread(()-> {
+            List<String> nodeList = DockerRuntimeData.getNodeNameList();
+            while(true) {
+                for (int i = 0; i < nodeList.size(); i++) {
+                    String containerName = nodeList.get(i);
+                    try {
+                        // 执行 docker stats 命令，过滤指定容器
+                        ProcessBuilder processBuilder = new ProcessBuilder(
+                                "docker", "stats", containerName, "--no-stream", "--format",
+                                "{{.Container}},{{.CPUPerc}},{{.MemUsage}}"
+                        );
+                        Process process = processBuilder.start();
+
+                        // 读取输出
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            if (line.startsWith(containerName + ",")) {
+                                String[] stats = line.split(",");
+                                String containerRead = stats[0];
+
+                                // 0.00% -> 0.00
+                                Double cpuUsage = Double.parseDouble(stats[1].split("%")[0]);
+
+                                // 2.24GiB / 503.3GiB -> 2.24
+                                Double memUsage;
+                                if(stats[2].contains("GiB / "))memUsage = Double.parseDouble(stats[2].split("GiB / ")[0]) * 1000.0;
+                                else if(stats[2].contains("MiB / "))memUsage = Double.parseDouble(stats[2].split("MiB")[0]);
+                                else if(stats[2].contains("KiB / "))memUsage = Double.parseDouble(stats[2].split("KiB")[0]) / 1000.0;
+                                else break;
+
+                                if (containerRead.equals(containerName)) {
+                                    BlockingQueue<Double> cpuQueue = cpuQueueList.get(i);
+                                    BlockingQueue<Double> memoryQueue = memoryQueueList.get(i);
+                                    logger.info("CPU: " + cpuUsage + "%, Memory: " + memUsage + "MB" + " for " + containerName);
+                                    cpuQueue.put(cpuUsage);
+                                    memoryQueue.put(memUsage);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        throw new RuntimeException();
+                    }
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        getterThread.start();
+    }
     public void cleanUp(){
         deleteAllContainers();
     }

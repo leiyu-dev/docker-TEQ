@@ -47,7 +47,6 @@ export default {
             type: 'line',
             data: this.yData[this.chartCount][i],
             connectNulls: true,
-            stack: 'Total',
             name: dataName,
             // smooth: true,
           })
