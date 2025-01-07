@@ -16,7 +16,7 @@ public class TimeQueueGenerator {
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                    time++;
+                    time+=intervalMilliseconds/1000.0;
                     try {
                         timeQueue.put(time);
                     } catch (InterruptedException e) {

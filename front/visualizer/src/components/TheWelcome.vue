@@ -1,5 +1,7 @@
 <template>
   <div>
+    Overview of all the charts
+    <br>
     <el-space wrap :size="25">
       <el-card v-for="(chartOption, index) in chartOptions" >
         <template #header>
@@ -29,7 +31,8 @@ export default {
       chartMap: null,
       chartList: [],
       intervalId: null,
-      chartTitle: []
+      chartTitle: [],
+      maxPoint: 20,
     }
   },
   mounted() {
@@ -48,12 +51,13 @@ export default {
             data: this.yData[this.chartCount][i],
             connectNulls: true,
             name: dataName,
-            // smooth: true,
+            smooth: true,
+            // symbol: 'none'
           })
         }
         let options = {
           grid: {
-            left: '30px',
+            left: '45px',
             right: '60px',
             bottom: '3%',
             containLabel: true
@@ -61,7 +65,8 @@ export default {
           xAxis: {
             type: 'category',
             name: rawChart.xLabel,
-            data: this.xData[this.chartCount]
+            data: this.xData[this.chartCount],
+            boundaryGap: false
           },
           tooltip: {
             trigger: 'axis'
@@ -78,7 +83,7 @@ export default {
           yAxis: {
             type: 'value',
             nameLocation: 'center',
-            nameGap: 50,
+            nameGap: 45,
             name: rawChart.yLabel
           },
           series:seriesList
@@ -121,6 +126,12 @@ export default {
         for(let rawData of response){
           let chartIndex = this.chartMap.get(rawData.chartName);
           this.xData[chartIndex].push(rawData.xData)
+          while(this.xData[chartIndex].length > this.maxPoint){
+            this.xData[chartIndex].shift();
+            for(let i=0;i<this.yData[chartIndex].length;i++){
+              this.yData[chartIndex][i].shift();
+            }
+          }
           for(let i=0;i<rawData.yData.length;i++) {
             let yData=rawData.yData[i];
             this.yData[chartIndex][i].push(yData);

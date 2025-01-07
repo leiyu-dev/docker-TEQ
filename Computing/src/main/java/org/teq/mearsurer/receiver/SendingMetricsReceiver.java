@@ -140,9 +140,9 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
                 while(true) {
                     try {
                         Thread.sleep(1000);
-                        double overallProcessingLatency = 0;
-                        double overallProcessingLatencyCount = 0;
-                        double overallTransferLatency = 0;
+                        double overallProcessingLatency = 0.0;
+                        double overallProcessingLatencyCount = 0.0;
+                        double overallTransferLatency = 0.0;
                         double overallTransferLatencyCount = 0;
                         while(!rawOverallProcessingLatencyQueue.isEmpty()) {
                             overallProcessingLatency += rawOverallProcessingLatencyQueue.poll();
@@ -152,12 +152,12 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
                             overallTransferLatency += rawOverallTransferLatencyQueue.poll();
                             overallTransferLatencyCount++;
                         }
-                        if(overallProcessingLatencyCount != 0) {
+//                        if(overallProcessingLatencyCount != 0) {
                             overallProcessingLatencyQueue.put(overallProcessingLatency / overallProcessingLatencyCount);
-                        }
-                        if(overallTransferLatencyCount != 0) {
+//                        }
+//                        if(overallTransferLatencyCount != 0) {
                             overallTransferLatencyQueue.put(overallTransferLatency / overallTransferLatencyCount);
-                        }
+//                        }
                         for(int i=0; i<rawProcessingLatencyQueueList.size(); i++) {
                             double processingLatency = 0;
                             double processingLatencyCount = 0;
@@ -165,9 +165,12 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
                                 processingLatency += rawProcessingLatencyQueueList.get(i).poll();
                                 processingLatencyCount++;
                             }
-                            if(processingLatencyCount != 0) {
+//                            if(processingLatencyCount != 0) {
                                 processingLatencyQueueList.get(i).put(processingLatency / processingLatencyCount);
-                            }
+//                            }
+//                            else {
+//                                processingLatencyQueueList.get(i).put(0.0);
+//                            }
                         }
                     } catch (InterruptedException e) {
                         e.printStackTrace();
