@@ -1,7 +1,9 @@
 package org.teq.simulator;
 
+import org.teq.backend.BackendManager;
 import org.teq.configurator.ExecutorParameters;
 import org.teq.configurator.SimulatorConfigurator;
+import org.teq.configurator.TeqGlobalConfig;
 import org.teq.layer.Layer;
 import org.teq.node.AbstractDockerNode;
 import org.teq.node.DefaultDockerNode;
@@ -10,9 +12,12 @@ import org.teq.simulator.docker.DockerRunner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.teq.simulator.network.AbstractNetworkHostNode;
+import org.teq.utils.StaticSerializer;
 import org.teq.utils.utils;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,10 +33,16 @@ public class Simulator {
     public DockerRunner getDockerRunner() {
         return dockerRunner;
     }
-    private String startClassImportContent = "import org.teq.configurator.*;";
+    private String startClassImportContent = "import org.teq.configurator.*;\n" +
+            "import java.nio.file.Files;\n" +
+            "import java.nio.file.Path;\n" +
+            "import org.teq.utils.*;\n" +
+            "import java.util.List;\n" ;
     private String startClassSwitchContent = "";
+    private BackendManager backendManager = new BackendManager(this);
 
     public Simulator(AbstractNetworkHostNode networkHostNode){
+
         logger.info("Initializing the simulator");
         // this line use TCP connection, if you want to use TCP, uncomment this line
         // dockerRunner = new DockerRunner(DockerConfigurator.imageName,DockerConfigurator.tcpPort);
@@ -43,6 +54,9 @@ public class Simulator {
         //Add the network host node to the node list
         String networkHostName = SimulatorConfigurator.networkHostName;
         addNode(networkHostNode, networkHostName,NodeType.network);
+
+        addConfig(SimulatorConfigurator.class);
+        addConfig(ExecutorParameters.class);
 
         logger.info("Initializing success");
     }
@@ -72,8 +86,18 @@ public class Simulator {
             this.nodeIdEnd = nodeIdEnd;
         }
     }
+    private List<Class<? extends TeqGlobalConfig>>configs = new ArrayList<>();
     private List<SimulatorNode> nodes = new ArrayList<>();
     private List<SimulatorLayer>layers = new ArrayList<>();
+
+    public List<Class<? extends TeqGlobalConfig>> getConfigs() {
+        return configs;
+    }
+
+    public void addConfig(Class<? extends TeqGlobalConfig> config){
+        configs.add(config);
+    }
+
     public void addLayer(Layer layer){
         int nodeCount = layer.getNodeCount();
         StringBuilder nodeNameContent = new StringBuilder();
@@ -112,11 +136,10 @@ public class Simulator {
 
     public void start() throws Exception {
         logger.info("Starting the simulation");
-        utils.writeStringToFile(SimulatorConfigurator.dataFolderPath + "/config/configs","here are the configs");
-        var conf1 = new ExecutorParameters();
-        conf1.saveToProperties(SimulatorConfigurator.dataFolderPath + "/config/ExecutorParameters.properties");
-        var conf2 = new SimulatorConfigurator();
-        conf2.saveToProperties(SimulatorConfigurator.dataFolderPath + "/config/SimulatorConfigurator.properties");
+
+        logger.info("launching the backend");
+        backendManager.launch();
+
         runAssembleScript();
         writeStartScriptToFile();
         writeStartClassToFile();
@@ -200,11 +223,21 @@ public class Simulator {
         String classContent = "package " + SimulatorConfigurator.StartPackageName + ";\n" +
                 startClassImportContent +
                 "public class "+ SimulatorConfigurator.StartClassName +"{\n" +
-                "    public static void main(String[] args) {\n" +
-                "        var conf1 = new ExecutorParameters();\n" +
-                "        conf1.getFromProperties(SimulatorConfigurator.dataFolderName + \"/config/ExecutorParameters.properties\");\n" +
-                "        var conf2 = new SimulatorConfigurator();\n" +
-                "        conf2.getFromProperties(SimulatorConfigurator.dataFolderName + \"/config/SimulatorConfigurator.properties\");\n" +
+                "    public static void main(String[] args) throws Exception{\n" +
+                "        Path path = Path.of(SimulatorConfigurator.dataFolderName + \"/\" + SimulatorConfigurator.parametersClassFileName);\n" +
+                "            List<String> parametersClassNames = Files.readAllLines(path);\n" +
+                "            for(int i = 0; i < parametersClassNames.size(); i++){\n" +
+                "                if(parametersClassNames.get(i).isEmpty()){\n" +
+                "                    continue;\n" +
+                "                }\n" +
+                "                String parametersClassName = parametersClassNames.get(i);\n" +
+                "                String parametersFilePath = SimulatorConfigurator.dataFolderName + \"/config/\" + parametersClassName + \".json\";\n" +
+                "                try {\n" +
+                "                    StaticSerializer.deserializeFromJson(Class.forName(parametersClassName),utils.readFirstLineFromFile(parametersFilePath));\n" +
+                "                } catch (Exception e) {\n" +
+                "                    throw new RuntimeException(e);\n" +
+                "                }\n" +
+                "            }\n" +
                 "        " + AbstractDockerNode.class.getName() + " node;\n" +
                 "       switch (Integer.parseInt(System.getenv(\"NODE_ID\"))) {\n" +
                 startClassSwitchContent +
@@ -238,6 +271,7 @@ public class Simulator {
     }
 
     private void writeRuntimeData(){
+        //write the node name file
         String nodeNameFilePath = SimulatorConfigurator.dataFolderPath + "/" + SimulatorConfigurator.nodeNameFileName;
         StringBuilder nodeNameContent = new StringBuilder();
         for(SimulatorNode node : nodes){
@@ -246,6 +280,8 @@ public class Simulator {
         utils.writeStringToFile(nodeNameFilePath,nodeNameContent.toString());
         logger.info("Node name file saved as " + nodeNameFilePath);
 
+
+        //write the layer name file
         String layerNamePath = SimulatorConfigurator.dataFolderPath + "/" + SimulatorConfigurator.layerNameFileName;
         StringBuilder layerNameContent = new StringBuilder();
         for(SimulatorLayer layer : layers){
@@ -253,6 +289,29 @@ public class Simulator {
         }
         utils.writeStringToFile(layerNamePath,layerNameContent.toString());
         logger.info("Layer name file saved as " + layerNamePath);
+
+        //write the parameters class name file
+        String ParametersPath = SimulatorConfigurator.dataFolderPath + "/" + SimulatorConfigurator.parametersClassFileName;
+        StringBuilder parametersContent = new StringBuilder();
+        for(Class<? extends TeqGlobalConfig> config : configs){
+            parametersContent.append(config.getName()).append("\n");
+        }
+        utils.writeStringToFile(ParametersPath,parametersContent.toString());
+        logger.info("Parameters class name file saved as " + ParametersPath);
+
+
+        //write the parameters
+        utils.writeStringToFile(SimulatorConfigurator.dataFolderPath + "/config/configs","here are the configs");
+        for(Class<? extends TeqGlobalConfig> config : configs){
+            String conf = null;
+            try {
+                conf = StaticSerializer.serializeToJson(config);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            utils.writeStringToFile(SimulatorConfigurator.dataFolderPath + "/config/" + config.getName() + ".json",conf);
+        }
+
     }
 
     private void cleanUp() {

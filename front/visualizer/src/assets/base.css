@@ -1,7 +1,6 @@
 html,body,#app{
   margin: 0;
   padding: 0;
-  height: 100%;
   min-height: 100%; /* 保证至少填满视口 */
   width: 100%;
   font-family: 'Poppins', sans-serif;

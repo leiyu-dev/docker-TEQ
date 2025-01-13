@@ -30,7 +30,7 @@
 <script>
 import { useChartStore } from '../stores/chart';
 import * as echarts from 'echarts';
-
+// import { ElMessage } from 'element-plus'
 export default {
   name: 'ChartView',
   data(){
@@ -45,11 +45,12 @@ export default {
   },
   mounted() {
     //wait until the chartOptions are set in the store
-    let count = 0;
-    while( this.chartStore.chartOptions.length === 0 && count < 10){
-      count++;
-      new Promise(r => setTimeout(r, 200));
-    }
+    // let count = 0;
+    // while( this.chartStore.chartOptions.length === 0 && count < 10){
+    //   count++;
+    //   new Promise(r => setTimeout(r, 200));
+    // }
+    // if(count === 10)ElMessage.error('Oops, cannot connect to the simulator. Please try again later!')
     this.chartStore.chartOptions.forEach((option, index) => {
       const chartRef = this.$refs['chart' + index][0];
       if (chartRef) {
