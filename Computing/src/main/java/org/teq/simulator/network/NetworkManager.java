@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+//deprecated
 
 //TODO:用set存储，不用map，自动分配端口，上层可以获取端口，这里也需要一个addNode方法
 /* this class is used to manage the network between different nodes

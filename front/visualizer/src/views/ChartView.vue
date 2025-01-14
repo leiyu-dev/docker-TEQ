@@ -1,5 +1,4 @@
 <template>
-  <main>
     <span style="font-size: 40px; font-weight: 100; text-align: center;">Overview charts</span>
     <br>
     <el-space wrap :size="25">
@@ -22,9 +21,9 @@
     <el-divider />
     <span style="font-size: 40px; font-weight: 100; text-align: center;">User defined charts</span>
     <br>
+  <el-backtop :right="100" :bottom="100" />
 
 
-  </main>
 </template>
 
 <script>
@@ -37,34 +36,26 @@ export default {
     return {
       chartList: [],
       intervalId: null,
+      chartStore : useChartStore()
     }
   },
-  setup() {
-    const chartStore = useChartStore();
-    return { chartStore };
-  },
   mounted() {
-    //wait until the chartOptions are set in the store
-    // let count = 0;
-    // while( this.chartStore.chartOptions.length === 0 && count < 10){
-    //   count++;
-    //   new Promise(r => setTimeout(r, 200));
-    // }
-    // if(count === 10)ElMessage.error('Oops, cannot connect to the simulator. Please try again later!')
     this.chartStore.chartOptions.forEach((option, index) => {
       const chartRef = this.$refs['chart' + index][0];
       if (chartRef) {
-        const chart = echarts.init(chartRef);
+        const chart = echarts.init(chartRef, null, { renderer: 'svg' });
         chart.setOption(option);
         this.chartList.push(chart);
-
-        window.addEventListener('resize', () => {
-          chart.resize();
-        });
       } else {
         console.error(`Chart ref "chart${index}" is undefined`);
       }
     });
+    if (!this.resizeListenerBound) {
+      window.addEventListener('resize', () => {
+        this.chartList.forEach(chart => chart.resize());
+      });
+      this.resizeListenerBound = true;
+    }
     this.intervalId = setInterval(() => {
       for(let i=0; i<this.chartList.length; i++){
         let chart = this.chartList[i];
@@ -86,12 +77,12 @@ export default {
 };
 </script>
 
-
-
-
 <style>
 .charts {
   width: 500px;
   height: 300px;
+}
+.el-card {
+  text-align: center;
 }
 </style>

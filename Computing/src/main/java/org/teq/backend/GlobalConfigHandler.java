@@ -4,26 +4,23 @@ import com.alibaba.fastjson.JSON;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.teq.configurator.TeqGlobalConfig;
-import org.teq.simulator.Simulator;
 import org.teq.utils.StaticSerializer;
-import org.teq.utils.utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static spark.Spark.*;
-public class ConfigHandler {
-    private static final Logger logger = LogManager.getLogger(ConfigHandler.class);
+public class GlobalConfigHandler {
+    private static final Logger logger = LogManager.getLogger(GlobalConfigHandler.class);
     List<Class<? extends TeqGlobalConfig>> configs;
-    public ConfigHandler(List<Class<? extends TeqGlobalConfig>> configs) {
+    public GlobalConfigHandler(List<Class<? extends TeqGlobalConfig>> configs) {
         this.configs = configs;
     }
-    public void handleConfig() {
+    public void handleGlobalConfig() {
         get("/config/name", (req, res) -> {
             List<String>names = new ArrayList<>();
             for(Class<? extends TeqGlobalConfig> config : configs){
@@ -47,7 +44,6 @@ public class ConfigHandler {
         });
         ObjectMapper objectMapper = new ObjectMapper();
         post("/config", (req, res) -> {
-            logger.info("POST /config");
             res.type("application/json");
             // parse request body
             JsonNode requestBody;

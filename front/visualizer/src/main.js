@@ -7,6 +7,7 @@ import router from './router'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import { useChartStore } from './stores/chart';
+import { useStatusStore } from './stores/status';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 const app = createApp(App)
@@ -20,8 +21,10 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 }
 
 const chartStore = useChartStore();
+const statusStore = useStatusStore();
 chartStore.fetchChartConfig();
 chartStore.startFetching();
+statusStore.startFetching();
 
 app.mount('#app')
 

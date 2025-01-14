@@ -10,6 +10,7 @@ import org.teq.node.AbstractFlinkNode;
 import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.CommonDataReceiver;
 import org.teq.utils.connector.CommonDataSender;
+import org.teq.utils.connector.MultiThreadDataReceiver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,16 +25,8 @@ public abstract class AbstractNetworkHostNode extends AbstractFlinkNode {
         for(String nodeName : nodeList){
             System.out.println(nodeName);
         }
-        for(int i=1;i<=nodeCount;i++){
-            DataStream<BuiltInMetrics> stream = env.addSource(new CommonDataReceiver<>(SimulatorConfigurator.metricsPortBegin + i, BuiltInMetrics.class))
-                    .returns(TypeInformation.of(BuiltInMetrics.class));
-            streams.add(stream);
-        }
-        DataStream<BuiltInMetrics> mergedStream = streams.get(0);
-        for(int i=1;i<nodeCount;i++){
-            mergedStream = mergedStream.union(streams.get(i));
-        }
-        DataStreamSink sink = mergedStream.addSink(new CommonDataSender<>(DockerRuntimeData.getHostIp(),SimulatorConfigurator.MetricsReceiverPort,10000,1000,true)).setParallelism(1);
+        DataStream<BuiltInMetrics> stream = env.addSource(new MultiThreadDataReceiver<>(SimulatorConfigurator.metricsPort , BuiltInMetrics.class)).returns(TypeInformation.of(BuiltInMetrics.class));
+        DataStreamSink sink = stream.addSink(new CommonDataSender<>(DockerRuntimeData.getHostIp(),SimulatorConfigurator.MetricsReceiverPort,10000,1000,true)).setParallelism(1);
         dataProcess();
     }
     abstract public void dataProcess();

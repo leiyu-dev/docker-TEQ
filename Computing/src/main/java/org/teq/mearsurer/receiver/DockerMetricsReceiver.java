@@ -13,7 +13,9 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
     private static final Logger logger = LogManager.getLogger(DockerMetricsReceiver.class);
@@ -38,15 +40,15 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
         List<BlockingQueue<Double>> memoryUsageQueueList = new ArrayList<>();
 
         for (int i = 0; i < nodeList.size(); i++) {
-            cpuUsageQueueList.add(new ArrayBlockingQueue<>(100));
-            memoryUsageQueueList.add(new ArrayBlockingQueue<>(100));
+            cpuUsageQueueList.add(new LinkedBlockingQueue<>());
+            memoryUsageQueueList.add(new LinkedBlockingQueue<>());
         }
 
         List<BlockingQueue<Double>> cpuUsageLayerList = new ArrayList<>();//for each layer
         List<BlockingQueue<Double>> memoryUsageLayerList = new ArrayList<>();
         for (int i = 0; i < layerList.size(); i++) {
-            cpuUsageLayerList.add(new ArrayBlockingQueue<>(100));
-            memoryUsageLayerList.add(new ArrayBlockingQueue<>(100));
+            cpuUsageLayerList.add(new LinkedBlockingQueue<>());
+            memoryUsageLayerList.add(new LinkedBlockingQueue<>());
         }
 
         DockerRunner dockerRunner = simulator.getDockerRunner();
@@ -56,8 +58,11 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
             throw new RuntimeException(e);
         }
 
-        metricsDisplayer.addChart(new Chart(TimeQueueGenerator.getTimeQueue(3000), cpuUsageLayerList, "time/s", "cpu usage/%",DockerRuntimeData.getLayerList(), " cpu usage"));
-        metricsDisplayer.addChart(new Chart(TimeQueueGenerator.getTimeQueue(3000), memoryUsageLayerList, "time/s", "memory usage/MB",DockerRuntimeData.getLayerList(),  " memory usage"));
+        BlockingQueue<Double>cpuTimeQueue = new LinkedBlockingQueue<>();
+        BlockingQueue<Double>memoryTimeQueue = new LinkedBlockingQueue<>();
+
+        metricsDisplayer.addChart(new Chart(cpuTimeQueue, cpuUsageLayerList, "time/s", "cpu usage/%",DockerRuntimeData.getLayerList(), " cpu usage"));
+        metricsDisplayer.addChart(new Chart(memoryTimeQueue, memoryUsageLayerList, "time/s", "memory usage/MB",DockerRuntimeData.getLayerList(),  " memory usage"));
 
 
         Thread thread = new Thread(() ->{
@@ -69,6 +74,7 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
                 cpuUsageLayerListSum.add(0.0);
                 memoryUsageLayerListSum.add(0.0);
             }
+            long startTime = System.currentTimeMillis();
             while (true) {
                 //set to 0
                 for (int i = 0; i < layerList.size(); i++) {
@@ -106,13 +112,20 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
 //                        logger.info("for layer " + layerList.get(i) + "add cpu: " + cpuUsageLayerListSum.get(i) / nodeCountList.get(i) + " memory: " + memoryUsageLayerListSum.get(i) / nodeCountList.get(i));
                         cpuUsageLayerList.get(i).put(cpuUsageLayerListSum.get(i) / nodeCountList.get(i));
                         memoryUsageLayerList.get(i).put(memoryUsageLayerListSum.get(i) / nodeCountList.get(i) * 1024.0);
+                        //保留一位
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
                 }
-
+                long currentTime = System.currentTimeMillis();
                 try {
-                    Thread.sleep(3000);
+                    cpuTimeQueue.put( Math.round((currentTime - startTime) / 1000.0 * 10.0) / 10.0);
+                    memoryTimeQueue.put( Math.round((currentTime - startTime) / 1000.0 * 10.0) / 10.0);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                try {
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }

@@ -1,10 +1,5 @@
 package org.teq.configurator;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Properties;
 public class SimulatorConfigurator implements TeqGlobalConfig{
     public static String volumePath = "/var/lib/teq";
     public static String volumeFolderName = "docker";
@@ -34,7 +29,7 @@ public class SimulatorConfigurator implements TeqGlobalConfig{
     public static String networkName = "teq-network";
     public static String networkSubnet = "10.0.0.0/16";
     public static String networkGateway = "10.0.0.2";
-    public static int metricsPortBegin = 50000;
+    public static int metricsPort = 50000;
     public static int MetricsReceiverPort = 8888;
     public static int restfulPort = 8889;
     public static String classNamePrefix = "teq_node_";

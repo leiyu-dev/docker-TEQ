@@ -8,7 +8,7 @@ import org.teq.visualizer.SocketDisplayer;
 public class CountingTest {
     public static void main(String[] args) {
         DockerNodeParameters param = new DockerNodeParameters();
-        param.cpuUsageRate = 0.5;
+        param.setCpuUsageRate(0.5);
         EndDevice end = new EndDevice();
         end.setParameters(param);
         Coordinator coor = new Coordinator();

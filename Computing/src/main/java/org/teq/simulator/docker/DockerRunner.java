@@ -1,6 +1,5 @@
 package org.teq.simulator.docker;
 
-import com.alibaba.fastjson.JSONObject;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.*;
@@ -8,8 +7,7 @@ import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
-import com.github.dockerjava.core.InvocationBuilder;
-import javassist.bytecode.analysis.ControlFlow;
+import com.github.dockerjava.core.command.ExecStartResultCallback;
 import org.teq.configurator.SimulatorConfigurator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,15 +21,10 @@ import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class DockerRunner {
     private static final Logger logger = LogManager.getLogger(DockerRunner.class);
@@ -145,9 +138,9 @@ public class DockerRunner {
                 .withNetworkMode(SimulatorConfigurator.networkName);
 
         /* CPU restriction */
-        if(parameters.cpuRestrictType == DockerNodeParameters.CpuRestrictType.ROUGH){
+        if(parameters.getCpuRestrictType() == DockerNodeParameters.CpuRestrictType.ROUGH){
             hostConfig = hostConfig.withCpuPeriod(1000000L)
-                    .withCpuQuota((long) (1000000 * parameters.cpuUsageRate));  // 最大使用 100% 的一个 CPU
+                    .withCpuQuota((long) (1000000 * parameters.getCpuUsageRate()));  // 最大使用 100% 的一个 CPU
         }
         else { // precise
             System.out.println("Precise CPU restriction is not supported yet");
@@ -157,8 +150,8 @@ public class DockerRunner {
 
 
         /* Memory restriction */
-        hostConfig = hostConfig.withMemory((long) parameters.memorySize * 1024 * 1024 * 1024)
-                .withMemorySwap((long) parameters.memorySize * 1024 * 1024 * 1024);
+        hostConfig = hostConfig.withMemory((long) parameters.getMemorySize() * 1024 * 1024 * 1024)
+                .withMemorySwap((long) parameters.getMemorySize() * 1024 * 1024 * 1024);
 
         /* Network restriction */
         hostConfig = hostConfig
@@ -172,8 +165,8 @@ public class DockerRunner {
             "bash", "-c",
             "chmod -R 777 " + SimulatorConfigurator.volumePath + " && " +
             "tc qdisc add dev eth0 root handle 1: htb default 1 && " +
-            "tc class add dev eth0 parent 1: classid 1:1 htb rate " + parameters.networkOutBandwidth + "kbps ceil " + parameters.networkOutBandwidth + "kbps && " +
-            "tc qdisc add dev eth0 parent 1:1 handle 10: netem delay "+ parameters.networkOutLatency +"ms && " +
+            "tc class add dev eth0 parent 1: classid 1:1 htb rate " + parameters.getNetworkOutBandwidth() + "kbps ceil " + parameters.getNetworkOutBandwidth() + "kbps && " +
+            "tc qdisc add dev eth0 parent 1:1 handle 10: netem delay "+ parameters.getNetworkOutLatency() +"ms && " +
             "tc class add dev eth0 parent 1: classid 1:2 htb rate 100mbit ceil 100mbit && " +
             "tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 match ip tos 0x10 0xff flowid 1:2 && " +
             "bash "+ SimulatorConfigurator.volumePath + "/" + SimulatorConfigurator.startScriptName
@@ -369,4 +362,75 @@ public class DockerRunner {
     public void cleanUp(){
         deleteAllContainers();
     }
+
+    public void changeCpuUsageRate(String containerName, double cpuUsageRate) throws IllegalArgumentException{
+        if(cpuUsageRate < 0){
+            throw new IllegalArgumentException("CPU usage rate should be greater than 0");
+        }
+        dockerClient.updateContainerCmd(containerName)
+                .withCpuPeriod(1000000)
+                .withCpuQuota( (int)(1000000 * cpuUsageRate)).exec();
+        logger.info("Updated CPU usage rate for container " + containerName + " to " + cpuUsageRate);
+    }
+    public void changeMemorySize(String containerName, double memorySize) throws IllegalArgumentException{
+        if(memorySize < 0){
+            throw new IllegalArgumentException("Memory size should be greater than 0");
+        }
+        dockerClient.updateContainerCmd(containerName)
+                .withMemory((long) memorySize * 1024 * 1024 * 1024)
+                .withMemorySwap((long) memorySize * 1024 * 1024 * 1024).exec();
+        logger.info("Updated memory size for container " + containerName + " to " + memorySize + " GB");
+    }
+
+    /*
+String[] command = {
+"tc qdisc add dev eth0 root handle 1: htb default 1 && " +
+"tc class add dev eth0 parent 1: classid 1:1 htb rate " + parameters.getNetworkOutBandwidth() + "kbps ceil " + parameters.getNetworkOutBandwidth() + "kbps && " +
+"tc qdisc add dev eth0 parent 1:1 handle 10: netem delay "+ parameters.getNetworkOutLatency() +"ms && " +
+"tc class add dev eth0 parent 1: classid 1:2 htb rate 100mbit ceil 100mbit && " +
+"tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 match ip tos 0x10 0xff flowid 1:2 && " +
+"bash "+ SimulatorConfigurator.volumePath + "/" + SimulatorConfigurator.startScriptName
+};
+     */
+    public void changeNetworkOutBandwidth(String containerName, double outBandwidth) throws IllegalArgumentException{
+        if(outBandwidth < 0){
+            throw new IllegalArgumentException("Network out bandwidth should be greater than 0");
+        }
+        try {
+            String command = String.format(
+                    "tc qdisc replace dev eth0 root handle 1: htb default 10 && " +
+                            "tc class replace dev eth0 parent 1: classid 1:1 htb rate %.2fkbps ceil %.2fkbps",
+                    outBandwidth, outBandwidth
+            );
+
+            dockerClient.execCreateCmd(containerName)
+                    .withCmd("bash", "-c", command)
+                    .exec();
+            dockerClient.execStartCmd(containerName).exec(new ExecStartResultCallback()).awaitCompletion();
+            logger.info("Updated network out bandwidth for container " + containerName + " to " + outBandwidth + " kbps");
+        } catch (Exception e) {
+            logger.error("Failed to update network out bandwidth for container " + containerName, e);
+        }
+    }
+
+    public void changeNetworkOutLatency(String containerName, double latency) throws IllegalArgumentException{
+        if(latency < 0){
+            throw new IllegalArgumentException("Network out latency should be greater than 0");
+        }
+        try {
+            String command = String.format(
+                    "tc qdisc replace dev eth0 root netem delay %.2fms",
+                    latency
+            );
+
+            dockerClient.execCreateCmd(containerName)
+                    .withCmd("bash", "-c", command)
+                    .exec();
+            dockerClient.execStartCmd(containerName).exec(new ExecStartResultCallback()).awaitCompletion();
+            logger.info("Updated network out latency for container " + containerName + " to " + latency + " ms");
+        } catch (Exception e) {
+            logger.error("Failed to update network out latency for container " + containerName, e);
+        }
+    }
+
 }

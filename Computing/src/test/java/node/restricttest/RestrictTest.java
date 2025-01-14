@@ -15,7 +15,7 @@ public class RestrictTest {
 
         for(int i=1;i<=3;i++){
             DockerNodeParameters parameters = new DockerNodeParameters();
-            parameters.cpuUsageRate=0.1;
+            parameters.setCpuUsageRate(0.1);
             simulator.addNode(new MyFlinkNode(parameters));
         }
         simulator.start();

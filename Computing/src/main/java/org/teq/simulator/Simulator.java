@@ -16,8 +16,6 @@ import org.teq.utils.StaticSerializer;
 import org.teq.utils.utils;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +26,7 @@ import javax.tools.ToolProvider;
 public class Simulator {
 
     private static final Logger logger = LogManager.getLogger(Simulator.class);
-    private int numberOfNodes = 0;
+    private int nodeCount = 0;
     private final DockerRunner dockerRunner;
     public DockerRunner getDockerRunner() {
         return dockerRunner;
@@ -89,9 +87,24 @@ public class Simulator {
     private List<Class<? extends TeqGlobalConfig>>configs = new ArrayList<>();
     private List<SimulatorNode> nodes = new ArrayList<>();
     private List<SimulatorLayer>layers = new ArrayList<>();
+    private List<DockerNodeParameters> parameters = new ArrayList<>();
 
     public List<Class<? extends TeqGlobalConfig>> getConfigs() {
         return configs;
+    }
+    public List<DockerNodeParameters> getParameters() {
+        return parameters;
+    }
+    public int getNodeCount() {
+        return nodes.size();
+    }
+
+    public int getLayerCount() {
+        return layers.size();
+    }
+
+    public int getAlgorithmCount() {
+        return 1;
     }
 
     public void addConfig(Class<? extends TeqGlobalConfig> config){
@@ -103,14 +116,14 @@ public class Simulator {
         StringBuilder nodeNameContent = new StringBuilder();
         String layerNodeNameFile = SimulatorConfigurator.dataFolderPath + "/" + layer.getLayerName() + "/" +
                 SimulatorConfigurator.nodeNameFileName;
-        int nodeIdBegin = numberOfNodes;
+        int nodeIdBegin = this.nodeCount;
         for(int i = 0; i < nodeCount; i++){
             AbstractDockerNode node = layer.getFunctionNode();
             node.parameters = layer.getNodeParameter(i);
             nodeNameContent.append(SimulatorConfigurator.classNamePrefix).append(layer.getNodeName(i)).append("\n");
             addNode(node,layer.getNodeName(i));
         }
-        layers.add(new SimulatorLayer(layer.getLayerName(),nodeIdBegin,numberOfNodes-1));
+        layers.add(new SimulatorLayer(layer.getLayerName(),nodeIdBegin, this.nodeCount -1));
         utils.writeStringToFile(layerNodeNameFile,nodeNameContent.toString());
     }
 
@@ -123,15 +136,16 @@ public class Simulator {
     private void addNode(AbstractDockerNode node,String nodeName,NodeType nodeType){
         Class<AbstractDockerNode>clazz = (Class<AbstractDockerNode>)node.getClass();
         if(nodeName.isEmpty()){
-            nodeName = SimulatorConfigurator.classNamePrefix + numberOfNodes + "_auto_name";
+            nodeName = SimulatorConfigurator.classNamePrefix + nodeCount + "_auto_name";
         }
         else {
             nodeName = SimulatorConfigurator.classNamePrefix + nodeName;
         }
         logger.debug("add node " + nodeName);
         addNodeToStartClass(clazz.getName());
-        nodes.add(new SimulatorNode(node.parameters,nodeName,nodeType,numberOfNodes));
-        numberOfNodes++;
+        nodes.add(new SimulatorNode(node.parameters,nodeName,nodeType, nodeCount));
+        parameters.add(node.parameters);
+        nodeCount++;
     }
 
     public void start() throws Exception {
@@ -209,7 +223,7 @@ public class Simulator {
     }
 
     private void addNodeToStartClass(String nodeClassName) {
-        startClassSwitchContent += "            case " + numberOfNodes + " :\n" +
+        startClassSwitchContent += "            case " + nodeCount + " :\n" +
                 "                node = new " + nodeClassName + "();\n" +
                 "                break;\n";
     }

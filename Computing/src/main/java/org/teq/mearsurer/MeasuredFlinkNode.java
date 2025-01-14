@@ -10,7 +10,6 @@ import org.teq.node.DockerNodeParameters;
 import org.teq.utils.DockerRuntimeData;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.management.ManagementFactory;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +31,7 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
         @Override
         public void run() {
             String serverHost = DockerRuntimeData.getNetworkHostNodeName();
-            int serverPort = SimulatorConfigurator.metricsPortBegin + getNodeID();
+            int serverPort = SimulatorConfigurator.metricsPort;
 
             Socket socket = null;
             OutputStream outputStream = null;

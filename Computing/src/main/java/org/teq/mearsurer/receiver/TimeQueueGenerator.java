@@ -4,7 +4,9 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public class TimeQueueGenerator {
-    static public BlockingQueue<Double> getTimeQueue(int intervalMilliseconds) {
+    private static BlockingQueue<Double> timeQueue;
+
+    static private BlockingQueue<Double> getTimeQueue(int intervalMilliseconds) {
         BlockingQueue<Double> timeQueue = new ArrayBlockingQueue<>(100);
         Thread threadTime = new Thread(new Thread(){
             double time = 0;

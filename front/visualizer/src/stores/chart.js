@@ -9,7 +9,7 @@ export const useChartStore = defineStore('chart', {
         chartCount: 0,
         chartMap: new Map(),
         chartTitle: [],
-        maxPoint: 20,
+        maxPoint: 10,
         intervalId: null,
     }),
     actions: {
@@ -35,11 +35,19 @@ export const useChartStore = defineStore('chart', {
                 }
 
                 let options = {
+                    // dataZoom: [
+                    //     {
+                    //         type: "slider",
+                    //         xAxisIndex: [0],
+                    //         start: 0,
+                    //         end: 1,
+                    //         minSpan: 0,
+                    //         maxSpan: 100,
+                    //     },
+                    // ],
                     animationThreshold: 100,
-                    animationDuration: 500,
+                    animationDuration: 300,
                     animationEasing: 'linear',
-                    progressive: 400,
-                    progressiveThreshold: 3000,
                     grid: {
                         left: '45px',
                         right: '60px',
@@ -50,9 +58,15 @@ export const useChartStore = defineStore('chart', {
                         type: 'category',
                         name: rawChart.xLabel,
                         data: this.xData[this.chartCount],
-                        boundaryGap: false,
+                        splitLine: {
+                            show: false
+                        }
                     },
-                    tooltip: { trigger: 'axis' },
+                    tooltip: {
+                        axisPointer: {
+                            animation: false, //很重要！
+                        },
+                    },
                     toolbox: {
                         feature: { saveAsImage: {} },
                     },

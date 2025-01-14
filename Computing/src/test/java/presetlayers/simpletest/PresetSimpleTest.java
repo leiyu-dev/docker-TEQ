@@ -10,7 +10,7 @@ public class PresetSimpleTest {
     public static void main(String[] args) throws Exception {
 
         DockerNodeParameters param = new DockerNodeParameters();
-        param.cpuUsageRate = 0.5;
+        param.setCpuUsageRate(0.5);
         EndDeviceNode end = new EndDeviceNode();
         end.setParameters(param);
         CoordinatorNode coor = new CoordinatorNode();
