@@ -121,7 +121,7 @@ export default {
   <el-divider />
 
   <!-- 参数详情表格 -->
-  <el-table :data="configDetails" style="width: 100%; margin-top: 20px;">
+  <el-table :data="configDetails" v-if="configDetails.length!==0" style="width: 100%; margin-top: 20px;">
     <el-table-column prop="key" label="Properties" width="300px"></el-table-column>
     <el-table-column prop="value" label="Current Value" width="400px"></el-table-column>
     <el-table-column label="Modify" width="500px">
@@ -142,4 +142,5 @@ export default {
       </template>
     </el-table-column>
   </el-table>
+  <el-empty v-else description=""></el-empty>
 </template>

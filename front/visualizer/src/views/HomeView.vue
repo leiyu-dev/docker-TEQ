@@ -23,6 +23,13 @@
                 </el-icon>
               </div>
 
+              <div style="display: flex; align-items: center; font-size: 30px; font-weight: bold; margin-bottom: 15px;" v-if="statusStore.status==='STOPPING'">
+                <span>STOPPING</span>
+                <el-icon :size="50" class="icons" style="color: darkorange; margin-left: 10px;">
+                  <Refresh />
+                </el-icon>
+              </div>
+
               <div style="display: flex; align-items: center; font-size: 30px; font-weight: bold; margin-bottom: 15px;" v-if="statusStore.status==='STOPPED'">
                 <span>STOPPED</span>
                 <el-icon :size="50" class="icons" style="color: rgba(255,0,0,0.71); margin-left: 10px;">
@@ -133,8 +140,12 @@ export default {
         ElMessage.warning('The simulator is disconnected');
         return;
       }
+      if(this.statusStore.status === 'STOPPING'){
+        ElMessage.warning('The simulator is stopping');
+        return;
+      }
       //use post /start to start the simulator
-      fetch('/start', {
+      fetch('http://localhost:8889/start', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -165,8 +176,16 @@ export default {
         ElMessage.warning('The simulator is disconnected');
         return;
       }
+      if(this.statusStore.status === 'RESTARTING'){
+        ElMessage.warning('The simulator is restarting');
+        return;
+      }
+      if(this.statusStore.status === 'STOPPING'){
+        ElMessage.warning('The simulator is stopping');
+        return;
+      }
       //use post /stop to stop the simulator
-      fetch('/stop', {
+      fetch('http://localhost:8889/stop', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -201,8 +220,12 @@ export default {
         ElMessage.warning('The simulator is stopped');
         return;
       }
+      if(this.statusStore.status === 'STOPPING'){
+        ElMessage.warning('The simulator is stopping');
+        return;
+      }
       //use post /restart to restart the simulator
-      fetch('/restart', {
+      fetch('http://localhost:8889/restart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -8,7 +8,6 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
-import javassist.bytecode.analysis.ControlFlow;
 import org.teq.configurator.SimulatorConfigurator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,10 +21,10 @@ import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class DockerRunner {
     private static final Logger logger = LogManager.getLogger(DockerRunner.class);
@@ -38,6 +37,51 @@ public class DockerRunner {
     private String hostPort;
     private String imageName;
     private String networkHostName;
+    public void closeAllContainers() {
+        ExecutorService executorService = Executors.newFixedThreadPool(10); // 调整线程池大小
+        try {
+            // 获取所有相关容器
+            List<Container> containers = dockerClient.listContainersCmd()
+                    .withShowAll(true)
+                    .withNameFilter(Collections.singletonList(SimulatorConfigurator.classNamePrefix))
+                    .exec();
+
+            List<Future<?>> futures = new ArrayList<>();
+            for (Container container : containers) {
+                futures.add(executorService.submit(() -> {
+                    try {
+                        // 检查容器是否正在运行
+                        if (!"running".equals(container.getState())) {
+                            logger.info("Container already stopped: " + container.getId());
+                            return;
+                        }
+                        // 停止容器
+                        dockerClient.stopContainerCmd(container.getId()).exec();
+                        logger.info("Closed container: " + container.getId());
+                    } catch (Exception e) {
+                        logger.error("Failed to stop container: " + container.getId(), e);
+                    }
+                }));
+            }
+
+            // 等待所有任务完成
+            for (Future<?> future : futures) {
+                future.get();
+            }
+        } catch (Exception e) {
+            logger.error("Failed to close all containers", e);
+        } finally {
+            executorService.shutdown();
+        }
+    }
+
+
+
+    //start a container
+    public void startContainer(String containerName){
+        dockerClient.startContainerCmd(containerName).exec();
+        logger.info("Container " + containerName + " started successfully");
+    }
     private void deleteAllContainers() {
         List<Container> containers = dockerClient.listContainersCmd()
                 .withShowAll(true) // show all containers (not just running ones)
@@ -46,7 +90,7 @@ public class DockerRunner {
         for (Container container : containers) {
             if (container.getNames()[0].startsWith("/"+ SimulatorConfigurator.classNamePrefix)) {
                 dockerClient.removeContainerCmd(container.getId()).withForce(true).exec();
-                System.out.println("Deleted container: " + container.getId());
+                logger.info("Deleted container: " + container.getId());
             }
         }
     }
@@ -131,7 +175,7 @@ public class DockerRunner {
         dockerNetworkController.createNetworkHostContainer(imageName, containerName, containerId);
     }
 
-    public void runContainer(String containerName, int containerId, DockerNodeParameters parameters){
+    public void createAndStartContainer(String containerName, int containerId, DockerNodeParameters parameters){
         logger.info("Running container " + containerName);
         Volume volume = new Volume(SimulatorConfigurator.volumePath);
         HostConfig hostConfig = HostConfig.newHostConfig()
@@ -291,7 +335,15 @@ public class DockerRunner {
                 }
         });
         getterThread.start();
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        getterThread.interrupt();
     }
+
+
     public void beginInspectNode(String containerName, BlockingQueue<Double>cpuQueue, BlockingQueue<Double>memoryQueue, BlockingQueue<Double>cpuTimeQueue, BlockingQueue<Double>memoryTimeQueue){
         Thread getterThread =  new Thread(()->{
             long startTime = utils.getStartTime();

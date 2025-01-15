@@ -1,22 +1,40 @@
 <template>
-    <span style="font-size: 40px; font-weight: 100; text-align: center;">Overview charts</span>
-    <br>
-    <el-space wrap :size="25">
-      <el-card v-for="(chartOption, index) in this.chartStore.chartOptions" >
-        <template #header>
-          <div class="card-header">
-            <span>{{ chartOption.chartTitle }}</span>
-          </div>
-        </template>
-        <div
-        :key="index"
-        :ref="'chart'+index"
-        class="charts"></div>
-      </el-card>
-    </el-space>
-    <el-divider />
-  <el-row :gutter="20">
-    <el-col :span="4" style="font-size: 40px; font-weight: 100; text-align: center;">Detail charts</el-col>
+  <!-- Overview charts -->
+  <el-row type="flex" align="middle" justify="start" style="margin-bottom: 20px;">
+    <el-col :span="2" style="text-align: left;">
+      <el-button size="large" @click="toggleSection('overview')">
+        {{ showOverview ? 'Collapse' : 'Expand' }}
+      </el-button>
+    </el-col>
+    <el-col :span="8" style="text-align: left;">
+      <span style="font-size: 40px; font-weight: 100;">Overview charts</span>
+    </el-col>
+  </el-row>
+  <el-space v-if="showOverview" wrap :size="25" style="margin-top: 10px;">
+    <el-card v-for="(chartOption, index) in this.chartStore.chartOptions" :key="index">
+      <template #header>
+        <div class="card-header">
+          <span>{{ chartOption.chartTitle }}</span>
+        </div>
+      </template>
+      <div :ref="'chart' + index" class="charts"></div>
+    </el-card>
+  </el-space>
+
+  <el-divider style="margin: 20px 0;" />
+
+  <!-- Detail charts -->
+  <el-row type="flex" align="middle" justify="start" style="margin-bottom: 20px;">
+    <el-col :span="2" style="text-align: left;">
+      <el-button size="large" @click="toggleSection('detail')">
+        {{ showDetail ? 'Collapse' : 'Expand' }}
+      </el-button>
+    </el-col>
+    <el-col :span="4" style="text-align: left;">
+      <span style="font-size: 40px; font-weight: 100;">Detail charts</span>
+    </el-col>
+  </el-row>
+  <el-row :gutter="20" v-if="showDetail" style="margin-bottom: 20px;">
     <el-col :span="4">
       <el-select
           v-model="selectedAlgorithm"
@@ -33,79 +51,86 @@
         ></el-option>
       </el-select>
     </el-col>
-      <el-col :span="4">
-        <el-select
-            size="large"
-            v-model="selectedLayer"
-            placeholder="Choose Layer"
-            style="width: 100%;"
-            @change="fetchNodes"
-        >
-          <el-option
-              v-for="layer in layers"
-              :key="layer"
-              :label="layer"
-              :value="layer"
-          ></el-option>
-        </el-select>
-      </el-col>
-      <el-col :span="4">
-        <el-select
-            size="large"
-            v-model="selectedNode"
-            placeholder="Choose Node"
-            style="width: 100%;"
-        >
-          <el-option
-              v-for="node in nodes"
-              :key="node"
-              :label="node"
-              :value="node"
-          ></el-option>
-        </el-select>
-      </el-col>
-      <el-col :span="4">
-        <el-button type="primary" size="large" @click="startInspect">
-          <el-icon :size="20" style="color: white; margin-right: 10px;">
-            <Plus />
-          </el-icon>
-          Add Inspect
-        </el-button>
-      </el-col>
-    </el-row>
-  <el-space wrap :size="25">
-    <el-card v-for="(chartOption, index) in this.chartStore.chartOptionsNode" >
+    <el-col :span="4">
+      <el-select
+          size="large"
+          v-model="selectedLayer"
+          placeholder="Choose Layer"
+          style="width: 100%;"
+          @change="fetchNodes"
+      >
+        <el-option
+            v-for="layer in layers"
+            :key="layer"
+            :label="layer"
+            :value="layer"
+        ></el-option>
+      </el-select>
+    </el-col>
+    <el-col :span="4">
+      <el-select
+          size="large"
+          v-model="selectedNode"
+          placeholder="Choose Node"
+          style="width: 100%;"
+      >
+        <el-option
+            v-for="node in nodes"
+            :key="node"
+            :label="node"
+            :value="node"
+        ></el-option>
+      </el-select>
+    </el-col>
+    <el-col :span="4">
+      <el-button type="primary" size="large" @click="startInspect">
+        <el-icon :size="20" style="color: white; margin-right: 10px;">
+          <Plus />
+        </el-icon>
+        Add Inspect
+      </el-button>
+    </el-col>
+  </el-row>
+  <el-space v-if="showDetail" wrap :size="25" style="margin-top: 10px;">
+    <el-card v-for="(chartOption, index) in this.chartStore.chartOptionsNode" :key="'detail-' + index">
       <template #header>
         <div class="card-header">
           <span>{{ chartOption.chartTitle }}</span>
         </div>
       </template>
-      <div
-          :key="index"
-          :ref="'chart'+(10000+index)"
-          class="charts"></div>
+      <div :ref="'chart' + (index + 10000)" class="charts"></div>
     </el-card>
   </el-space>
-    <el-divider />
-    <span style="font-size: 40px; font-weight: 100; text-align: center;">User defined charts</span>
-    <br>
-  <el-space wrap :size="25">
-    <el-card v-for="(chartOption, index) in this.chartStore.chartOptionsUser" >
+
+  <el-divider style="margin: 20px 0;" />
+
+  <!-- User defined charts -->
+  <el-row type="flex" align="middle" justify="start" style="margin-bottom: 20px;">
+    <el-col :span="2" style="text-align: left;">
+      <el-button size="large" @click="toggleSection('user')">
+        {{ showUser ? 'Collapse' : 'Expand' }}
+      </el-button>
+    </el-col>
+    <el-col :span="8" style="text-align: left;">
+      <span style="font-size: 40px; font-weight: 100;">User defined charts</span>
+    </el-col>
+  </el-row>
+  <el-space v-if="showUser" wrap :size="25">
+    <el-card v-for="(chartOption, index) in this.chartStore.chartOptionsUser" :key="'user-' + index">
       <template #header>
         <div class="card-header">
           <span>{{ chartOption.chartTitle }}</span>
         </div>
       </template>
-      <div
-          :key="index"
-          :ref="'chart'+(20000+index)"
-          class="charts"></div>
+      <div :ref="'chart' + (index + 20000)" class="charts"></div>
     </el-card>
   </el-space>
+
+
   <el-backtop :right="100" :bottom="100" />
-
-
 </template>
+
+
 
 <script>
 import { useChartStore } from '../stores/chart';
@@ -129,48 +154,17 @@ export default {
       selectedAlgorithm: '',
       selectedLayer: '',
       selectedNode: '',
+      showOverview: true,
+      showDetail: true,
+      showUser: true,
     }
   },
   mounted() {
-    this.chartStore.chartOptions.forEach((option, index) => {
-        const chartRef = this.$refs['chart' + index][0];
-        if (chartRef) {
-          const chart = echarts.init(chartRef, null, {renderer: 'svg'});
-          chart.setOption(option.option);
-          this.defaultChartList.push({
-            chart: chart,
-            chartTitle: option.chartTitle,
-          });
-        } else {
-          console.error(`Chart ref "chart${index}" is undefined`);
-        }
-    });
-    this.chartStore.chartOptionsNode.forEach((option, index) => {
-      const chartRef = this.$refs['chart' + (index + 10000)][0];
-      if (chartRef) {
-        const chart = echarts.init(chartRef, null, {renderer: 'svg'});
-        chart.setOption(option.option);
-        this.nodeChartList.push({
-          chart: chart,
-          chartTitle: option.chartTitle,
-        });
-      } else {
-        console.error(`Chart ref "node chart${index}" is undefined`);
-      }
-    });
-    this.chartStore.chartOptionsUser.forEach((option, index) => {
-      const chartRef = this.$refs['chart' + (index + 20000)][0];
-      if (chartRef) {
-        const chart = echarts.init(chartRef, null, {renderer: 'svg'});
-        chart.setOption(option.option);
-        this.userChartList.push({
-          chart: chart,
-          chartTitle: option.chartTitle,
-        });
-      } else {
-        console.error(`Chart ref "user chart${index}" is undefined`);
-      }
-    });
+    setTimeout( () => {
+      this.initOverview()
+      this.initNode()
+      this.initUser()
+    },300);
     this.intervalId = setInterval(() => {
       for(let i=0; i<this.defaultChartList.length; i++){
         let chart = this.defaultChartList[i].chart;
@@ -227,6 +221,83 @@ export default {
     this.fetchAlgorithms();
   },
   methods:{
+    initOverview(){
+      this.chartStore.chartOptions.forEach((option, index) => {
+        // if the chart has already been initialized, destroy it first
+        if (this.defaultChartList[index]) {
+          this.defaultChartList[index].chart.dispose();
+        }
+      });
+      this.defaultChartList = [];
+      this.chartStore.chartOptions.forEach((option, index) => {
+        const chartRef = this.$refs['chart' + index][0];
+        if (chartRef) {
+
+          const chart = echarts.init(chartRef, null, {renderer: 'svg'});
+          chart.setOption(option.option);
+          this.defaultChartList.push({
+            chart: chart,
+            chartTitle: option.chartTitle,
+          });
+        } else {
+          console.error(`Chart ref "chart${index}" is undefined`);
+        }
+      });
+    },
+    initNode(){
+      this.chartStore.chartOptionsNode.forEach((option, index) => {
+        const chartRef = this.$refs['chart' + (index + 10000)][0];
+        if (chartRef) {
+          const chart = echarts.init(chartRef, null, {renderer: 'svg'});
+          chart.setOption(option.option);
+          this.nodeChartList.push({
+            chart: chart,
+            chartTitle: option.chartTitle,
+          });
+        } else {
+          console.error(`Chart ref "node chart${index}" is undefined`);
+        }
+      });
+    },
+    initUser(){
+      this.chartStore.chartOptionsUser.forEach((option, index) => {
+        const chartRef = this.$refs['chart' + (index + 20000)][0];
+        if (chartRef) {
+          const chart = echarts.init(chartRef, null, {renderer: 'svg'});
+          chart.setOption(option.option);
+          this.userChartList.push({
+            chart: chart,
+            chartTitle: option.chartTitle,
+          });
+        } else {
+          console.error(`Chart ref "user chart${index}" is undefined`);
+        }
+      });
+    },
+    toggleSection(section) {
+      if (section === 'overview') {
+        this.showOverview = !this.showOverview;
+        if(this.showOverview === true){
+          this.$nextTick(() => {
+            this.initOverview();
+          });
+        }
+      } else if (section === 'detail') {
+        this.showDetail = !this.showDetail;
+        if(this.showDetail === true){
+          this.$nextTick(() => {
+            this.initNode();
+          });
+        }
+      } else if (section === 'user') {
+        this.showUser = !this.showUser;
+        if(this.showUser === true){
+          this.$nextTick(() => {
+            this.initUser();
+          });
+        }
+      }
+    },
     async fetchAlgorithms() {
       try {
         const response = await axios.get("http://localhost:8889/algorithm");

@@ -1,5 +1,4 @@
 <template>
-    <el-header>
       <el-row :gutter="20">
         <el-col :span="8">
           <el-select
@@ -50,7 +49,6 @@
           </el-select>
         </el-col>
       </el-row>
-    </el-header>
     <span style="display: block; text-align: center; margin-top: 20px;">All the Configurations here will be applied in real time</span>
     <el-divider/>
     <el-table :data="configNodes" style="width: 100%; margin-top: 20px;" v-if="configNodes.length">

@@ -88,7 +88,32 @@ public class NodeConfigHandler {
             String key = requestBody.getString("key");
             String newValue = requestBody.getString("value");
             logger.info("Received request to update configuration for node: " + name + ", key: " + key + ", value: " + newValue);
-            if(name.equals("All nodes"))
+            if(name.equals("All nodes")){
+                List<String> nodes = DockerRuntimeData.getNodeNameListByLayerName(layer);
+                for(String node:nodes){
+                    switch (key) {
+                        case "cpuUsageRate":
+                            dockerRunner.changeCpuUsageRate(node, Double.parseDouble(newValue));
+                            parametersList.get(DockerRuntimeData.getNodeIdByName(node)).setCpuUsageRate(Double.parseDouble(newValue));
+                            break;
+                        case "memorySize":
+                            dockerRunner.changeMemorySize(node, Double.parseDouble(newValue));
+                            parametersList.get(DockerRuntimeData.getNodeIdByName(node)).setMemorySize(Double.parseDouble(newValue));
+                            break;
+                        case "networkOutBandwidth":
+                            dockerRunner.changeNetworkOutBandwidth(node, Double.parseDouble(newValue));
+                            parametersList.get(DockerRuntimeData.getNodeIdByName(node)).setNetworkOutBandwidth(Double.parseDouble(newValue));
+                            break;
+                        case "networkOutLatency":
+                            dockerRunner.changeNetworkOutLatency(node, Double.parseDouble(newValue));
+                            parametersList.get(DockerRuntimeData.getNodeIdByName(node)).setNetworkOutLatency(Double.parseDouble(newValue));
+                            break;
+                        default:
+                            res.status(400); // Bad Request
+                            return JSON.toJSONString(Map.of("error", "Invalid key: " + key));
+                    }
+                }
+            }
             try {
                 switch (key) {
                     case "cpuUsageRate":

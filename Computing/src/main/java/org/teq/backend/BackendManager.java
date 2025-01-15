@@ -9,6 +9,8 @@ import org.teq.simulator.Simulator;
 
 import java.lang.management.ManagementFactory;
 import com.sun.management.OperatingSystemMXBean;
+import org.teq.utils.utils;
+
 import static spark.Spark.*;
 
 public class BackendManager {
@@ -123,8 +125,9 @@ public class BackendManager {
             double systemCpuLoad = osBean.getSystemCpuLoad();
             long physicalTotalMemory = osBean.getTotalPhysicalMemorySize();
             long physicalFreeMemory = osBean.getFreePhysicalMemorySize();
-            long upTime = ManagementFactory.getRuntimeMXBean().getUptime() / 1000; // in seconds
-            Status status = new Status("RUNNING", simulator.getLayerCount(), simulator.getNodeCount(), simulator.getAlgorithmCount(),
+            long startTime = utils.getStartTime();
+            long upTime = (System.currentTimeMillis() - startTime) / 1000;
+            Status status = new Status(simulator.getState(), simulator.getLayerCount(), simulator.getNodeCount(), simulator.getAlgorithmCount(),
                     String.format("%.2f", systemCpuLoad * 100) + "% / " + cores + " cores",
                     String.format("%.2f", (physicalTotalMemory - physicalFreeMemory) / 1024.0 / 1024.0 / 1024.0 ) + " GB (buffered) / " +
                             String.format("%.2f", physicalTotalMemory / 1024.0 / 1024.0 / 1024.0) + " GB",
@@ -139,5 +142,7 @@ public class BackendManager {
         NodeConfigHandler nodeConfigHandler = new NodeConfigHandler(simulator.getParameters(),simulator.getDockerRunner());
         nodeConfigHandler.handleNodeConfig();
         ChartHandler.setDockerRunner(simulator.getDockerRunner());
+        ControlHandler controlHandler = new ControlHandler(simulator);
+        controlHandler.handleControl();
     }
 }

@@ -19,7 +19,6 @@ app.use(pinia);
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component)
 }
-
 const chartStore = useChartStore();
 const statusStore = useStatusStore();
 chartStore.fetchChartConfig();

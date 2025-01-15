@@ -33,7 +33,7 @@ public class MetricsTransformer {
         //add a thread to add an element into timeQueue every second:
         AbstractReceiver dockerMonitor = new DockerMetricsReceiver(metricsDisplayer, simulator);
         AbstractReceiver sending = new SendingMetricsReceiver<BuiltInMetrics>(metricsDisplayer,BuiltInMetrics.class);
-        sending.beginReceive();
         dockerMonitor.beginReceive();
+        sending.beginReceive();
     }
 }

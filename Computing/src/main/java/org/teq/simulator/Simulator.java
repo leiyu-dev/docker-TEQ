@@ -18,12 +18,32 @@ import org.teq.utils.utils;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
 public class Simulator {
+
+    private AtomicInteger state = new AtomicInteger(0);
+    public String getState(){
+        if(state.get() == 0){
+            return "STOPPED";
+        }
+        else if(state.get() == 1){
+            return "RUNNING";
+        }
+        else if(state.get() == 2){
+            return "RESTARTING";
+        }
+        else if(state.get() == 3){
+            return "STOPPING";
+        }
+        else {
+            return "DISCONNECTED";
+        }
+    }
 
     private static final Logger logger = LogManager.getLogger(Simulator.class);
     private int nodeCount = 0;
@@ -149,6 +169,7 @@ public class Simulator {
     }
 
     public void start() throws Exception {
+        state.set(2);
         utils.startTimer();
         logger.info("Starting the simulation");
 
@@ -168,7 +189,7 @@ public class Simulator {
             int nodeId = node.nodeId;
             logger.debug("Running container for class " + nodeName);
             if(nodeType == NodeType.normal) {
-                dockerRunner.runContainer(nodeName, nodeId, parameters);
+                dockerRunner.createAndStartContainer(nodeName, nodeId, parameters);
                 logger.info("Node " + nodeName + " started");
             }
             else if(nodeType == NodeType.network){
@@ -176,14 +197,48 @@ public class Simulator {
                 logger.info("Network node started");
             }
         }
-
-
+        state.set(1);
         // 等待所有节点运行完
-        dockerRunner.waitUntilContainerStopped();
-        logger.info("Simulation finished");
         if(SimulatorConfigurator.cleanUpAfterSimulation){
             cleanUp();
         }
+    }
+
+    public void stop(){
+        state.set(3);
+        dockerRunner.closeAllContainers();
+        state.set(0);
+    }
+
+    public void restart() throws Exception {
+        state.set(2);
+        utils.startTimer();
+        logger.info("Restarting the simulation");
+
+        dockerRunner.closeAllContainers();
+
+        runAssembleScript();
+        writeStartScriptToFile();
+        writeStartClassToFile();
+        writeRuntimeData();
+
+        logger.info("Starting the nodes");
+        for(SimulatorNode node : nodes){
+            DockerNodeParameters parameters = node.parameters;
+            String nodeName = node.nodeName;
+            NodeType nodeType = node.nodeType;
+            int nodeId = node.nodeId;
+            logger.debug("Running container for class " + nodeName);
+            if(nodeType == NodeType.normal) {
+                dockerRunner.startContainer(nodeName);
+                logger.info("Node " + nodeName + " started");
+            }
+            else if(nodeType == NodeType.network){
+                dockerRunner.startContainer(nodeName);
+                logger.info("Network node started");
+            }
+        }
+        state.set(1);
     }
 
     private void runAssembleScript() throws IOException {
@@ -211,6 +266,8 @@ public class Simulator {
     }
 
 
+
+
     private void writeStartScriptToFile() throws IOException {
         logger.info("Writing start script to file...");
         String scriptContent = "#!/bin/bash\n" +
@@ -228,11 +285,14 @@ public class Simulator {
                 "                node = new " + nodeClassName + "();\n" +
                 "                break;\n";
     }
-
+    private boolean addDefault = false;
     private void writeStartClassToFile() throws IOException {
-        startClassSwitchContent += "            default:\n" +
-                "               node = new " + DefaultDockerNode.class.getName() + "();\n" +
-                "                break;\n";
+        if(!addDefault) {
+            addDefault = true;
+            startClassSwitchContent += "            default:\n" +
+                    "               node = new " + DefaultDockerNode.class.getName() + "();\n" +
+                    "                break;\n";
+        }
 
         logger.info("Writing start class to file...");
         String classContent = "package " + SimulatorConfigurator.StartPackageName + ";\n" +

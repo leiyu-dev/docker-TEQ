@@ -1,6 +1,7 @@
 package org.teq.mearsurer.receiver;
 
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.typeinfo.AtomicType;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -16,11 +17,13 @@ import org.teq.utils.connector.CommonDataReceiver;
 import org.teq.utils.utils;
 import org.teq.visualizer.Chart;
 import org.teq.visualizer.MetricsDisplayer;
+import scala.Int;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractReceiver implements Runnable{
 
@@ -32,6 +35,8 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
     static private BlockingQueue<Double> rawOverallProcessingLatencyQueue;
     static private BlockingQueue<Double> rawOverallTransferLatencyQueue;
     static private List<BlockingQueue<Double>> rawProcessingLatencyQueueList;
+    static private BlockingQueue<Integer> processedQueryQueue;
+    static private AtomicInteger processedQueryCount = new AtomicInteger(0);
     private Class<T> typeClass;
     public SendingMetricsReceiver(MetricsDisplayer metricsDisplayer, Class<T> typeClass) {
         super(metricsDisplayer);
@@ -70,6 +75,8 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
 //        }
 
         //process the raw data
+        processedQueryCount.getAndAdd(1);
+
         double overallProcessingLatency = (list.get(list.size()-1).getTimestampOut() - first.getTimestampIn())/1000.0/1000.0;
         double overallTransferLatency = 0;
         for(int i=0; i<list.size()-1; i++) {
@@ -122,6 +129,7 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
         rawOverallProcessingLatencyQueue = new LinkedBlockingQueue<>();
         rawOverallTransferLatencyQueue = new LinkedBlockingQueue<>();
         rawProcessingLatencyQueueList = new ArrayList<>();
+        processedQueryQueue = new LinkedBlockingQueue<>();
         for(int i=0; i<DockerRuntimeData.getLayerList().size(); i++) {
             processingLatencyQueueList.add(new LinkedBlockingQueue<>());
             rawProcessingLatencyQueueList.add(new LinkedBlockingQueue<>());
@@ -129,13 +137,15 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
         BlockingQueue<Double> overallProcessingLatencyTime = new LinkedBlockingQueue<>();
         BlockingQueue<Double> overallTransferLatencyTime = new LinkedBlockingQueue<>();
         BlockingQueue<Double> processingLatencyTime = new LinkedBlockingQueue<>();
+        BlockingQueue<Double> processedQueryTime = new LinkedBlockingQueue<>();
         metricsDisplayer.addChart(new Chart( overallProcessingLatencyTime,overallProcessingLatencyQueue,
                 "time/s","overall processing latency/ms","latency","overall processing latency","overview"));
         metricsDisplayer.addChart(new Chart( overallTransferLatencyTime,overallTransferLatencyQueue,
                 "time/s","overall transfer latency/ms","latency","overall transfer latency","overview"));
         metricsDisplayer.addChart(new Chart( processingLatencyTime,processingLatencyQueueList,
                 "time/s","processing latency/ms",DockerRuntimeData.getLayerList(),"processing latency", "overview"));
-
+        metricsDisplayer.addChart(new Chart( processedQueryTime,processedQueryQueue,
+                "time/s","processed query","count","processed query","user"));
         //add a new thread to process the raw data and produce the data per second
         Thread thread = new Thread(new Runnable() {
             @Override
@@ -143,8 +153,11 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
                 long startTime = utils.getStartTime();
                 while(true) {
                     try {
-//                        logger.info("a new second");
+//                       logger.info("a new second");
                         Thread.sleep(1000);
+                        processedQueryQueue.put(processedQueryCount.get());
+                        processedQueryTime.put((double)Math.round((System.currentTimeMillis() - startTime)/1000.0*10.0)/10.0);
+                        processedQueryCount.set(0);
                         double overallProcessingLatency = 0.0;
                         int overallProcessingLatencyCount = 0;
                         double overallTransferLatency = 0.0;
