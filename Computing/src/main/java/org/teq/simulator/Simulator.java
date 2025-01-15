@@ -149,6 +149,7 @@ public class Simulator {
     }
 
     public void start() throws Exception {
+        utils.startTimer();
         logger.info("Starting the simulation");
 
         logger.info("launching the backend");

@@ -138,5 +138,6 @@ public class BackendManager {
         globalConfigHandler.handleGlobalConfig();
         NodeConfigHandler nodeConfigHandler = new NodeConfigHandler(simulator.getParameters(),simulator.getDockerRunner());
         nodeConfigHandler.handleNodeConfig();
+        ChartHandler.setDockerRunner(simulator.getDockerRunner());
     }
 }

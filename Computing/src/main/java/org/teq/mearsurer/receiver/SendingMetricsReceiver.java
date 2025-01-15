@@ -13,6 +13,7 @@ import org.teq.mearsurer.BuiltInMetrics;
 import org.teq.mearsurer.MetricsTransformer;
 import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.CommonDataReceiver;
+import org.teq.utils.utils;
 import org.teq.visualizer.Chart;
 import org.teq.visualizer.MetricsDisplayer;
 
@@ -129,20 +130,20 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
         BlockingQueue<Double> overallTransferLatencyTime = new LinkedBlockingQueue<>();
         BlockingQueue<Double> processingLatencyTime = new LinkedBlockingQueue<>();
         metricsDisplayer.addChart(new Chart( overallProcessingLatencyTime,overallProcessingLatencyQueue,
-                "time/s","overall processing latency/ms","latency","overall processing latency"));
+                "time/s","overall processing latency/ms","latency","overall processing latency","overview"));
         metricsDisplayer.addChart(new Chart( overallTransferLatencyTime,overallTransferLatencyQueue,
-                "time/s","overall transfer latency/ms","latency","overall transfer latency"));
+                "time/s","overall transfer latency/ms","latency","overall transfer latency","overview"));
         metricsDisplayer.addChart(new Chart( processingLatencyTime,processingLatencyQueueList,
-                "time/s","processing latency/ms",DockerRuntimeData.getLayerList(),"processing latency"));
+                "time/s","processing latency/ms",DockerRuntimeData.getLayerList(),"processing latency", "overview"));
 
         //add a new thread to process the raw data and produce the data per second
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                long startTime = System.currentTimeMillis();
+                long startTime = utils.getStartTime();
                 while(true) {
                     try {
-                        logger.info("a new second");
+//                        logger.info("a new second");
                         Thread.sleep(1000);
                         double overallProcessingLatency = 0.0;
                         int overallProcessingLatencyCount = 0;
@@ -202,7 +203,7 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
             private Map<UUID,TreeSet<T>> metricsMap = new HashMap<>();
             @Override
             public T map(T value) throws Exception {
-                logger.info("receive a new metrics:" + value);
+//                logger.info("receive a new metrics:" + value);
                 if(!metricsMap.containsKey(value.getId())) {
                     TreeSet<T> set = new TreeSet<>(Comparator.comparingLong(T::getTimestampIn));
                     set.add(value);
@@ -211,7 +212,7 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
                     TreeSet<T> set = metricsMap.get(value.getId());
                     set.add(value);
                     if(set.last().getToNodeId() == -1) { //sink
-                        SendingMetricsReceiver.logger.info("stream "+value.getId()+" finished");
+//                        SendingMetricsReceiver.logger.info("stream "+value.getId()+" finished");
                         finishStreamTest(set);
                         metricsMap.remove(value.getId());
                     }

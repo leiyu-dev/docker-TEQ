@@ -6,6 +6,7 @@ import org.slf4j.ILoggerFactory;
 import org.teq.simulator.Simulator;
 import org.teq.simulator.docker.DockerRunner;
 import org.teq.utils.DockerRuntimeData;
+import org.teq.utils.utils;
 import org.teq.visualizer.Chart;
 import org.teq.visualizer.MetricsDisplayer;
 
@@ -61,8 +62,8 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
         BlockingQueue<Double>cpuTimeQueue = new LinkedBlockingQueue<>();
         BlockingQueue<Double>memoryTimeQueue = new LinkedBlockingQueue<>();
 
-        metricsDisplayer.addChart(new Chart(cpuTimeQueue, cpuUsageLayerList, "time/s", "cpu usage/%",DockerRuntimeData.getLayerList(), " cpu usage"));
-        metricsDisplayer.addChart(new Chart(memoryTimeQueue, memoryUsageLayerList, "time/s", "memory usage/MB",DockerRuntimeData.getLayerList(),  " memory usage"));
+        metricsDisplayer.addChart(new Chart(cpuTimeQueue, cpuUsageLayerList, "time/s", "cpu usage/%",DockerRuntimeData.getLayerList(), " cpu usage","overview"));
+        metricsDisplayer.addChart(new Chart(memoryTimeQueue, memoryUsageLayerList, "time/s", "memory usage/MB",DockerRuntimeData.getLayerList(),  " memory usage","overview"));
 
 
         Thread thread = new Thread(() ->{
@@ -74,7 +75,7 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
                 cpuUsageLayerListSum.add(0.0);
                 memoryUsageLayerListSum.add(0.0);
             }
-            long startTime = System.currentTimeMillis();
+            long startTime = utils.getStartTime();
             while (true) {
                 //set to 0
                 for (int i = 0; i < layerList.size(); i++) {
@@ -85,10 +86,8 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
                 for (int i = 0; i < nodeList.size(); i++) {
                     try {
                         while(!cpuUsageQueueList.get(i).isEmpty()) {
-//                        logger.info("try to take from queue");
                             double cpuUsage = (cpuUsageQueueList.get(i).take());
                             double memoryUsage = (memoryUsageQueueList.get(i).take());
-//                        logger.info("take from queue");
                             String nodeName = nodeList.get(i);
                             String layerName = DockerRuntimeData.getLayerNameByNodeName(nodeName);
                             if (layerName == null) { // network node or other user defined node

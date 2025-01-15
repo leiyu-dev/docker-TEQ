@@ -17,9 +17,16 @@
     left: 0;
     width: 100%;
     z-index: 10;
+    padding: 0 20px;
   "
     >
-      <span style="font-size: 18px; font-weight: bold;">Teq Dashboard</span>
+      <!-- 左侧部分 -->
+      <div style="display: flex; align-items: center;">
+        <img src="./components/icons/teq.svg" alt="TEQ Icon" width="60" height="60" />
+        <span style="font-size: 23px; font-weight: bold; margin-left: 20px;">TEQ Dashboard</span>
+      </div>
+
+      <!-- 右侧部分 -->
       <div style="font-size: 14px;">version: 0.1</div>
     </el-header>
 

@@ -34,7 +34,7 @@ public class FileDisplayerTest {
                 }
             }
         });
-        Chart chart = new Chart<Integer,Integer>(x,y,"x","y",yLableList,"Test Chart");
+        Chart chart = new Chart<Integer,Integer>(x,y,"x","y",yLableList,"Test Chart","overview");
         fileDisplayer.addChart(chart);
         fileDisplayer.display();
         t1.start();

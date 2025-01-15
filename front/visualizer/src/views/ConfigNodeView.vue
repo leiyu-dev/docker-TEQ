@@ -7,7 +7,7 @@
               placeholder="Choose Algorithm"
               style="width: 100%"
               size="large"
-              @change="fetchNodes"
+              @change="fetchLayers"
           >
             <el-option
                 v-for="algorithm in algorithms"

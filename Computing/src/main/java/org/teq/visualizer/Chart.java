@@ -19,23 +19,28 @@ public class Chart<X,Y>{
     private String yLabel;
     @JSONField(serialize = true)
     private String title;
+    @JSONField(serialize = true)
 
-    public Chart(BlockingQueue<X> xAxis, List<BlockingQueue<Y>> yAxis, String xLabel,String yLabel, List<String> dataLabel, String title){
+    private String type;
+
+    public Chart(BlockingQueue<X> xAxis, List<BlockingQueue<Y>> yAxis, String xLabel,String yLabel, List<String> dataLabel, String title, String type){
         this.setxAxis(xAxis);
         this.setyAxis(yAxis);
         this.setxLabel(xLabel);
         this.setyLabel(yLabel);
         this.setDataLabel(dataLabel);
         this.setTitle(title);
+        this.setType(type);
     }
     //only one yData
-    public Chart(BlockingQueue<X> xAxis, BlockingQueue<Y> yAxis, String xLabel,String yLabel, String dataLabel, String title){
+    public Chart(BlockingQueue<X> xAxis, BlockingQueue<Y> yAxis, String xLabel,String yLabel, String dataLabel, String title, String type){
         this.setxAxis(xAxis);
         this.setyAxis(List.of(yAxis));
         this.setxLabel(xLabel);
         this.setyLabel(yLabel);
         this.setDataLabel(List.of(dataLabel));
         this.setTitle(title);
+        this.setType(type);
     }
 
     /**
@@ -102,4 +107,11 @@ public class Chart<X,Y>{
     }
 
 
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 }

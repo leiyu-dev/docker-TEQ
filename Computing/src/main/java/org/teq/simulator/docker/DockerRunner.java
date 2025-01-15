@@ -8,6 +8,7 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
+import javassist.bytecode.analysis.ControlFlow;
 import org.teq.configurator.SimulatorConfigurator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -234,23 +235,16 @@ public class DockerRunner {
     public void beginDockerMetricsCollection(List<BlockingQueue<Double>>cpuQueueList, List<BlockingQueue<Double>>memoryQueueList){
         Thread getterThread =  new Thread(()->{
             List<String>nodeList = DockerRuntimeData.getNodeNameList();
-//            AtomicReferenceArray<Statistics> lastStats = new AtomicReferenceArray<>(nodeList.size());
             for(int i = 0; i < nodeList.size(); i++){
                 String containerName = nodeList.get(i);
                 StatsCmd statsCmd = dockerClient.statsCmd(containerName);
                 int finalI = i;
                 statsCmd.exec(new ResultCallback<Statistics>() {
                     @Override
-                    public void close() throws IOException {
-
-                    }
-
+                    public void close() throws IOException {}
                     private Statistics lastStat = null; // 独立的 lastStat
-
                     @Override
-                    public void onStart(Closeable closeable) {
-
-                    }
+                    public void onStart(Closeable closeable) {}
 
                     @Override
                     public void onNext(Statistics stats) {
@@ -289,19 +283,73 @@ public class DockerRunner {
                     }
 
                     @Override
-                    public void onError(Throwable throwable) {
-
-                    }
+                    public void onError(Throwable throwable) {}
 
                     @Override
-                    public void onComplete() {
-
-                    }
+                    public void onComplete() {}
                 });
                 }
         });
         getterThread.start();
     }
+    public void beginInspectNode(String containerName, BlockingQueue<Double>cpuQueue, BlockingQueue<Double>memoryQueue, BlockingQueue<Double>cpuTimeQueue, BlockingQueue<Double>memoryTimeQueue){
+        Thread getterThread =  new Thread(()->{
+            long startTime = utils.getStartTime();
+            StatsCmd statsCmd = dockerClient.statsCmd(containerName);
+            statsCmd.exec(new ResultCallback<Statistics>() {
+                @Override
+                public void close() throws IOException {}
+                private Statistics lastStat = null; // 独立的 lastStat
+                @Override
+                public void onStart(Closeable closeable) {}
+
+                @Override
+                public void onNext(Statistics stats) {
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    if (lastStat == null) {
+                        lastStat = stats; // 初始化上一次数据
+                        return;
+                    }
+
+                    // 计算 CPU 使用率
+                    double cpuDelta = stats.getCpuStats().getCpuUsage().getTotalUsage()
+                            - lastStat.getCpuStats().getCpuUsage().getTotalUsage();
+                    double systemCpuDelta = stats.getCpuStats().getSystemCpuUsage()
+                            - lastStat.getCpuStats().getSystemCpuUsage();
+                    double cpuUsage = (cpuDelta / systemCpuDelta) * stats.getCpuStats().getOnlineCpus();
+
+                    // 获取内存使用情况
+                    long memoryUsageRaw = stats.getMemoryStats().getUsage();
+                    double memoryUsage = memoryUsageRaw / 1024 / 1024 / 1024.0;
+
+                    try {
+                        cpuQueue.put(cpuUsage * 100);
+                        memoryQueue.put(memoryUsage * 1024.0);
+                        long currentTime = System.currentTimeMillis();
+                        cpuTimeQueue.put( Math.round((currentTime - startTime) / 1000.0 * 10.0) / 10.0);
+                        memoryTimeQueue.put( Math.round((currentTime - startTime) / 1000.0 * 10.0) / 10.0);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+
+                    lastStat = stats; // 更新上一次的统计数据
+                }
+
+                @Override
+                public void onError(Throwable throwable) {}
+
+                @Override
+                public void onComplete() {}
+            });
+        });
+        getterThread.start();
+    }
+
 
     //TODO: use better ways
     public void beginDockerMetricsCollectionTry(List<BlockingQueue<Double>>cpuQueueList, List<BlockingQueue<Double>>memoryQueueList) throws Exception {

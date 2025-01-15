@@ -13,13 +13,15 @@ import static spark.Spark.*;
 import java.io.FileOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SocketDisplayer extends MetricsDisplayer{
     private static final Logger logger = LogManager.getLogger(SocketDisplayer.class);
 
-    List<Chart> chartList = new ArrayList<>();
+    CopyOnWriteArrayList<Chart> chartList = new CopyOnWriteArrayList<>();
     @Override
     public void addChart(Chart chart) {
         chartList.add(chart);
@@ -27,7 +29,7 @@ public class SocketDisplayer extends MetricsDisplayer{
 
     @Override
     public void display() {
-        ChartHandler chartHandler = new ChartHandler();
-        chartHandler.HandleChart(chartList);
+        ChartHandler chartHandler = new ChartHandler(chartList);
+        chartHandler.HandleChart();
     }
 }

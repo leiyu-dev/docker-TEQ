@@ -51,4 +51,13 @@ public class utils {
         String inDocker = System.getenv("IN_DOCKER");
         return inDocker != null && inDocker.equals("1");
     }
+
+    static long startTime = 0;
+    static public void startTimer() {
+        startTime = System.currentTimeMillis();
+    }
+    static public long getStartTime(){
+        return startTime;
+    }
+
 }
