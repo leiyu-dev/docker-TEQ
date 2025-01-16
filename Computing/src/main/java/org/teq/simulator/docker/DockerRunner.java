@@ -404,52 +404,67 @@ public class DockerRunner {
 
 
     //TODO: use better ways
-    public void beginDockerMetricsCollectionTry(List<BlockingQueue<Double>>cpuQueueList, List<BlockingQueue<Double>>memoryQueueList) throws Exception {
-        Thread getterThread =  new Thread(()-> {
+    public void beginDockerMetricsCollectionTry(List<BlockingQueue<Double>> cpuQueueList, List<BlockingQueue<Double>> memoryQueueList) throws Exception {
+        Thread getterThread = new Thread(() -> {
             List<String> nodeList = DockerRuntimeData.getNodeNameList();
-            while(true) {
+            ExecutorService executorService = Executors.newFixedThreadPool(nodeList.size()); // 使用线程池并行执行任务
+            while (true) {
+                List<Future<?>> futures = new ArrayList<>();
                 for (int i = 0; i < nodeList.size(); i++) {
-                    String containerName = nodeList.get(i);
-                    try {
-                        // 执行 docker stats 命令，过滤指定容器
-                        ProcessBuilder processBuilder = new ProcessBuilder(
-                                "docker", "stats", containerName, "--no-stream", "--format",
-                                "{{.Container}},{{.CPUPerc}},{{.MemUsage}}"
-                        );
-                        Process process = processBuilder.start();
+                    int index = i; // 避免 Lambda 表达式中的变量捕获问题
+                    String containerName = nodeList.get(index);
+                    futures.add(executorService.submit(() -> {
+                        try {
+                            ProcessBuilder processBuilder = new ProcessBuilder(
+                                    "docker", "stats", containerName, "--no-stream", "--format",
+                                    "{{.Container}},{{.CPUPerc}},{{.MemUsage}}"
+                            );
+                            Process process = processBuilder.start();
 
-                        // 读取输出
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            if (line.startsWith(containerName + ",")) {
-                                String[] stats = line.split(",");
-                                String containerRead = stats[0];
+                            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                if (line.startsWith(containerName + ",")) {
+                                    String[] stats = line.split(",");
+                                    String containerRead = stats[0];
 
-                                // 0.00% -> 0.00
-                                Double cpuUsage = Double.parseDouble(stats[1].split("%")[0]);
+                                    Double cpuUsage = Double.parseDouble(stats[1].split("%")[0]);
 
-                                // 2.24GiB / 503.3GiB -> 2.24
-                                Double memUsage;
-                                if(stats[2].contains("GiB / "))memUsage = Double.parseDouble(stats[2].split("GiB / ")[0]) * 1000.0;
-                                else if(stats[2].contains("MiB / "))memUsage = Double.parseDouble(stats[2].split("MiB")[0]);
-                                else if(stats[2].contains("KiB / "))memUsage = Double.parseDouble(stats[2].split("KiB")[0]) / 1000.0;
-                                else break;
+                                    Double memUsage;
+                                    if (stats[2].contains("GiB / "))
+                                        memUsage = Double.parseDouble(stats[2].split("GiB / ")[0]) * 1000.0;
+                                    else if (stats[2].contains("MiB / "))
+                                        memUsage = Double.parseDouble(stats[2].split("MiB")[0]);
+                                    else if (stats[2].contains("KiB / "))
+                                        memUsage = Double.parseDouble(stats[2].split("KiB")[0]) / 1000.0;
+                                    else
+                                        break;
 
-                                if (containerRead.equals(containerName)) {
-                                    BlockingQueue<Double> cpuQueue = cpuQueueList.get(i);
-                                    BlockingQueue<Double> memoryQueue = memoryQueueList.get(i);
-                                    logger.info("CPU: " + cpuUsage + "%, Memory: " + memUsage + "MB" + " for " + containerName);
-                                    cpuQueue.put(cpuUsage);
-                                    memoryQueue.put(memUsage);
+                                    if (containerRead.equals(containerName)) {
+                                        BlockingQueue<Double> cpuQueue = cpuQueueList.get(index);
+                                        BlockingQueue<Double> memoryQueue = memoryQueueList.get(index);
+                                        logger.info("CPU: " + cpuUsage + "%, Memory: " + memUsage + "MB" + " for " + containerName);
+                                        cpuQueue.put(cpuUsage);
+                                        memoryQueue.put(memUsage / 1024.0);
+                                    }
                                 }
                             }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            throw new RuntimeException(e);
                         }
+                    }));
+                }
+
+                // 等待所有任务完成
+                for (Future<?> future : futures) {
+                    try {
+                        future.get();
                     } catch (Exception e) {
                         e.printStackTrace();
-                        throw new RuntimeException();
                     }
                 }
+
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
@@ -459,6 +474,7 @@ public class DockerRunner {
         });
         getterThread.start();
     }
+
     public void cleanUp(){
         deleteAllContainers();
     }
@@ -492,16 +508,18 @@ String[] command = {
 "bash "+ SimulatorConfigurator.volumePath + "/" + SimulatorConfigurator.startScriptName
 };
      */
-    public void changeNetworkOutBandwidth(String containerName, double outBandwidth) throws IllegalArgumentException{
+    public void changeNetwork(String containerName, double outBandwidth, double outLatency) throws IllegalArgumentException{
         if(outBandwidth < 0){
             throw new IllegalArgumentException("Network out bandwidth should be greater than 0");
         }
         try {
-            String command = String.format(
-                    "tc qdisc replace dev eth0 root handle 1: htb default 10 && " +
-                            "tc class replace dev eth0 parent 1: classid 1:1 htb rate %.2fkbps ceil %.2fkbps",
-                    outBandwidth, outBandwidth
-            );
+            String command =
+                "tc qdisc del dev eth0 root &&" +
+                "tc qdisc add dev eth0 root handle 1: htb default 1 && " +
+                "tc class add dev eth0 parent 1: classid 1:1 htb rate " + outBandwidth + "kbps ceil " + outBandwidth + "kbps && " +
+                "tc qdisc add dev eth0 parent 1:1 handle 10: netem delay "+ outLatency +"ms && " +
+                "tc class add dev eth0 parent 1: classid 1:2 htb rate 100mbit ceil 100mbit && " +
+                "tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 match ip tos 0x10 0xff flowid 1:2 && ";
 
             dockerClient.execCreateCmd(containerName)
                     .withCmd("bash", "-c", command)
@@ -513,24 +531,5 @@ String[] command = {
         }
     }
 
-    public void changeNetworkOutLatency(String containerName, double latency) throws IllegalArgumentException{
-        if(latency < 0){
-            throw new IllegalArgumentException("Network out latency should be greater than 0");
-        }
-        try {
-            String command = String.format(
-                    "tc qdisc replace dev eth0 root netem delay %.2fms",
-                    latency
-            );
-
-            dockerClient.execCreateCmd(containerName)
-                    .withCmd("bash", "-c", command)
-                    .exec();
-            dockerClient.execStartCmd(containerName).exec(new ExecStartResultCallback()).awaitCompletion();
-            logger.info("Updated network out latency for container " + containerName + " to " + latency + " ms");
-        } catch (Exception e) {
-            logger.error("Failed to update network out latency for container " + containerName, e);
-        }
-    }
 
 }

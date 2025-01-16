@@ -101,11 +101,11 @@ public class NodeConfigHandler {
                             parametersList.get(DockerRuntimeData.getNodeIdByName(node)).setMemorySize(Double.parseDouble(newValue));
                             break;
                         case "networkOutBandwidth":
-                            dockerRunner.changeNetworkOutBandwidth(node, Double.parseDouble(newValue));
+                            dockerRunner.changeNetwork(node, Double.parseDouble(newValue), parametersList.get(DockerRuntimeData.getNodeIdByName(node)).getNetworkOutLatency());
                             parametersList.get(DockerRuntimeData.getNodeIdByName(node)).setNetworkOutBandwidth(Double.parseDouble(newValue));
                             break;
                         case "networkOutLatency":
-                            dockerRunner.changeNetworkOutLatency(node, Double.parseDouble(newValue));
+                            dockerRunner.changeNetwork(node, parametersList.get(DockerRuntimeData.getNodeIdByName(node)).getNetworkOutBandwidth(), Double.parseDouble(newValue));
                             parametersList.get(DockerRuntimeData.getNodeIdByName(node)).setNetworkOutLatency(Double.parseDouble(newValue));
                             break;
                         default:
@@ -125,11 +125,11 @@ public class NodeConfigHandler {
                         parametersList.get(DockerRuntimeData.getNodeIdByName(name)).setMemorySize(Double.parseDouble(newValue));
                         break;
                     case "networkOutBandwidth":
-                        dockerRunner.changeNetworkOutBandwidth(name, Double.parseDouble(newValue));
+                        dockerRunner.changeNetwork(name, Double.parseDouble(newValue), parametersList.get(DockerRuntimeData.getNodeIdByName(name)).getNetworkOutLatency());
                         parametersList.get(DockerRuntimeData.getNodeIdByName(name)).setNetworkOutBandwidth(Double.parseDouble(newValue));
                         break;
                     case "networkOutLatency":
-                        dockerRunner.changeNetworkOutLatency(name, Double.parseDouble(newValue));
+                        dockerRunner.changeNetwork(name, parametersList.get(DockerRuntimeData.getNodeIdByName(name)).getNetworkOutBandwidth(), Double.parseDouble(newValue));
                         parametersList.get(DockerRuntimeData.getNodeIdByName(name)).setNetworkOutLatency(Double.parseDouble(newValue));
                         break;
                     default:

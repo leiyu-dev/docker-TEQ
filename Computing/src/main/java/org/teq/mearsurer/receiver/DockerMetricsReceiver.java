@@ -54,7 +54,7 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
 
         DockerRunner dockerRunner = simulator.getDockerRunner();
         try {
-            dockerRunner.beginDockerMetricsCollection(cpuUsageQueueList, memoryUsageQueueList);
+            dockerRunner.beginDockerMetricsCollectionTry(cpuUsageQueueList, memoryUsageQueueList);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
