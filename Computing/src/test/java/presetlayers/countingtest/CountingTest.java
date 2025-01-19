@@ -33,14 +33,5 @@ public class CountingTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-        SocketDisplayer fileDisplayer = new SocketDisplayer();
-        MetricsTransformer transformer = new MetricsTransformer(simulator, fileDisplayer);
-        try {
-            transformer.beginTransform();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        fileDisplayer.display();
     }
 }

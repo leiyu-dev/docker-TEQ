@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DockerRunner {
     private static final Logger logger = LogManager.getLogger(DockerRunner.class);
@@ -274,9 +275,41 @@ public class DockerRunner {
 //        }
     }
 
+    private AtomicBoolean shouldStop = new AtomicBoolean(false);
+    private List<BlockingQueue<Double>>cpuQueueList;
+    private List<BlockingQueue<Double>>memoryQueueList;
+    class InspectNode{
+        String containerName;
+        BlockingQueue<Double>cpuQueue;
+        BlockingQueue<Double>memoryQueue;
+        BlockingQueue<Double>cpuTimeQueue;
+        BlockingQueue<Double>memoryTimeQueue;
+        public InspectNode(String containerName, BlockingQueue<Double>cpuQueue, BlockingQueue<Double>memoryQueue, BlockingQueue<Double>cpuTimeQueue, BlockingQueue<Double>memoryTimeQueue){
+            this.containerName = containerName;
+            this.cpuQueue = cpuQueue;
+            this.memoryQueue = memoryQueue;
+            this.cpuTimeQueue = cpuTimeQueue;
+            this.memoryTimeQueue = memoryTimeQueue;
+        }
+    }
+    private List<InspectNode>inspectNodes = new ArrayList<>();
+
+    public void stopCollection(){
+        shouldStop.set(true);
+    }
+
+    public void recoverCollection(){
+        shouldStop.set(false);
+        beginDockerMetricsCollection(cpuQueueList, memoryQueueList);
+        for(InspectNode inspectNode: inspectNodes){
+            beginInspectNode(inspectNode.containerName, inspectNode.cpuQueue, inspectNode.memoryQueue, inspectNode.cpuTimeQueue, inspectNode.memoryTimeQueue);
+        }
+    }
 
     //deprecated: have bug
     public void beginDockerMetricsCollection(List<BlockingQueue<Double>>cpuQueueList, List<BlockingQueue<Double>>memoryQueueList){
+        this.cpuQueueList = cpuQueueList;
+        this.memoryQueueList = memoryQueueList;
         Thread getterThread =  new Thread(()->{
             List<String>nodeList = DockerRuntimeData.getNodeNameList();
             for(int i = 0; i < nodeList.size(); i++){
@@ -292,11 +325,17 @@ public class DockerRunner {
 
                     @Override
                     public void onNext(Statistics stats) {
+                        if (shouldStop.get()) {
+                            System.out.println("Stopping execution...");
+                            throw new RuntimeException("Stopping execution...");
+                        }
+
                         try {
                             TimeUnit.SECONDS.sleep(1);
                         } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
+                            e.printStackTrace();
                         }
+
 
                         if (lastStat == null) {
                             lastStat = stats; // 初始化上一次数据
@@ -335,20 +374,17 @@ public class DockerRunner {
                 }
         });
         getterThread.start();
-        try {
-            Thread.sleep(10);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        getterThread.interrupt();
     }
 
 
     public void beginInspectNode(String containerName, BlockingQueue<Double>cpuQueue, BlockingQueue<Double>memoryQueue, BlockingQueue<Double>cpuTimeQueue, BlockingQueue<Double>memoryTimeQueue){
+        InspectNode inspectNode = new InspectNode(containerName, cpuQueue, memoryQueue, cpuTimeQueue, memoryTimeQueue);
+        inspectNodes.add(inspectNode);
         Thread getterThread =  new Thread(()->{
             long startTime = utils.getStartTime();
             StatsCmd statsCmd = dockerClient.statsCmd(containerName);
             statsCmd.exec(new ResultCallback<Statistics>() {
+
                 @Override
                 public void close() throws IOException {}
                 private Statistics lastStat = null; // 独立的 lastStat
@@ -357,6 +393,10 @@ public class DockerRunner {
 
                 @Override
                 public void onNext(Statistics stats) {
+                    if (shouldStop.get()) {
+                        System.out.println("Stopping execution...");
+                        throw new RuntimeException("Stopping execution...");
+                    }
                     try {
                         TimeUnit.SECONDS.sleep(1);
                     } catch (InterruptedException e) {
@@ -508,28 +548,49 @@ String[] command = {
 "bash "+ SimulatorConfigurator.volumePath + "/" + SimulatorConfigurator.startScriptName
 };
      */
-    public void changeNetwork(String containerName, double outBandwidth, double outLatency) throws IllegalArgumentException{
-        if(outBandwidth < 0){
+    public void changeNetwork(String containerName, double outBandwidth, double outLatency) throws IllegalArgumentException {
+        if (outBandwidth <= 0) {
             throw new IllegalArgumentException("Network out bandwidth should be greater than 0");
         }
-        try {
-            String command =
-                "tc qdisc del dev eth0 root &&" +
-                "tc qdisc add dev eth0 root handle 1: htb default 1 && " +
-                "tc class add dev eth0 parent 1: classid 1:1 htb rate " + outBandwidth + "kbps ceil " + outBandwidth + "kbps && " +
-                "tc qdisc add dev eth0 parent 1:1 handle 10: netem delay "+ outLatency +"ms && " +
-                "tc class add dev eth0 parent 1: classid 1:2 htb rate 100mbit ceil 100mbit && " +
-                "tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 match ip tos 0x10 0xff flowid 1:2 && ";
 
-            dockerClient.execCreateCmd(containerName)
+        try {
+            // Construct the command
+            String command =
+                    "tc qdisc del dev eth0 root || true && " +
+                            "tc qdisc add dev eth0 root handle 1: htb default 1 && " +
+                            "tc class add dev eth0 parent 1: classid 1:1 htb rate " + outBandwidth + "kbps ceil " + outBandwidth + "kbps && " +
+                            "tc qdisc add dev eth0 parent 1:1 handle 10: netem delay " + outLatency + "ms && " +
+                            "tc class add dev eth0 parent 1: classid 1:2 htb rate 100mbit ceil 100mbit && " +
+                            "tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 match ip tos 0x10 0xff flowid 1:2";
+
+            // Ensure container exists and is running
+            Container container = dockerClient.listContainersCmd()
+                    .withNameFilter(Collections.singletonList(containerName))
+                    .exec()
+                    .stream()
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Container not found or not running: " + containerName));
+
+            // Create and start the exec command
+            ExecCreateCmdResponse execResponse = dockerClient.execCreateCmd(container.getId())
                     .withCmd("bash", "-c", command)
+                    .withAttachStdin(true)
+                    .withAttachStdout(true)
+                    .withAttachStderr(true)
                     .exec();
-            dockerClient.execStartCmd(containerName).exec(new ExecStartResultCallback()).awaitCompletion();
+
+            dockerClient.execStartCmd(execResponse.getId())
+                    .exec(new ExecStartResultCallback())
+                    .awaitCompletion();
+
             logger.info("Updated network out bandwidth for container " + containerName + " to " + outBandwidth + " kbps");
+
         } catch (Exception e) {
-            logger.error("Failed to update network out bandwidth for container " + containerName, e);
+            logger.error("Failed to update network settings for container " + containerName, e);
+            throw new RuntimeException("Failed to update network settings for container " + containerName, e);
         }
     }
+
 
 
 }

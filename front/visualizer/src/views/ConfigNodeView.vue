@@ -1,21 +1,21 @@
 <template>
       <el-row :gutter="20">
-        <el-col :span="8">
-          <el-select
-              v-model="chooseStore.selectedAlgorithm"
-              placeholder="Choose Algorithm"
-              style="width: 100%"
-              size="large"
-              @change="fetchLayers"
-          >
-            <el-option
-                v-for="algorithm in algorithms"
-                :key="algorithm"
-                :label="algorithm"
-                :value="algorithm"
-            ></el-option>
-          </el-select>
-        </el-col>
+<!--        <el-col :span="8">-->
+<!--          <el-select-->
+<!--              v-model="chooseStore.selectedAlgorithm"-->
+<!--              placeholder="Choose Algorithm"-->
+<!--              style="width: 100%"-->
+<!--              size="large"-->
+<!--              @change="fetchLayers"-->
+<!--          >-->
+<!--            <el-option-->
+<!--                v-for="algorithm in algorithms"-->
+<!--                :key="algorithm"-->
+<!--                :label="algorithm"-->
+<!--                :value="algorithm"-->
+<!--            ></el-option>-->
+<!--          </el-select>-->
+<!--        </el-col>-->
         <el-col :span="8">
           <el-select
               size="large"
@@ -113,7 +113,7 @@ export default {
       try {
         const response = await axios.get("http://localhost:8889/layer", {
           params: {
-            ElMessage: this.chooseStore.selectedAlgorithm,
+            algorithm: "Algorithm1",
           },
         });
         this.layers = response.data;
@@ -123,13 +123,13 @@ export default {
     },
     async fetchNodes() {
       // this.configNodes.length = 0;
-      if (!this.chooseStore.selectedAlgorithm || !this.chooseStore.selectedLayer) {
+      if (!"Algorithm1" || !this.chooseStore.selectedLayer) {
         return;
       }
       try {
         const response = await axios.get("http://localhost:8889/node", {
           params: {
-            algorithm: this.chooseStore.selectedAlgorithm,
+            algorithm: "Algorithm1",
             layer: this.chooseStore.selectedLayer,
           },
         });
@@ -140,7 +140,7 @@ export default {
       }
     },
     async fetchConfigNodes() {
-      if (!this.chooseStore.selectedAlgorithm || !this.chooseStore.selectedLayer || !this.chooseStore.selectedAlgorithm) {
+      if (!"Algorithm1" || !this.chooseStore.selectedLayer || !"Algorithm1") {
         return;
       }
       try {
@@ -150,7 +150,7 @@ export default {
         }
         const response = await axios.get("http://localhost:8889/config/node", {
           params: {
-            algorithm: this.chooseStore.selectedAlgorithm,
+            algorithm: "Algorithm1",
             layer: this.chooseStore.selectedLayer,
             node: sendNode,
           },

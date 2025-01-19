@@ -35,22 +35,22 @@
     </el-col>
   </el-row>
   <el-row :gutter="20" v-if="showDetail" style="margin-bottom: 20px;">
-    <el-col :span="4">
-      <el-select
-          v-model="selectedAlgorithm"
-          placeholder="Choose Algorithm"
-          style="width: 100%"
-          size="large"
-          @change="fetchLayers"
-      >
-        <el-option
-            v-for="algorithm in algorithms"
-            :key="algorithm"
-            :label="algorithm"
-            :value="algorithm"
-        ></el-option>
-      </el-select>
-    </el-col>
+<!--    <el-col :span="4">-->
+<!--      <el-select-->
+<!--          v-model="selectedAlgorithm"-->
+<!--          placeholder="Choose Algorithm"-->
+<!--          style="width: 100%"-->
+<!--          size="large"-->
+<!--          @change="fetchLayers"-->
+<!--      >-->
+<!--        <el-option-->
+<!--            v-for="algorithm in algorithms"-->
+<!--            :key="algorithm"-->
+<!--            :label="algorithm"-->
+<!--            :value="algorithm"-->
+<!--        ></el-option>-->
+<!--      </el-select>-->
+<!--    </el-col>-->
     <el-col :span="4">
       <el-select
           size="large"
@@ -218,7 +218,7 @@ export default {
         });
       }
     }, 1000);
-    this.fetchAlgorithms();
+    this.fetchLayers();
   },
   methods:{
     initOverview(){
@@ -310,7 +310,7 @@ export default {
       try {
         const response = await axios.get("http://localhost:8889/layer", {
           params: {
-            ElMessage: this.selectedAlgorithm,
+            algorithm: "Algorithm1",
           },
         });
         this.layers = response.data;
@@ -320,13 +320,13 @@ export default {
     },
     async fetchNodes() {
       // this.configNodes.length = 0;
-      if (!this.selectedAlgorithm || !this.selectedLayer) {
+      if (!"Algorithm1" || !this.selectedLayer) {
         return;
       }
       try {
         const response = await axios.get("http://localhost:8889/node", {
           params: {
-            algorithm: this.selectedAlgorithm,
+            algorithm: "Algorithm1",
             layer: this.selectedLayer,
           },
         });
@@ -345,12 +345,12 @@ export default {
          }
        }
 
-       if (!this.selectedAlgorithm || !this.selectedLayer || !this.selectedNode) {
+       if (!"Algorithm1" || !this.selectedLayer || !this.selectedNode) {
          return;
        }
        try {
          const response = await axios.post("http://localhost:8889/inspect", {
-           algorithm: this.selectedAlgorithm,
+           algorithm: "Algorithm1",
            layer: this.selectedLayer,
            node: this.selectedNode,
          });

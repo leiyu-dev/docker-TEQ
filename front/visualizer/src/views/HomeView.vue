@@ -2,7 +2,7 @@
       <!-- 第一行：状态和运行节点 -->
       <el-row :gutter="20" align="top" style="margin-bottom: 20px;">
         <!-- 状态卡片 -->
-        <el-col :span="12" style="height: 250px">
+        <el-col style="height: 250px">
           <el-card style="height: 100%;">
             <template #header>
               <span class="headers">Status</span>
@@ -53,27 +53,36 @@
           </el-card>
         </el-col>
 
-        <!-- 运行节点卡片 -->
-        <el-col :span="12" style="height: 250px">
+      </el-row>
+
+      <el-row :gutter="20" align="top" style="margin-bottom: 20px;">
+        <el-col :span="12" style="height: 350px;">
           <el-card style="height: 100%">
             <template #header>
               <span class="headers">Running Nodes</span>
             </template>
             <div style="padding: 20px; font-size: 20px;">
               <div style="margin-bottom: 15px;">
-                <strong>Algorithms:</strong> {{ statusStore.algorithms }}
+<!--                <strong>Algorithms:</strong> {{ statusStore.algorithms }}-->
               </div>
               <div style="margin-bottom: 15px;">
-                <strong>Layers:</strong> {{ statusStore.layers }}
+                <strong>Total Running Layers:</strong> {{ statusStore.layers }}
               </div>
               <div>
-                <strong>Nodes:</strong> {{ statusStore.nodes }}
+                <strong>Total Running Nodes:</strong> {{ statusStore.nodes }}
               </div>
             </div>
           </el-card>
         </el-col>
+        <el-col :span="12" style="height: 350px;">
+          <el-card style="height: 100%">
+            <template #header>
+              <span class="headers">Nodes in Layers</span>
+            </template>
+          <div :ref="'chart'" style="height: 250px; width:100%  " ></div>
+          </el-card>
+        </el-col>
       </el-row>
-
 
       <!-- 第二行：内存、CPU 和运行时间 -->
       <el-row :gutter="20">
@@ -117,14 +126,50 @@
 <script>
 import {ElMessage} from "element-plus";
 import {useStatusStore} from "@/stores/status.js";
+import * as echarts from "echarts";
+import axios from "axios";
 export default {
   data() {
     return {
       statusStore : useStatusStore(),
+      layers : [],
+      nodeCounts: [],
     };
   },
-  mounted() {
-
+  async mounted() {
+    const chartRef = this.$refs['chart'];
+    const chart = echarts.init(chartRef, null, {renderer: 'svg'});
+    await this.fetchLayers();
+    let data = []
+    for(let layer of this.layers){
+      const nodeCount = await this.fetchNodes(layer);
+      this.nodeCounts.push(nodeCount);
+      data.push({value: nodeCount, name: layer});
+    }
+    let option = {
+      tooltip: {
+        trigger: 'item'
+      },
+      legend: {
+        orient: 'vertical',
+        left: 'left'
+      },
+      series: [
+        {
+          type: 'pie',
+          radius: '50%',
+          data: data,
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
+          }
+        }
+      ]
+    };
+    chart.setOption(option);
   },
   methods:{
     start(){
@@ -246,7 +291,33 @@ export default {
       }).catch(error => {
         ElMessage.error('There has been a problem with your fetch operation: ' + error.message);
       });
-    }
+    },
+    async fetchLayers() {
+      try {
+        const response = await axios.get("http://localhost:8889/layer", {
+          params: {
+            //todo: add algorithm
+            algorithm: "Algorithm1",
+          },
+        });
+        this.layers = response.data;
+      } catch (error) {
+        ElMessage.error("Error fetching layers:", error);
+      }
+    },
+    async fetchNodes(layer) {
+      try {
+        const response = await axios.get("http://localhost:8889/node", {
+          params: {
+            algorithm: "Algorithm1",
+            layer: layer,
+          },
+        });
+        return response.data.length;
+      } catch (error) {
+        ElMessage.error("Error fetching nodes:", error);
+      }
+    },
   }
 };
 </script>

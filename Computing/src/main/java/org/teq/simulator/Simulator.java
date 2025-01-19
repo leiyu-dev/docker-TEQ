@@ -5,6 +5,7 @@ import org.teq.configurator.ExecutorParameters;
 import org.teq.configurator.SimulatorConfigurator;
 import org.teq.configurator.TeqGlobalConfig;
 import org.teq.layer.Layer;
+import org.teq.mearsurer.MetricsTransformer;
 import org.teq.node.AbstractDockerNode;
 import org.teq.node.DefaultDockerNode;
 import org.teq.node.DockerNodeParameters;
@@ -14,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import org.teq.simulator.network.AbstractNetworkHostNode;
 import org.teq.utils.StaticSerializer;
 import org.teq.utils.utils;
+import org.teq.visualizer.SocketDisplayer;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -197,6 +199,16 @@ public class Simulator {
                 logger.info("Network node started");
             }
         }
+
+        SocketDisplayer fileDisplayer = new SocketDisplayer();
+        MetricsTransformer transformer = new MetricsTransformer(this, fileDisplayer);
+        try {
+            transformer.beginTransform();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        fileDisplayer.display();
+
         state.set(1);
         // 等待所有节点运行完
         if(SimulatorConfigurator.cleanUpAfterSimulation){
@@ -206,6 +218,7 @@ public class Simulator {
 
     public void stop(){
         state.set(3);
+        dockerRunner.stopCollection();
         dockerRunner.closeAllContainers();
         state.set(0);
     }
@@ -215,6 +228,7 @@ public class Simulator {
         utils.startTimer();
         logger.info("Restarting the simulation");
 
+        dockerRunner.stopCollection();
         dockerRunner.closeAllContainers();
 
         runAssembleScript();
@@ -238,6 +252,8 @@ public class Simulator {
                 logger.info("Network node started");
             }
         }
+        Thread thread = new Thread(dockerRunner::recoverCollection);
+        thread.start();
         state.set(1);
     }
 
