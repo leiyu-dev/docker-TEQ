@@ -9,6 +9,7 @@ import org.teq.configurator.unserializable.InfoType;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.abstractLayer.AbstractEndDeviceNode;
 import org.teq.utils.DockerRuntimeData;
+import org.teq.utils.connector.MultiThreadDataReceiver;
 import org.teq.utils.dataSet.dataSetPlayer.CommonDataSource;
 import org.teq.utils.dataSet.dataSetPlayer.DataSetCommonPlayer;
 import org.teq.utils.dataSet.dataSetPlayer.Reader.CSVReader;
@@ -24,20 +25,13 @@ public class EndDevice extends AbstractEndDeviceNode {
     private static final String filePath = "dataItem1M+ForLocal.csv";
     @Override
     protected DataStream<PackageBean> getSource() {
-        CommonReader<String[]> csvReader = new CSVReader( filePath, 30);
-        CommonDataSource<String[]> dataSource = new DataSetCommonPlayer<String[]>().genPlayer( 10, csvReader);
         StreamExecutionEnvironment env = getEnv();
-        if(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.endDeviceLayerName).get(0).equals(getNodeName())) {
-            return env.addSource(dataSource).
-                    returns(String[].class).
-                    map((MapFunction<String[], PackageBean>) s -> new PackageBean(s[14],
-                            DockerRuntimeData.getNodeNameListByLayerName(coordinatorLayerName).get(0),
-                            ExecutorParameters.fromEndToCodPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s)));
-        }
-        else {
-            //return an empty data stream
-            return env.fromElements();
-        }
+        return env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorParameters.fromNetworkToEndPort, PackageBean.class)).
+                returns(PackageBean.class).
+                map((MapFunction<PackageBean, String[]>) s -> (String[])s.getObject()).
+                map((MapFunction<String[], PackageBean>) s -> new PackageBean(s[14],
+                        DockerRuntimeData.getNodeNameListByLayerName(coordinatorLayerName).get(0),
+                        ExecutorParameters.fromEndToCodPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s)));
     }
 
     @Override

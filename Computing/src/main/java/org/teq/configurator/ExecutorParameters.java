@@ -10,6 +10,8 @@ public class ExecutorParameters implements TeqGlobalConfig{
     public static String coordinatorLayerName = "CoordinatorLayer";
     public static String workerLayerName = "WorkerLayer";
     public static String dataCenterLayerName = "DataCenterLayer";
+
+    public static int fromNetworkToEndPort = 9999;
     public static int fromEndToCodPort = 10000;
     public static int fromCodToWorkerPort = 10001;
     public static int fromWorkerToCenterPort = 10002;

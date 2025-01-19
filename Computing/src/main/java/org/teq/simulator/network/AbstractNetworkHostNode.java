@@ -21,7 +21,6 @@ public abstract class AbstractNetworkHostNode extends AbstractFlinkNode {
         StreamExecutionEnvironment env = getEnv();
         List<DataStream<BuiltInMetrics>> streams = new ArrayList<>();
         List<String>nodeList = DockerRuntimeData.getNodeNameList();
-        int nodeCount = nodeList.size()-1;
         for(String nodeName : nodeList){
             System.out.println(nodeName);
         }
