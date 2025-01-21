@@ -9,14 +9,13 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 //import org.apache.log4j.PropertyConfigurator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.teq.configurator.unserializable.InfoType;
 import org.teq.mearsurer.MeasuredFlinkNode;
 import org.teq.configurator.ExecutorParameters;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.EndDeviceTask;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.MultiThreadDataReceiver;
-import org.teq.utils.connector.TargetedDataSender;
+import org.teq.utils.connector.flink.javasocket.MultiThreadDataReceiver;
+import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
 
 
 public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements EndDeviceTask {

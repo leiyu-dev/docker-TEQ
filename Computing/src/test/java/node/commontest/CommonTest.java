@@ -4,7 +4,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.teq.simulator.Simulator;
-import org.teq.utils.connector.CommonDataReceiver;
+import org.teq.utils.connector.flink.javasocket.CommonDataReceiver;
 
 public class CommonTest {
     public static void main(String[] args) throws Exception {

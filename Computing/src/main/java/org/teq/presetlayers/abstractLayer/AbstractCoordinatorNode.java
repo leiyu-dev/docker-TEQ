@@ -13,8 +13,8 @@ import org.teq.configurator.ExecutorParameters;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.CoordinatorTask;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.MultiThreadDataReceiver;
-import org.teq.utils.connector.TargetedDataSender;
+import org.teq.utils.connector.flink.javasocket.MultiThreadDataReceiver;
+import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
 //import org.apache.log4j.PropertyConfigurator;
 
 

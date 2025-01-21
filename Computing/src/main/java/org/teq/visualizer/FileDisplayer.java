@@ -4,7 +4,6 @@ import akka.japi.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.teq.configurator.SimulatorConfigurator;
-import org.teq.utils.connector.CommonDataReceiver;
 
 import java.io.File;
 import java.io.FileNotFoundException;

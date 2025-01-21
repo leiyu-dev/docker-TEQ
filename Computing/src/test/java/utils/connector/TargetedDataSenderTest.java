@@ -5,7 +5,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.teq.configurator.unserializable.InfoType;
 import org.teq.mearsurer.MetricsPackageBean;
-import org.teq.utils.connector.TargetedDataSender;
+import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
 
 public class TargetedDataSenderTest {
     public static void main(String[] args) throws Exception {

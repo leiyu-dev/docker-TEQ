@@ -131,7 +131,8 @@ public class BackendManager {
                     String.format("%.2f", systemCpuLoad * 100) + "% / " + cores + " cores",
                     String.format("%.2f", (physicalTotalMemory - physicalFreeMemory) / 1024.0 / 1024.0 / 1024.0 ) + " GB (buffered) / " +
                             String.format("%.2f", physicalTotalMemory / 1024.0 / 1024.0 / 1024.0) + " GB",
-                    upTime/60 + "min" + upTime%60 + "s");
+                    simulator.getState().equals("RUNNING")  ? upTime/60 + "min" + upTime%60 + "s" : "stopped"
+            );
             String jsonString = JSON.toJSONString(status);
             return jsonString;
         });

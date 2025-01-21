@@ -1,8 +1,7 @@
-package org.teq.utils.connector;
+package org.teq.utils.connector.flink.javasocket;
 
 import com.alibaba.fastjson.JSON;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -106,12 +105,11 @@ public class MultiThreadDataReceiver<T> implements SourceFunction<T> {
                     }
                 }
             }
-        } catch (IOException e) {
-            if (isRunning) {
-                logger.error("Error reading from client " + clientSocket.toString(), e);
-            }
+            logger.info("Connection lost: " + clientSocket.toString());
+        } catch (Exception e) {
+            logger.error("Error reading from client " + clientSocket.toString(), e);
         } finally {
-            System.out.println("closed connection:" + isRunning);
+            logger.info("closed connection:" + isRunning);
             // 移除并关闭客户端连接
             clientSockets.remove(clientSocket);
             try {
@@ -121,6 +119,7 @@ public class MultiThreadDataReceiver<T> implements SourceFunction<T> {
                 logger.info("Closed client connection: " + clientSocket.toString());
             } catch (IOException e) {
                 logger.error("Error closing client socket " + clientSocket.toString(), e);
+                e.printStackTrace();
             }
         }
     }

@@ -17,7 +17,7 @@ public class CountingTest {
         work.setParameters(param);
         DataCenter dat = new DataCenter();
         dat.setParameters(param);
-        Layer endDeviceLayer = new Layer(end,4, "EndDeviceLayer");
+        Layer endDeviceLayer = new Layer(end,10, "EndDeviceLayer");
         Layer coordinatorLayer = new Layer(coor,1, "CoordinatorLayer");
         Layer workerLayer = new Layer(work,2, "WorkerLayer");
         Layer dataCenterLayer = new Layer(dat,1, "DataCenterLayer");

@@ -8,9 +8,8 @@ import org.teq.configurator.SimulatorConfigurator;
 import org.teq.mearsurer.BuiltInMetrics;
 import org.teq.node.AbstractFlinkNode;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.CommonDataReceiver;
-import org.teq.utils.connector.CommonDataSender;
-import org.teq.utils.connector.MultiThreadDataReceiver;
+import org.teq.utils.connector.flink.javasocket.CommonDataSender;
+import org.teq.utils.connector.flink.javasocket.MultiThreadDataReceiver;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -13,8 +13,8 @@ import org.teq.configurator.ExecutorParameters;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.DataCenterTask;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.MultiThreadDataReceiver;
-import org.teq.utils.connector.TargetedDataSender;
+import org.teq.utils.connector.flink.javasocket.MultiThreadDataReceiver;
+import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
 
 public abstract class AbstractDataCenterNode extends MeasuredFlinkNode implements DataCenterTask {
     private static final Logger logger = LogManager.getLogger(AbstractEndDeviceNode.class);

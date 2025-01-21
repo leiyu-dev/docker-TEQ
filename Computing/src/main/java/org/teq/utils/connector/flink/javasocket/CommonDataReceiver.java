@@ -1,10 +1,9 @@
-package org.teq.utils.connector;
+package org.teq.utils.connector.flink.javasocket;
 
 import com.alibaba.fastjson.JSON;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.teq.simulator.Simulator;
 
 import java.io.BufferedReader;
 import java.io.IOException;

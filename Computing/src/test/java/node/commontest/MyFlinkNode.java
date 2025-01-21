@@ -5,7 +5,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.teq.node.AbstractFlinkNode;
 import org.teq.node.DockerNodeParameters;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.CommonDataSender;
+import org.teq.utils.connector.flink.javasocket.CommonDataSender;
 
 public class MyFlinkNode extends AbstractFlinkNode{
 

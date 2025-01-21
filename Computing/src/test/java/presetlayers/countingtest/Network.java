@@ -7,7 +7,7 @@ import org.teq.configurator.unserializable.InfoType;
 import org.teq.presetlayers.PackageBean;
 import org.teq.simulator.network.AbstractNetworkHostNode;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.TargetedDataSender;
+import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
 import org.teq.utils.dataSet.dataSetPlayer.CommonDataSource;
 import org.teq.utils.dataSet.dataSetPlayer.DataSetCommonPlayer;
 import org.teq.utils.dataSet.dataSetPlayer.Reader.CSVReader;
@@ -15,8 +15,6 @@ import org.teq.utils.dataSet.dataSetPlayer.Reader.CommonReader;
 
 import java.util.Arrays;
 import java.util.Random;
-
-import static org.teq.configurator.ExecutorParameters.coordinatorLayerName;
 
 public class Network extends AbstractNetworkHostNode {
     private static final String filePath = "dataItem1M+ForLocal.csv";
@@ -31,7 +29,7 @@ public class Network extends AbstractNetworkHostNode {
                 map((MapFunction<String[], PackageBean>) s -> new PackageBean(getNodeName(),
                         DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.endDeviceLayerName).get(
                                 random.nextInt(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.endDeviceLayerName).size())),
-                        ExecutorParameters.fromNetworkToEndPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, s)).
+                        ExecutorParameters.fromNetworkToEndPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s))).
                 addSink(new TargetedDataSender<>(ExecutorParameters.maxNumRetries, ExecutorParameters.retryInterval)).setParallelism(1);
     }
 }

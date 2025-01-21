@@ -1,26 +1,20 @@
 package org.teq.mearsurer.receiver;
 
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.typeinfo.AtomicType;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.intellij.lang.annotations.Identifier;
-import org.teq.configurator.ExecutorParameters;
 import org.teq.configurator.unserializable.InfoType;
 import org.teq.mearsurer.BuiltInMetrics;
-import org.teq.mearsurer.MetricsTransformer;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.CommonDataReceiver;
+import org.teq.utils.connector.flink.javasocket.CommonDataReceiver;
 import org.teq.utils.utils;
 import org.teq.visualizer.Chart;
 import org.teq.visualizer.MetricsDisplayer;
-import scala.Int;
 
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;

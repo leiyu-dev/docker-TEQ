@@ -1,4 +1,4 @@
-package org.teq.utils.connector;
+package org.teq.utils.connector.flink.javasocket;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

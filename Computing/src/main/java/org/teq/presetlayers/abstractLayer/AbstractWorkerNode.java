@@ -12,7 +12,8 @@ import org.teq.mearsurer.MeasuredFlinkNode;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.WorkerTask;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.*;
+import org.teq.utils.connector.flink.javasocket.MultiThreadDataReceiver;
+import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
 
 public abstract class AbstractWorkerNode extends MeasuredFlinkNode implements WorkerTask  {
     protected String logConfigFilePath; // 每个实例的日志配置文件路径都不一样

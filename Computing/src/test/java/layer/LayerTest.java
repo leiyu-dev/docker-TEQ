@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.teq.layer.Layer;
 import org.teq.simulator.Simulator;
-import org.teq.utils.connector.CommonDataReceiver;
+import org.teq.utils.connector.flink.javasocket.CommonDataReceiver;
 
 public class LayerTest {
     public static void main(String[] args) throws Exception {
