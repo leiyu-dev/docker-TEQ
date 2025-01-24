@@ -2,16 +2,12 @@ package org.teq.backend;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.teq.configurator.TeqGlobalConfig;
 import org.teq.node.DockerNodeParameters;
 import org.teq.simulator.docker.DockerRunner;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.StaticSerializer;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -89,60 +85,58 @@ public class NodeConfigHandler {
             String newValue = requestBody.getString("value");
             logger.info("Received request to update configuration for node: " + name + ", key: " + key + ", value: " + newValue);
             if(name.equals("All nodes")){
-                List<String> nodes = DockerRuntimeData.getNodeNameListByLayerName(layer);
-                for(String node:nodes){
-                    switch (key) {
-                        case "cpuUsageRate":
-                            dockerRunner.changeCpuUsageRate(node, Double.parseDouble(newValue));
-                            parametersList.get(DockerRuntimeData.getNodeIdByName(node)).setCpuUsageRate(Double.parseDouble(newValue));
-                            break;
-                        case "memorySize":
-                            dockerRunner.changeMemorySize(node, Double.parseDouble(newValue));
-                            parametersList.get(DockerRuntimeData.getNodeIdByName(node)).setMemorySize(Double.parseDouble(newValue));
-                            break;
-                        case "networkOutBandwidth":
-                            dockerRunner.changeNetwork(node, Double.parseDouble(newValue), parametersList.get(DockerRuntimeData.getNodeIdByName(node)).getNetworkOutLatency());
-                            parametersList.get(DockerRuntimeData.getNodeIdByName(node)).setNetworkOutBandwidth(Double.parseDouble(newValue));
-                            break;
-                        case "networkOutLatency":
-                            dockerRunner.changeNetwork(node, parametersList.get(DockerRuntimeData.getNodeIdByName(node)).getNetworkOutBandwidth(), Double.parseDouble(newValue));
-                            parametersList.get(DockerRuntimeData.getNodeIdByName(node)).setNetworkOutLatency(Double.parseDouble(newValue));
-                            break;
-                        default:
-                            res.status(400); // Bad Request
-                            return JSON.toJSONString(Map.of("error", "Invalid key: " + key));
+                try {
+                    List<String> nodes = DockerRuntimeData.getNodeNameListByLayerName(layer);
+                    for (String node : nodes) {
+                        changeParameter(node, key, newValue);
                     }
+                } catch (Exception e) {
+                    logger.error("exception: " + e);
+                    res.status(400); // Bad Request
+                    return JSON.toJSONString(Map.of("error", e.getMessage()));
                 }
             }
-            try {
-                switch (key) {
-                    case "cpuUsageRate":
-                        dockerRunner.changeCpuUsageRate(name, Double.parseDouble(newValue));
-                        parametersList.get(DockerRuntimeData.getNodeIdByName(name)).setCpuUsageRate(Double.parseDouble(newValue));
-                        break;
-                    case "memorySize":
-                        dockerRunner.changeMemorySize(name, Double.parseDouble(newValue));
-                        parametersList.get(DockerRuntimeData.getNodeIdByName(name)).setMemorySize(Double.parseDouble(newValue));
-                        break;
-                    case "networkOutBandwidth":
-                        dockerRunner.changeNetwork(name, Double.parseDouble(newValue), parametersList.get(DockerRuntimeData.getNodeIdByName(name)).getNetworkOutLatency());
-                        parametersList.get(DockerRuntimeData.getNodeIdByName(name)).setNetworkOutBandwidth(Double.parseDouble(newValue));
-                        break;
-                    case "networkOutLatency":
-                        dockerRunner.changeNetwork(name, parametersList.get(DockerRuntimeData.getNodeIdByName(name)).getNetworkOutBandwidth(), Double.parseDouble(newValue));
-                        parametersList.get(DockerRuntimeData.getNodeIdByName(name)).setNetworkOutLatency(Double.parseDouble(newValue));
-                        break;
-                    default:
-                        res.status(400); // Bad Request
-                        return JSON.toJSONString(Map.of("error", "Invalid key: " + key));
-                }
+            else try {
+                changeParameter(name, key, newValue);
             } catch (Exception e) {
+                logger.error("exception: " + e);
                 res.status(400); // Bad Request
-                return JSON.toJSONString(Map.of("error", "Invalid value for key: " + key));
+                return JSON.toJSONString(Map.of("error", e.getMessage()));
             }
+            logger.info("Configuration updated successfully.");
             res.status(200); // OK
             return JSON.toJSONString(Map.of("message", "Configuration updated successfully."));
         });
+    }
+    private void changeParameter(String name, String key, String newValue) {
+        switch (key) {
+            case "cpuUsageRate":
+                dockerRunner.changeCpuUsageRate(name, Double.parseDouble(newValue));
+                parametersList.get(DockerRuntimeData.getNodeIdByName(name)).setCpuUsageRate(Double.parseDouble(newValue));
+                break;
+            case "memorySize":
+                dockerRunner.changeMemorySize(name, Double.parseDouble(newValue));
+                parametersList.get(DockerRuntimeData.getNodeIdByName(name)).setMemorySize(Double.parseDouble(newValue));
+                break;
+            case "networkOutBandwidth":
+                dockerRunner.changeNetworkOut(name, Double.parseDouble(newValue), parametersList.get(DockerRuntimeData.getNodeIdByName(name)).getNetworkOutLatency());
+                parametersList.get(DockerRuntimeData.getNodeIdByName(name)).setNetworkOutBandwidth(Double.parseDouble(newValue));
+                break;
+            case "networkOutLatency":
+                dockerRunner.changeNetworkOut(name, parametersList.get(DockerRuntimeData.getNodeIdByName(name)).getNetworkOutBandwidth(), Double.parseDouble(newValue));
+                parametersList.get(DockerRuntimeData.getNodeIdByName(name)).setNetworkOutLatency(Double.parseDouble(newValue));
+                break;
+            case "networkInBandwidth":
+                dockerRunner.changeNetworkIn(name, Double.parseDouble(newValue), parametersList.get(DockerRuntimeData.getNodeIdByName(name)).getNetworkInLatency());
+                parametersList.get(DockerRuntimeData.getNodeIdByName(name)).setNetworkInBandwidth(Double.parseDouble(newValue));
+                break;
+            case "networkInLatency":
+                dockerRunner.changeNetworkIn(name, parametersList.get(DockerRuntimeData.getNodeIdByName(name)).getNetworkInBandwidth(), Double.parseDouble(newValue));
+                parametersList.get(DockerRuntimeData.getNodeIdByName(name)).setNetworkInLatency(Double.parseDouble(newValue));
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid key: " + key);
+        }
     }
 
 }

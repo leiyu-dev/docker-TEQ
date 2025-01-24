@@ -99,6 +99,14 @@ public class DockerNodeParameters implements Serializable {
         this.fixedOutLatency = fixedOutLatency;
     }
 
+    public double getNetworkOutPacketLossRate() {
+        return networkOutPacketLossRate;
+    }
+
+    public void setNetworkOutPacketLossRate(double networkOutPacketLossRate) {
+        this.networkOutPacketLossRate = networkOutPacketLossRate;
+    }
+
     public enum CpuRestrictType{
         ROUGH, //roughly restrict the cpu speed,using the percentage of the cpu usage rate
         PRECISE //precisely restrict the cpu speed,using the exact cpu clock speed and cpu core number
@@ -123,13 +131,15 @@ public class DockerNodeParameters implements Serializable {
 
     /*restrict the network bandwidth of the node*/
     private double networkOutBandwidth = 1024;//kbps
-    private double networkOutLatency = 0;//ms
+    private double networkOutLatency = 100;//ms
 
     private double networkInBandwidth = 1024;//kbps
-    private double networkInLatency = 0;//ms
+    private double networkInLatency = 100;//ms
 
     private int fixedInLatency = 0;//ms, when this is not 0, the network in latency will be fixed to this value
     private int fixedOutLatency = 0;//ms, when this is not 0, the network out latency will be fixed to this value
+
+    private double networkOutPacketLossRate = 0;//percentage of the packet loss rate
 
     @Override
     public String toString(){

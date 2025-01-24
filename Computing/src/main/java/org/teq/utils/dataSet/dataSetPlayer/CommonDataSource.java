@@ -1,13 +1,13 @@
 package org.teq.utils.dataSet.dataSetPlayer;
 
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.teq.configurator.ExecutorParameters;
 import org.teq.utils.dataSet.dataSetPlayer.Reader.CommonReader;
 
 import java.util.concurrent.BlockingQueue;
 
 public class CommonDataSource<T> implements SourceFunction<T> {
     private boolean isRunning = true;
-    private long minBuffer = 0; // unit: ms, 每发出数据条目之间设置的缓冲时间
     private CommonReader<T> commonReader;
     private static final int cacheSize = 30;
 
@@ -16,7 +16,7 @@ public class CommonDataSource<T> implements SourceFunction<T> {
     }
 
     public CommonDataSource(long minBuffer, CommonReader<T> commonReader) {
-        this.minBuffer = minBuffer;
+        ExecutorParameters.minBuffer = minBuffer;
         this.commonReader = commonReader;
     }
 
@@ -27,8 +27,8 @@ public class CommonDataSource<T> implements SourceFunction<T> {
         reader.start();
         while(isRunning){
             sourceContext.collect(blockingQueue.take());
-            if(minBuffer > 0){
-                Thread.sleep(minBuffer);
+            if(ExecutorParameters.minBuffer > 0){
+                Thread.sleep(ExecutorParameters.minBuffer);
             }
         }
     }

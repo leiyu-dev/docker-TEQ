@@ -178,6 +178,8 @@ export default {
           if(response.status !== 200)throw new Error(response.data.error);
           ElMessage.success("Config updated successfully");
           this.fetchConfigNodes();
+        }).catch( error => {
+          ElMessage.error("Error updating config node:", error);
         });
       } catch (error) {
         ElMessage.error("Error updating config node:", error);

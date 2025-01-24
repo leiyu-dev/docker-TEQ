@@ -215,6 +215,13 @@ public class DockerRunner {
             "tc qdisc add dev eth0 parent 1:1 handle 10: netem delay "+ parameters.getNetworkOutLatency() +"ms && " +
             "tc class add dev eth0 parent 1: classid 1:2 htb rate 100mbit ceil 100mbit && " +
             "tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 match ip tos 0x10 0xff flowid 1:2 && " +
+            "ip link add ifb0 type ifb &&" +
+            "ip link set dev ifb0 up &&" +
+            "tc qdisc add dev eth0 handle ffff: ingress && " +
+            "tc filter replace dev eth0 parent ffff: protocol ip u32 match u32 0 0 action mirred egress redirect dev ifb0 &&" +
+            "tc qdisc replace dev ifb0 root handle 2: htb default 22 && " +
+            "tc class add dev ifb0 parent 2: classid 2:22 htb rate " + parameters.getNetworkInBandwidth() + "kbps ceil " + parameters.getNetworkInBandwidth() + "kbps && " +
+            "tc qdisc add dev ifb0 parent 2:22 handle 20: netem delay "+ parameters.getNetworkInLatency() +"ms && " +
             "bash "+ SimulatorConfigurator.volumePath + "/" + SimulatorConfigurator.startScriptName
         };
         String[] env = {
@@ -548,7 +555,7 @@ String[] command = {
 "bash "+ SimulatorConfigurator.volumePath + "/" + SimulatorConfigurator.startScriptName
 };
      */
-    public void changeNetwork(String containerName, double outBandwidth, double outLatency) throws IllegalArgumentException {
+    public void changeNetworkOut(String containerName, double outBandwidth, double outLatency) throws IllegalArgumentException {
         if (outBandwidth <= 0) {
             throw new IllegalArgumentException("Network out bandwidth should be greater than 0");
         }
@@ -556,13 +563,8 @@ String[] command = {
         try {
             // Construct the command
             String command =
-                    "tc qdisc del dev eth0 root || true && " +
-                            "tc qdisc add dev eth0 root handle 1: htb default 1 && " +
-                            "tc class add dev eth0 parent 1: classid 1:1 htb rate " + outBandwidth + "kbps ceil " + outBandwidth + "kbps && " +
-                            "tc qdisc add dev eth0 parent 1:1 handle 10: netem delay " + outLatency + "ms && " +
-                            "tc class add dev eth0 parent 1: classid 1:2 htb rate 100mbit ceil 100mbit && " +
-                            "tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 match ip tos 0x10 0xff flowid 1:2";
-
+                            "tc class replace dev eth0 parent 1: classid 1:1 htb rate " + outBandwidth + "kbps ceil " + outBandwidth + "kbps && " +
+                            "tc qdisc replace dev eth0 parent 1:1 handle 10: netem delay " + outLatency + "ms ";
             // Ensure container exists and is running
             Container container = dockerClient.listContainersCmd()
                     .withNameFilter(Collections.singletonList(containerName))
@@ -583,14 +585,49 @@ String[] command = {
                     .exec(new ExecStartResultCallback())
                     .awaitCompletion();
 
-            logger.info("Updated network out bandwidth for container " + containerName + " to " + outBandwidth + " kbps");
+            logger.info("Updated network out bandwidth for container " + containerName + " to " + outBandwidth + " kbps" + " and latency to " + outLatency + " ms");
 
         } catch (Exception e) {
             logger.error("Failed to update network settings for container " + containerName, e);
             throw new RuntimeException("Failed to update network settings for container " + containerName, e);
         }
     }
+    public void changeNetworkIn(String containerName, double inBandwidth, double inLatency) throws IllegalArgumentException {
+        if (inBandwidth <= 0) {
+            throw new IllegalArgumentException("Network in bandwidth should be greater than 0");
+        }
 
+        try {
+            // Construct the command
+            String command =
+                    "tc class replace dev ifb0 parent 2: classid 2:22 htb rate " + inBandwidth + "kbps ceil " + inBandwidth + "kbps && " +
+                    "tc qdisc replace dev ifb0 parent 2:22 handle 20: netem delay " + inLatency + "ms ";
+            // Ensure container exists and is running
+            Container container = dockerClient.listContainersCmd()
+                    .withNameFilter(Collections.singletonList(containerName))
+                    .exec()
+                    .stream()
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Container not found or not running: " + containerName));
 
+            // Create and start the exec command
+            ExecCreateCmdResponse execResponse = dockerClient.execCreateCmd(container.getId())
+                    .withCmd("bash", "-c", command)
+                    .withAttachStdin(true)
+                    .withAttachStdout(true)
+                    .withAttachStderr(true)
+                    .exec();
+
+            dockerClient.execStartCmd(execResponse.getId())
+                    .exec(new ExecStartResultCallback())
+                    .awaitCompletion();
+
+            logger.info("Updated network in bandwidth for container " + containerName + " to " + inBandwidth + " kbps" + " and latency to " + inLatency + " ms");
+
+        } catch (Exception e) {
+            logger.error("Failed to update network settings for container " + containerName, e);
+            throw new RuntimeException("Failed to update network settings for container " + containerName, e);
+        }
+    }
 
 }
