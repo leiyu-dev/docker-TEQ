@@ -42,7 +42,7 @@ export const useChartStore = defineStore('chart', {
                 let dataName = rawChart.dataLabel[i];
                 seriesList.push({
                     type: 'line',
-                    data: this.yData[this.chartCount][i],
+                    data: this.yData[this.chartCount][i].slice(-20),
                     connectNulls: true,
                     name: dataName,
                     // smooth: true,
@@ -72,7 +72,7 @@ export const useChartStore = defineStore('chart', {
                 xAxis: {
                     type: 'category',
                     name: rawChart.xLabel,
-                    data: this.xData[this.chartCount],
+                    data: this.xData[this.chartCount].slice(-20),
                     splitLine: {
                         show: false
                     }
@@ -103,11 +103,12 @@ export const useChartStore = defineStore('chart', {
                     chartTitle: rawChart.title,
                 });
             }
-            if(rawChart.type==="user")
+            if(rawChart.type==="user"){
                 this.chartOptionsUser.push({
                     option: option,
                     chartTitle: rawChart.title,
                 });
+                }
             if(rawChart.type==="node") {
                 this.chartOptionsNode.push({
                     option: option,
@@ -126,14 +127,6 @@ export const useChartStore = defineStore('chart', {
             data.forEach((rawData) => {
                 const chartIndex = this.chartMap.get(rawData.chartName);
                 this.xData[chartIndex].push(rawData.xData);
-
-                while (this.xData[chartIndex].length > this.maxPoint) {
-                    this.xData[chartIndex].shift();
-                    for (let i = 0; i < this.yData[chartIndex].length; i++) {
-                        this.yData[chartIndex][i].shift();
-                    }
-                }
-
                 rawData.yData.forEach((yData, i) => {
                     this.yData[chartIndex][i].push(yData);
                 });

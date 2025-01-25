@@ -13,8 +13,9 @@
   <el-space v-if="showOverview" wrap :size="25" style="margin-top: 10px;">
     <el-card v-for="(chartOption, index) in this.chartStore.chartOptions" :key="index">
       <template #header>
-        <div class="card-header">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
           <span>{{ chartOption.chartTitle }}</span>
+          <el-button type="text" @click="showFullChart(index, 'overview')">View Full Chart</el-button>
         </div>
       </template>
       <div :ref="'chart' + index" class="charts"></div>
@@ -94,8 +95,9 @@
   <el-space v-if="showDetail" wrap :size="25" style="margin-top: 10px;">
     <el-card v-for="(chartOption, index) in this.chartStore.chartOptionsNode" :key="'detail-' + index">
       <template #header>
-        <div class="card-header">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
           <span>{{ chartOption.chartTitle }}</span>
+          <el-button type="text" @click="showFullChart(index, 'detail')">View Full Chart</el-button>
         </div>
       </template>
       <div :ref="'chart' + (index + 10000)" class="charts"></div>
@@ -118,14 +120,24 @@
   <el-space v-if="showUser" wrap :size="25">
     <el-card v-for="(chartOption, index) in this.chartStore.chartOptionsUser" :key="'user-' + index">
       <template #header>
-        <div class="card-header">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
           <span>{{ chartOption.chartTitle }}</span>
+          <el-button type="text" @click="showFullChart(index, 'user')">View Full Chart</el-button>
         </div>
       </template>
       <div :ref="'chart' + (index + 20000)" class="charts"></div>
     </el-card>
   </el-space>
 
+
+  <el-dialog v-model="dialogVisible" style="width:80%" destroy-on-close :close-on-click-modal="false" :before-close="closeDialog">
+    <template #title>
+      <div style="display: flex; justify-content: center; align-items: center; text-align: center;">
+        <span style="font-size: 20px; font-weight: 400;">{{ dialogChartTitle }}</span>
+      </div>
+    </template>
+    <div ref="dialogChart" style="width: 100%; height: 500px;"></div>
+  </el-dialog>
 
   <el-backtop :right="100" :bottom="100" />
 </template>
@@ -145,7 +157,6 @@ export default {
       defaultChartList: [],
       nodeChartList: [],
       userChartList: [],
-      resizeListenerBound: false,
       intervalId: null,
       chartStore : useChartStore(),
       algorithms: [],
@@ -157,6 +168,9 @@ export default {
       showOverview: true,
       showDetail: true,
       showUser: true,
+      dialogVisible: false, // Controls dialog visibility
+      dialogChartTitle: '', // Title of the chart in dialog
+      dialogChartInstance: null, // Chart instance for dialog
     }
   },
   mounted() {
@@ -173,13 +187,13 @@ export default {
         let seriesList = [];
         for(let j=0; j<this.chartStore.yData[index].length; j++){
           seriesList.push({
-            data: this.chartStore.yData[index][j]
+            data: this.chartStore.yData[index][j].slice(-20)
           });
         }
         chart.setOption({
           series:seriesList,
           xAxis: {
-            data: this.chartStore.xData[index]
+            data: this.chartStore.xData[index].slice(-20)
           }
         });
       }
@@ -190,13 +204,13 @@ export default {
         let seriesList = [];
         for(let j=0; j<this.chartStore.yData[index].length; j++){
           seriesList.push({
-            data: this.chartStore.yData[index][j]
+            data: this.chartStore.yData[index][j].slice(-20)
           });
         }
         chart.setOption({
           series:seriesList,
           xAxis: {
-            data: this.chartStore.xData[index]
+            data: this.chartStore.xData[index].slice(-20)
           }
         });
       }
@@ -207,17 +221,17 @@ export default {
         let seriesList = [];
         for(let j=0; j<this.chartStore.yData[index].length; j++){
           seriesList.push({
-            data: this.chartStore.yData[index][j]
+            data: this.chartStore.yData[index][j].slice(-20)
           });
         }
         chart.setOption({
           series:seriesList,
           xAxis: {
-            data: this.chartStore.xData[index]
+            data: this.chartStore.xData[index].slice(-20)
           }
         });
       }
-    }, 1000);
+    }, 3000);
     this.fetchLayers();
   },
   methods:{
@@ -378,8 +392,90 @@ export default {
        } catch (error) {
          ElMessage.error("Error starting inspect:", error);
        }
-     }
-  }
+     },
+    showFullChart(i, type) {
+      // Determine the chart list based on type
+      const chartList =
+          type === 'overview' ? this.defaultChartList :
+              type === 'detail' ? this.nodeChartList :
+                  this.userChartList;
+      let originChart = chartList[i].chart;
+      let chartTitle = chartList[i].chartTitle;
+      let index = this.chartStore.chartMap.get(chartTitle);
+      let seriesList = [];
+      for(let j=0; j<this.chartStore.yData[index].length; j++){
+        seriesList.push({
+          sampling: 'lttb',
+          type: 'line',
+          connectNulls: true,
+          name: originChart.getOption().series[j].name,
+          data: this.chartStore.yData[index][j],
+          symbol: 'none',
+        });
+        console.log("name:",originChart.getOption().series[j].name);
+      }
+      this.dialogChartTitle = chartTitle;
+      this.dialogVisible = true;
+      this.$nextTick(() => {
+        const chartRef = this.$refs.dialogChart;
+        if (this.dialogChartInstance) {
+          this.dialogChartInstance.dispose();
+        }
+        const chart = echarts.init(chartRef, null, { renderer: 'svg' });
+        chart.setOption({
+          dataZoom: [
+              {
+                  type: "slider",
+                  start: 0,
+                  end: 100,
+              },
+              {
+                type: 'inside',
+                start: 0,
+                end: 100
+              }
+          ],
+          tooltip: {
+            trigger: 'axis',
+            position: function (pt) {
+              return [pt[0], '10%'];
+            }
+          },
+          xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            name: originChart.getOption().xAxis[0].name,
+            data: this.chartStore.xData[index],
+          },
+          toolbox: {
+            feature: {
+              saveAsImage: {}
+            },
+          },
+          legend: {
+            data: originChart.getOption().legend[0].data,
+          },
+          yAxis: {
+            type: 'value',
+            nameLocation: 'center',
+            nameGap: 45,
+            name: originChart.getOption().yAxis[0].name,
+          },
+          series: seriesList,
+        });
+        this.dialogChartInstance = chart;
+      });
+
+      },
+      closeDialog() {
+        this.dialogVisible = false;
+        if (this.dialogChartInstance) {
+          this.dialogChartInstance.dispose();
+          this.dialogChartInstance = null;
+        }
+      },
+    },
+
 };
 </script>
 
