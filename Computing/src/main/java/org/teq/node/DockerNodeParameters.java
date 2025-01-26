@@ -136,8 +136,8 @@ public class DockerNodeParameters implements Serializable {
     private double networkInBandwidth = 1024;//kbps
     private double networkInLatency = 100;//ms
 
-    private int fixedInLatency = 0;//ms, when this is not 0, the network in latency will be fixed to this value
-    private int fixedOutLatency = 0;//ms, when this is not 0, the network out latency will be fixed to this value
+    private int fixedInLatency = 500;//ms, when this is not 0, the network in latency will be fixed to this value
+    private int fixedOutLatency = 500;//ms, when this is not 0, the network out latency will be fixed to this value
 
     private double networkOutPacketLossRate = 0;//percentage of the packet loss rate
 

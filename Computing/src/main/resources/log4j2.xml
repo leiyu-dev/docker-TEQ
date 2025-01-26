@@ -21,13 +21,13 @@
         </Logger>
 
         <Logger name="org.teq" level="debug" additivity="false">
-            <AppenderRef ref="DebugFile"/>
+<!--            <AppenderRef ref="DebugFile"/>-->
 
-            <AppenderRef ref="File">
-                <Filters>
-                    <ThresholdFilter level="info" onMatch="accept" onMismatch="deny"/>
-                </Filters>
-            </AppenderRef>
+<!--            <AppenderRef ref="File">-->
+<!--                <Filters>-->
+<!--                    <ThresholdFilter level="info" onMatch="accept" onMismatch="deny"/>-->
+<!--                </Filters>-->
+<!--            </AppenderRef>-->
 
             <AppenderRef ref="Console">
                 <Filters>
@@ -39,7 +39,7 @@
 
         <Root level="info">
             <AppenderRef ref="Console"/>
-            <AppenderRef ref="File"/>
+<!--            <AppenderRef ref="File"/>-->
         </Root>
     </Loggers>
 </Configuration>

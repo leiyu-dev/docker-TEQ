@@ -1,8 +1,10 @@
 package org.teq.mearsurer;
 
 import com.alibaba.fastjson.JSON;
+import com.github.dockerjava.core.DockerContextMetaFile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.teq.configurator.ExecutorParameters;
 import org.teq.configurator.SimulatorConfigurator;
 import org.teq.configurator.unserializable.InfoType;
 import org.teq.node.AbstractFlinkNode;
@@ -88,7 +90,22 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
     }
     static Map<UUID,BuiltInMetrics> metricsMap = new HashMap<>();
     // call this when finish every data process (usually means finish an object processing)
-    static public void beginProcess(UUID dataId){
+
+    //TODO: decouple the sleep and metrics collection
+    static public void beginProcess(UUID dataId, long timestampOut, String srcNodeName){
+//        long timestampIn = System.nanoTime();
+//        if(ExecutorParameters.useFixedLatency && srcNodeName != null && !srcNodeName.isEmpty()){
+//            long shouldSleep = DockerRuntimeData.getNodeParametersByNodeName(srcNodeName).getFixedOutLatency()
+//                    + DockerRuntimeData.getNodeParametersByNodeName(getNodeName()).getFixedInLatency()
+//                    - (timestampIn - timestampOut)/1000000;
+//            if(shouldSleep > 0){
+//                try {
+//                    Thread.sleep(shouldSleep);
+//                } catch (InterruptedException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//        }
         logger.debug("Begin process data: " + dataId);
         BuiltInMetrics metrics = new BuiltInMetrics() ;
         metrics.setTimestampIn(System.nanoTime());

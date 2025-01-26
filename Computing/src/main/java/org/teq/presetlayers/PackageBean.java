@@ -22,16 +22,4 @@ public class PackageBean extends MetricsPackageBean {
     public PackageBean(UUID id, String src, String target, int targetPort, InfoType type, Object object) {
         super(id,src,target,targetPort,object, type);
     }
-
-    @Override
-    public String toString() {
-        return "PackageBean{" +
-                "id='" + getId() + '\'' +
-                ", src='" + getSrc() + '\'' +
-                ", target='" + getTarget() + '\'' +
-                ", targetPort=" + getTargetPort() +
-                ", type=" + type +
-                ", object=" + getObject() +
-                '}';
-    }
 }

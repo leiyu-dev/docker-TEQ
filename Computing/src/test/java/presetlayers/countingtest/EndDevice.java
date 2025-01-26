@@ -30,7 +30,7 @@ public class EndDevice extends AbstractEndDeviceNode {
                 map((MapFunction<PackageBean, String[]>) s -> ((List<String>)s.getObject()).toArray(new String[0])).
                 map((MapFunction<String[], PackageBean>) s -> {
                     logger.info("EndDevice: " + Arrays.asList(s));
-                    return new PackageBean(s[14],
+                    return new PackageBean(getNodeName(),
                             DockerRuntimeData.getNodeNameListByLayerName(coordinatorLayerName).get(0),
                             ExecutorParameters.fromEndToCodPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s));
                 });

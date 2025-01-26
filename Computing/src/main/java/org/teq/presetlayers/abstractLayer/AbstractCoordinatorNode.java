@@ -45,7 +45,7 @@ public abstract class AbstractCoordinatorNode extends MeasuredFlinkNode implemen
         DataStream<PackageBean> inputMap = stream.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                beginProcess(packageBean.getId());
+                beginProcess(packageBean.getId(), packageBean.getTimestampOut(),packageBean.getSrc());
                 logger.debug("Coordinator Layer received data from End Device: {}", packageBean);
                 return packageBean;
             }
@@ -68,7 +68,7 @@ public abstract class AbstractCoordinatorNode extends MeasuredFlinkNode implemen
         DataStream<PackageBean> inputMap = stream.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                beginProcess(packageBean.getId());
+                beginProcess(packageBean.getId(), packageBean.getTimestampOut(),packageBean.getSrc());
                 logger.debug("Coordinator Layer received data from End Device: {}", packageBean);
                 return packageBean;
             }

@@ -17,6 +17,7 @@ public class DockerNetworkController {
         this.networkHostName = networkHostName;
         String[] env = {
                 "NODE_ID=" + containerId,
+                "NODE_NAME=" + networkHostName,
                 "IN_DOCKER=1",
         };
 //        ExposedPort exposedPort = ExposedPort.tcp(8888);

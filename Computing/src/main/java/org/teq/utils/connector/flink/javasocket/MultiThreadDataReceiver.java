@@ -110,6 +110,7 @@ public class MultiThreadDataReceiver<T> implements SourceFunction<T> {
             logger.error("Error reading from client " + clientSocket.toString(), e);
         } finally {
             logger.info("closed connection:" + isRunning);
+//            System.exit(0);
             // 移除并关闭客户端连接
             clientSockets.remove(clientSocket);
             try {

@@ -6,7 +6,6 @@ import java.io.Serializable;
 import java.util.UUID;
 
 public class MetricsPackageBean implements Serializable {
-    static private long instanceCount = 0;
     protected InfoType type;
     private UUID id;
     private Object object;
@@ -16,10 +15,14 @@ public class MetricsPackageBean implements Serializable {
     private String target;
     private int targetPort;
 
+    /**
+     * timestampOut is used to store the time when the message was sent out, used to fix the transfer latency
+     */
+    private long timestampOut;
+
     public MetricsPackageBean(Object object) {
         this.id = UUID.randomUUID();
         this.object = object;
-        instanceCount++;
     }
 
     public MetricsPackageBean(String src, String target, int targetPort, Object object, InfoType type) {
@@ -28,7 +31,6 @@ public class MetricsPackageBean implements Serializable {
         this.src = src;
         this.target = target;
         this.targetPort = targetPort;
-        instanceCount++;
         this.type = type;
     }
 
@@ -38,7 +40,6 @@ public class MetricsPackageBean implements Serializable {
         this.src = src;
         this.target = target;
         this.targetPort = targetPort;
-        instanceCount++;
         this.type = type;
     }
 
@@ -89,6 +90,15 @@ public class MetricsPackageBean implements Serializable {
                 ", target='" + target + '\'' +
                 ", targetPort=" + targetPort +
                 ", type=" + type +
+                ", timestampOut=" + timestampOut +
                 '}';
+    }
+
+    public long getTimestampOut() {
+        return timestampOut;
+    }
+
+    public void setTimestampOut(long timestampOut) {
+        this.timestampOut = timestampOut;
     }
 }

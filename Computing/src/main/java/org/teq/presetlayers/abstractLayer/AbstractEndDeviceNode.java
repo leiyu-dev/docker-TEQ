@@ -41,7 +41,7 @@ public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements
         DataStream<PackageBean> inputMap = infoSteam.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                beginProcess(packageBean.getId());
+                beginProcess(packageBean.getId(), packageBean.getTimestampOut(),packageBean.getSrc());
                 logger.debug("End Device Layer received data from Sensor: {}", packageBean);
                 return packageBean;
             }
@@ -62,7 +62,7 @@ public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements
         DataStream<PackageBean> inputMap = infoSteam.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                beginProcess(packageBean.getId());
+                beginProcess(packageBean.getId(), packageBean.getTimestampOut(),packageBean.getSrc());
                 logger.debug("End Device Layer received data from Sensor: {}", packageBean);
                 return packageBean;
             }

@@ -81,6 +81,7 @@ public class TargetedDataSender<T extends MetricsPackageBean> extends RichSinkFu
             bufferedWriter.flush();
         }
         catch (IOException e) {
+            logger.error("Failed to send message to " + value.getTarget() + ":" + value.getTargetPort() + " : " + msg);
             e.printStackTrace();
         }
     }

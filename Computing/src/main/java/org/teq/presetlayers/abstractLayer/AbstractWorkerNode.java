@@ -51,7 +51,7 @@ public abstract class AbstractWorkerNode extends MeasuredFlinkNode implements Wo
         DataStream<PackageBean> inputMap = stream.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                beginProcess(packageBean.getId());
+                beginProcess(packageBean.getId(), packageBean.getTimestampOut(),packageBean.getSrc());
                 logger.debug("Worker Layer received data: {}", packageBean);
                 return packageBean;
             }

@@ -1,6 +1,8 @@
 package org.teq.utils;
 
+import com.alibaba.fastjson2.JSON;
 import org.teq.configurator.SimulatorConfigurator;
+import org.teq.node.DockerNodeParameters;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -18,6 +20,8 @@ public class DockerRuntimeData {
     private static volatile List<Integer> layerBeginList;
     private static volatile List<Integer> layerEndList;
 
+    public static volatile List<DockerNodeParameters> nodeParametersList;
+
     public static void initRuntimeData() {
         // Thread-safe initialization logic, if required
     }
@@ -25,6 +29,27 @@ public class DockerRuntimeData {
     private static Path getPathByEnvironment(String path) {
         if (utils.isInDocker()) return Path.of(path);
         return Path.of(SimulatorConfigurator.hostPath + "/" + path);
+    }
+
+    public static synchronized List<DockerNodeParameters> getNodeParametersList() {
+        if(nodeParametersList != null) return nodeParametersList;
+
+        synchronized (DockerRuntimeData.class){
+            if(nodeParametersList == null){
+                nodeParametersList = Collections.synchronizedList(new ArrayList<>());
+                Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/nodeParams" );
+                try {
+                    String parametersString = Files.readAllLines(path).get(0);
+                    nodeParametersList = JSON.parseArray(parametersString, DockerNodeParameters.class);
+                    System.out.println(nodeParametersList);
+                }
+                catch (Exception e){
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+        }
+        return nodeParametersList;
     }
 
     public static synchronized List<String> getLayerList() {
@@ -159,5 +184,15 @@ public class DockerRuntimeData {
             }
         }
         return -1;
+    }
+
+    public static DockerNodeParameters getNodeParametersByNodeName(String nodeName){
+        List<DockerNodeParameters> nodeParametersList = getNodeParametersList();
+        return nodeParametersList.get(getNodeIdByName(nodeName));
+    }
+
+    public static DockerNodeParameters getNodeParametersByNodeId(int nodeId){
+        List<DockerNodeParameters> nodeParametersList = getNodeParametersList();
+        return nodeParametersList.get(nodeId);
     }
 }

@@ -1,5 +1,6 @@
 package org.teq.simulator;
 
+import com.alibaba.fastjson.JSON;
 import org.teq.backend.BackendManager;
 import org.teq.configurator.ExecutorParameters;
 import org.teq.configurator.SimulatorConfigurator;
@@ -381,7 +382,7 @@ public class Simulator {
         utils.writeStringToFile(layerNamePath,layerNameContent.toString());
         logger.info("Layer name file saved as " + layerNamePath);
 
-        //write the parameters class name file
+        //write the config parameters class name file
         String ParametersPath = SimulatorConfigurator.dataFolderPath + "/" + SimulatorConfigurator.parametersClassFileName;
         StringBuilder parametersContent = new StringBuilder();
         for(Class<? extends TeqGlobalConfig> config : configs){
@@ -391,7 +392,7 @@ public class Simulator {
         logger.info("Parameters class name file saved as " + ParametersPath);
 
 
-        //write the parameters
+        //write the config parameters
         utils.writeStringToFile(SimulatorConfigurator.dataFolderPath + "/config/configs","here are the configs");
         for(Class<? extends TeqGlobalConfig> config : configs){
             String conf = null;
@@ -402,6 +403,9 @@ public class Simulator {
             }
             utils.writeStringToFile(SimulatorConfigurator.dataFolderPath + "/config/" + config.getName() + ".json",conf);
         }
+
+        //write the node configs
+        utils.writeStringToFile(SimulatorConfigurator.dataFolderPath + "/nodeParams", JSON.toJSONString(parameters));
 
     }
 

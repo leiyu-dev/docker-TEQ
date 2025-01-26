@@ -32,7 +32,7 @@ public abstract class AbstractDataCenterNode extends MeasuredFlinkNode implement
         DataStream<PackageBean> inputMap = stream.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                beginProcess(packageBean.getId());
+                beginProcess(packageBean.getId(), packageBean.getTimestampOut(),packageBean.getSrc());
                 logger.debug("DataCenterLayer: Received data from Worker: {}", packageBean);
                 return packageBean;
             }
