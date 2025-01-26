@@ -1,4 +1,4 @@
-package presetlayers.countingtest;
+package example;
 
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;

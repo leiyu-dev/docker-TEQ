@@ -98,7 +98,7 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
             long shouldSleep = DockerRuntimeData.getNodeParametersByNodeName(srcNodeName).getFixedOutLatency()
                     + DockerRuntimeData.getNodeParametersByNodeName(getNodeName()).getFixedInLatency()
                     - (timestampIn - timestampOut)/1000000;
-            logger.info("Should sleep: " + shouldSleep);
+//            logger.info("Should sleep: " + shouldSleep);
             if(shouldSleep > 0){
                 try {
                     Thread.sleep(shouldSleep);

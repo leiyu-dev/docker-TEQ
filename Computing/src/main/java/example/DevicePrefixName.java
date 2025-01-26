@@ -1,4 +1,4 @@
-package presetlayers.countingtest;
+package example;
 
 public enum DevicePrefixName {
     Center("center"),

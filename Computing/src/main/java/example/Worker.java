@@ -1,14 +1,10 @@
-package presetlayers.countingtest;
+package example;
 
 
 import com.alibaba.fastjson.JSONObject;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
-import org.apache.flink.api.common.state.MapState;
-import org.apache.flink.api.common.state.MapStateDescriptor;
-import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.util.Collector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,6 +13,7 @@ import org.teq.configurator.unserializable.InfoType;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.abstractLayer.AbstractWorkerNode;
 import org.teq.utils.DockerRuntimeData;
+import presetlayers.DevicePrefixName;
 
 import java.util.ArrayList;
 import java.util.HashMap;

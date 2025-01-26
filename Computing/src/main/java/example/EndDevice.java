@@ -1,4 +1,4 @@
-package presetlayers.countingtest;
+package example;
 
 import com.alibaba.fastjson.JSONObject;
 import org.apache.flink.api.common.functions.MapFunction;
