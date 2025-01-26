@@ -1,4 +1,4 @@
-package example;
+package example.utils;
 
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;

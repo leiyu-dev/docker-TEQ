@@ -2,6 +2,7 @@ package example;
 
 
 import com.alibaba.fastjson.JSONObject;
+import example.utils.DevicePrefixName;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;

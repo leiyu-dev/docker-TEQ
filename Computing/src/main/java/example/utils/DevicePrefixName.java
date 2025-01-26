@@ -1,4 +1,4 @@
-package example;
+package example.utils;
 
 public enum DevicePrefixName {
     Center("center"),

@@ -1,8 +1,6 @@
 package example;
 
-import example.Coordinator;
-import example.DataCenter;
-import example.EndDevice;
+import example.utils.Network;
 import org.teq.layer.Layer;
 import org.teq.node.DockerNodeParameters;
 import org.teq.simulator.Simulator;
