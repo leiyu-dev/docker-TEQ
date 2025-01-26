@@ -42,12 +42,20 @@ public class CommonDataReceiver<T> implements SourceFunction<T> {
     @Override
     public void run(SourceContext<T> ctx) throws Exception {
         open();
-        while(isRunning){
-            String readline;
-            while ((readline = bufferedReader.readLine()) != null) {
-                logger.debug("receive data: " + readline);
-                ctx.collect(JSON.parseObject(readline, typeClass));
+        try {
+            while (isRunning) {
+                String readline;
+                while ((readline = bufferedReader.readLine()) != null) {
+                    logger.debug("receive data: " + readline);
+                    ctx.collect(JSON.parseObject(readline, typeClass));
+                }
             }
+        }
+        catch (Exception e){
+            logger.error("receiver error: " + e.getMessage());
+            e.printStackTrace();
+            cancel();
+            System.exit(0);
         }
     }
     @Override

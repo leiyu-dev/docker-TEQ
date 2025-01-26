@@ -27,13 +27,23 @@ public class EndDevice extends AbstractEndDeviceNode {
         StreamExecutionEnvironment env = getEnv();
         return env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorParameters.fromNetworkToEndPort, PackageBean.class)).
                 returns(PackageBean.class).
-                map((MapFunction<PackageBean, String[]>) s -> ((List<String>)s.getObject()).toArray(new String[0])).
-                map((MapFunction<String[], PackageBean>) s -> {
-                    logger.info("EndDevice: " + Arrays.asList(s));
+                map(new MapFunction<PackageBean, PackageBean>() {
+                    @Override
+                    public PackageBean map(PackageBean packageBean) throws Exception {
+                        String[] s = ((List<String>)packageBean.getObject()).toArray(new String[0]);
                     return new PackageBean(getNodeName(),
                             DockerRuntimeData.getNodeNameListByLayerName(coordinatorLayerName).get(0),
-                            ExecutorParameters.fromEndToCodPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s));
+                            ExecutorParameters.fromEndToCodPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s),
+                            packageBean.getTimestampOut());
+                    }
                 });
+//                map((MapFunction<PackageBean, String[]>) s -> ((List<String>)s.getObject()).toArray(new String[0])).
+//                map((MapFunction<String[], PackageBean>) s -> {
+////                    logger.debug("EndDevice: " + Arrays.asList(s));
+//                    return new PackageBean(getNodeName(),
+//                            DockerRuntimeData.getNodeNameListByLayerName(coordinatorLayerName).get(0),
+//                            ExecutorParameters.fromEndToCodPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s));
+//                });
     }
 
     @Override

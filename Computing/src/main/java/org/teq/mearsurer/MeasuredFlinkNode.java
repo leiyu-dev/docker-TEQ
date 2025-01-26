@@ -62,7 +62,7 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
                         throw new IOException("Failed to connect to the server " + serverHost + ":" + serverPort);
                     }
                     String data = JSON.toJSONString(queue.take());
-                    logger.info("Sending Metrics: " + data);
+//                    logger.info("Sending Metrics: " + data);
                     outputStream.write((data+"\n").getBytes());
                     outputStream.flush();
 
@@ -92,20 +92,21 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
     // call this when finish every data process (usually means finish an object processing)
 
     //TODO: decouple the sleep and metrics collection
-    static public void beginProcess(UUID dataId, long timestampOut, String srcNodeName){
-//        long timestampIn = System.nanoTime();
-//        if(ExecutorParameters.useFixedLatency && srcNodeName != null && !srcNodeName.isEmpty()){
-//            long shouldSleep = DockerRuntimeData.getNodeParametersByNodeName(srcNodeName).getFixedOutLatency()
-//                    + DockerRuntimeData.getNodeParametersByNodeName(getNodeName()).getFixedInLatency()
-//                    - (timestampIn - timestampOut)/1000000;
-//            if(shouldSleep > 0){
-//                try {
-//                    Thread.sleep(shouldSleep);
-//                } catch (InterruptedException e) {
-//                    throw new RuntimeException(e);
-//                }
-//            }
-//        }
+    static public void beginProcess(UUID dataId, long timestampOut, String srcNodeName, MetricsPackageBean metricsPackageBean){
+        long timestampIn = System.nanoTime();
+        if(ExecutorParameters.useFixedLatency && srcNodeName != null && !srcNodeName.isEmpty()){
+            long shouldSleep = DockerRuntimeData.getNodeParametersByNodeName(srcNodeName).getFixedOutLatency()
+                    + DockerRuntimeData.getNodeParametersByNodeName(getNodeName()).getFixedInLatency()
+                    - (timestampIn - timestampOut)/1000000;
+            logger.info("Should sleep: " + shouldSleep);
+            if(shouldSleep > 0){
+                try {
+                    Thread.sleep(shouldSleep);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
         logger.debug("Begin process data: " + dataId);
         BuiltInMetrics metrics = new BuiltInMetrics() ;
         metrics.setTimestampIn(System.nanoTime());
@@ -121,7 +122,8 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
      * @param dataId
      * @param toNodeId
      */
-    static public void finishProcess(UUID dataId, int toNodeId, int packageLength, InfoType infoType){
+    static public void finishProcess(UUID dataId, int toNodeId, int packageLength, InfoType infoType, MetricsPackageBean metricsPackageBean){
+        metricsPackageBean.setTimestampOut(System.nanoTime());
         BuiltInMetrics metrics = metricsMap.get(dataId);
         metrics.setPackageLength(packageLength);
         metrics.setInfoType(infoType);
@@ -137,7 +139,8 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
      * if you call this function for a stream, do not call finishProcess()
      * @param dataId
      */
-    static public void endProcess(UUID dataId, int packageLength, InfoType infoType){
+    static public void endProcess(UUID dataId, int packageLength, InfoType infoType, MetricsPackageBean metricsPackageBean){
+        metricsPackageBean.setTimestampOut(System.nanoTime());
         BuiltInMetrics metrics = metricsMap.get(dataId);
         metrics.setTimestampOut(System.nanoTime());
         metrics.setPackageLength(packageLength);

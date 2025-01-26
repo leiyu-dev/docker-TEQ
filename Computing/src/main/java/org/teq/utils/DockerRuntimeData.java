@@ -41,7 +41,6 @@ public class DockerRuntimeData {
                 try {
                     String parametersString = Files.readAllLines(path).get(0);
                     nodeParametersList = JSON.parseArray(parametersString, DockerNodeParameters.class);
-                    System.out.println(nodeParametersList);
                 }
                 catch (Exception e){
                     e.printStackTrace();

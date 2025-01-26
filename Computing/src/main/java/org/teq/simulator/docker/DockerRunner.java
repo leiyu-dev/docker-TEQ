@@ -8,6 +8,7 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
+import org.teq.configurator.ExecutorParameters;
 import org.teq.configurator.SimulatorConfigurator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -210,6 +211,7 @@ public class DockerRunner {
         String[] command = {
             "bash", "-c",
             "chmod -R 777 " + SimulatorConfigurator.volumePath + " && " +
+            (ExecutorParameters.useFixedLatency ? "" :
             "tc qdisc add dev eth0 root handle 1: htb default 1 && " +
             "tc class add dev eth0 parent 1: classid 1:1 htb rate " + parameters.getNetworkOutBandwidth() + "kbps ceil " + parameters.getNetworkOutBandwidth() + "kbps && " +
             "tc qdisc add dev eth0 parent 1:1 handle 10: netem delay "+ parameters.getNetworkOutLatency() +"ms && " +
@@ -221,7 +223,8 @@ public class DockerRunner {
             "tc filter replace dev eth0 parent ffff: protocol ip u32 match u32 0 0 action mirred egress redirect dev ifb0 &&" +
             "tc qdisc replace dev ifb0 root handle 2: htb default 22 && " +
             "tc class add dev ifb0 parent 2: classid 2:22 htb rate " + parameters.getNetworkInBandwidth() + "kbps ceil " + parameters.getNetworkInBandwidth() + "kbps && " +
-            "tc qdisc add dev ifb0 parent 2:22 handle 20: netem delay "+ parameters.getNetworkInLatency() +"ms && " +
+            "tc qdisc add dev ifb0 parent 2:22 handle 20: netem delay "+ parameters.getNetworkInLatency() +"ms && "
+            ) +
             "bash "+ SimulatorConfigurator.volumePath + "/" + SimulatorConfigurator.startScriptName
         };
         String[] env = {
@@ -556,6 +559,9 @@ String[] command = {
 };
      */
     public void changeNetworkOut(String containerName, double outBandwidth, double outLatency) throws IllegalArgumentException {
+        if(ExecutorParameters.useFixedLatency){
+            return;
+        }
         if (outBandwidth <= 0) {
             throw new IllegalArgumentException("Network out bandwidth should be greater than 0");
         }
@@ -593,6 +599,9 @@ String[] command = {
         }
     }
     public void changeNetworkIn(String containerName, double inBandwidth, double inLatency) throws IllegalArgumentException {
+        if(ExecutorParameters.useFixedLatency){
+            return;
+        }
         if (inBandwidth <= 0) {
             throw new IllegalArgumentException("Network in bandwidth should be greater than 0");
         }

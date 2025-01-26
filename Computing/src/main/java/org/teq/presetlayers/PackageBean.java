@@ -19,7 +19,11 @@ public class PackageBean extends MetricsPackageBean {
     public PackageBean(String src, String target, int targetPort, InfoType type, Object object) {
         super(src,target,targetPort,object, type);
     }
+    public PackageBean(String src, String target, int targetPort, InfoType type, Object object, long timestamp) {
+        super(src,target,targetPort,object, type, timestamp);
+    }
     public PackageBean(UUID id, String src, String target, int targetPort, InfoType type, Object object) {
         super(id,src,target,targetPort,object, type);
     }
+
 }

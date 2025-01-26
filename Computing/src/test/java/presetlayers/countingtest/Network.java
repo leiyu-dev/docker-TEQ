@@ -22,14 +22,14 @@ public class Network extends AbstractNetworkHostNode {
     public void dataProcess() {
         Random random = new Random();
         CommonReader<String[]> csvReader = new CSVReader( filePath, 30);
-        CommonDataSource<String[]> dataSource = new DataSetCommonPlayer<String[]>().genPlayer( 10, csvReader);
+        CommonDataSource<String[]> dataSource = new DataSetCommonPlayer<String[]>().genPlayer( csvReader);
         StreamExecutionEnvironment env = getEnv();
         env.addSource(dataSource).
                 returns(String[].class).
                 map((MapFunction<String[], PackageBean>) s -> new PackageBean(getNodeName(),
                         DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.endDeviceLayerName).get(
                                 random.nextInt(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.endDeviceLayerName).size())),
-                        ExecutorParameters.fromNetworkToEndPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s))).
+                        ExecutorParameters.fromNetworkToEndPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s), System.nanoTime())).
                 addSink(new TargetedDataSender<>(ExecutorParameters.maxNumRetries, ExecutorParameters.retryInterval)).setParallelism(1);
     }
 }

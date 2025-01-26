@@ -26,7 +26,7 @@ public class MyFlinkNode extends MeasuredFlinkNode {
             @Override
             public MetricsPackageBean map(String value) throws Exception {
                 var packageBean = new MetricsPackageBean(value);
-                beginProcess(packageBean.getId(),packageBean.getTimestampOut(),packageBean.getSrc());
+                beginProcess(packageBean.getId(),packageBean.getTimestampOut(),packageBean.getSrc(),packageBean);
                 Thread.sleep(500);
                 return packageBean;
             }
@@ -34,7 +34,7 @@ public class MyFlinkNode extends MeasuredFlinkNode {
             @Override
             public String map(MetricsPackageBean value) throws Exception {
                 String result = value.getObject().toString();
-                finishProcess(value.getId(),0,result.length(), InfoType.Data);
+                finishProcess(value.getId(),0,result.length(), InfoType.Data,value);
                 return value.getObject().toString();
             }
         });

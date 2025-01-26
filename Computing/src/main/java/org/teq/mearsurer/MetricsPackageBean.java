@@ -43,6 +43,15 @@ public class MetricsPackageBean implements Serializable {
         this.type = type;
     }
 
+    public MetricsPackageBean(String src, String target, int targetPort, Object object, InfoType type, long timestampOut) {
+        this.id = UUID.randomUUID();
+        this.object = object;
+        this.src = src;
+        this.target = target;
+        this.targetPort = targetPort;
+        this.type = type;
+        this.timestampOut = timestampOut;
+    }
     public void setId(UUID id) {
         this.id = id;
     }

@@ -97,7 +97,7 @@ public class MultiThreadDataReceiver<T> implements SourceFunction<T> {
             while (isRunning) {
                 String readline;
                 while((readline = bufferedReader.readLine()) != null){
-                    logger.info("Received data from " + clientSocket.toString() + ": " + readline);
+                    logger.debug("Received data from " + clientSocket.toString() + ": " + readline);
                     T data = JSON.parseObject(readline, typeClass);
                     // 使用 synchronized 确保线程安全
                     synchronized (ctx.getCheckpointLock()) {
@@ -107,10 +107,11 @@ public class MultiThreadDataReceiver<T> implements SourceFunction<T> {
             }
             logger.info("Connection lost: " + clientSocket.toString());
         } catch (Exception e) {
+            e.printStackTrace();
             logger.error("Error reading from client " + clientSocket.toString(), e);
+            System.exit(0);
         } finally {
             logger.info("closed connection:" + isRunning);
-//            System.exit(0);
             // 移除并关闭客户端连接
             clientSockets.remove(clientSocket);
             try {
