@@ -14,7 +14,6 @@ import org.teq.configurator.unserializable.InfoType;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.abstractLayer.AbstractWorkerNode;
 import org.teq.utils.DockerRuntimeData;
-import presetlayers.DevicePrefixName;
 
 import java.util.ArrayList;
 import java.util.HashMap;

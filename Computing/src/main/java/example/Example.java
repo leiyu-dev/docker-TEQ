@@ -4,7 +4,6 @@ import example.utils.Network;
 import org.teq.layer.Layer;
 import org.teq.node.DockerNodeParameters;
 import org.teq.simulator.Simulator;
-import presetlayers.Network;
 
 public class Example {
     public static void main(String[] args) {
