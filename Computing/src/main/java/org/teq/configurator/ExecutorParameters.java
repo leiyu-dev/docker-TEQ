@@ -22,7 +22,7 @@ public class ExecutorParameters implements TeqGlobalConfig{
     public static int maxNumRetries = 100;
     public static int retryInterval = 1000;
 
-    public static boolean useFixedLatency = true;
+    public static boolean useFixedLatency = false;
     public static long minBuffer = 100; // unit: ms, 每发出数据条目之间设置的缓冲时间
 
 }

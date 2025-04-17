@@ -83,10 +83,15 @@ export default {
       }
     });
 
+    const saveDefault = () => {
+      ElMessage.success("Save Successfully!");
+    }
+
     return {
       chooseStore,
       options,
       configDetails,
+      saveDefault,
       fetchConfigDetails,
       updateConfigParameter,
     };
@@ -111,7 +116,7 @@ export default {
           :value="item.value"
       ></el-option>
     </el-select>
-    <el-button type="primary" @click="" style="margin-left: 20px">
+    <el-button type="primary" @click="saveDefault" style="margin-left: 20px">
       Save as default params
     </el-button>
     <div style="margin-left: 20px">

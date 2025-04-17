@@ -8,6 +8,10 @@ import org.teq.simulator.Simulator;
 
 
 import java.lang.management.ManagementFactory;
+import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import com.sun.management.OperatingSystemMXBean;
 import org.teq.utils.utils;
 
@@ -118,7 +122,12 @@ public class BackendManager {
                 });
 
         before((request, response) -> response.header("Access-Control-Allow-Origin", "*"));
-
+        get("/log", (req, res) -> {
+            res.type("text/plain");
+            String log = HttpAppender.getLogs();
+//            System.out.println("log: " + log);
+            return log; // 获取 HttpAppender 中的日志
+        });
         get("/app/status", (req, res) -> {
             int cores = Runtime.getRuntime().availableProcessors();
             OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();

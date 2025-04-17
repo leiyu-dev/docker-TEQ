@@ -2,6 +2,7 @@ package org.teq.simulator;
 
 import com.alibaba.fastjson.JSON;
 import org.teq.backend.BackendManager;
+import org.teq.backend.LogHandler;
 import org.teq.configurator.ExecutorParameters;
 import org.teq.configurator.SimulatorConfigurator;
 import org.teq.configurator.TeqGlobalConfig;
@@ -174,6 +175,7 @@ public class Simulator {
     public void start() throws Exception {
         state.set(2);
         utils.startTimer();
+//        LogHandler.redirectConsoleOutput();
         logger.info("Starting the simulation");
 
         logger.info("launching the backend");

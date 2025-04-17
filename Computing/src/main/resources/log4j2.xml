@@ -13,6 +13,9 @@
         <File name="FlinkFile" fileName="Computing/logs/flink.log">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss}  %-5level %logger{36} - %msg%n"/>
         </File>
+        <HttpAppender name="HttpAppender">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %logger{36} - %msg%n"/>
+        </HttpAppender>
     </Appenders>
     <Loggers>
         <!-- Logger for Flink classes -->
@@ -34,11 +37,17 @@
                     <ThresholdFilter level="info" onMatch="accept" onMismatch="deny"/>
                 </Filters>
             </AppenderRef>
+            <AppenderRef ref="HttpAppender">
+                <Filters>
+                    <ThresholdFilter level="info" onMatch="accept" onMismatch="deny"/>
+                </Filters>
+            </AppenderRef>
 
         </Logger>
 
         <Root level="info">
             <AppenderRef ref="Console"/>
+
 <!--            <AppenderRef ref="File"/>-->
         </Root>
     </Loggers>

@@ -85,7 +85,7 @@
       </el-row>
 
       <!-- 第二行：内存、CPU 和运行时间 -->
-      <el-row :gutter="20">
+      <el-row :gutter="20" style="margin-bottom: 20px;">
         <!-- 内存使用 -->
         <el-col :span="8">
           <el-card>
@@ -112,7 +112,7 @@
 
         <!-- 运行时间 -->
         <el-col :span="8">
-          <el-card>
+          <el-card >
             <template #header>
               <span class="headers">Up Time</span>
             </template>
@@ -122,16 +122,27 @@
           </el-card>
         </el-col>
       </el-row>
+  <el-row :gutter="20" style="margin-bottom: 20px;">
+    <el-card style="width: 100%;" >
+      <template #header><span class="headers">Logs</span></template>
+      <!-- 日志内容区域 -->
+      <div class="log-container">
+        <textarea v-model="logsStore.logs" class="log-box" readonly></textarea>
+      </div>
+    </el-card>
+  </el-row>
   </template>
 <script>
 import {ElMessage} from "element-plus";
 import {useStatusStore} from "@/stores/status.js";
 import * as echarts from "echarts";
 import axios from "axios";
+import {useLogsStore} from "@/stores/logs.js";
 export default {
   data() {
     return {
       statusStore : useStatusStore(),
+      logsStore : useLogsStore(),
       layers : [],
       nodeCounts: [],
     };
@@ -347,4 +358,34 @@ body {
 .el-card {
   text-align: center;
 }
+.log-container {
+ display: flex;
+ justify-content: center;
+ align-items: center;
+ height: 300px;
+ background-color: #f5f5f5;
+}
+
+.log-box {
+  width: 100%;
+  height: 100%;
+  padding: 15px;
+  border: 1px solid #ffffff;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  color: #000000;
+  line-height: 1.5;
+  overflow-y: scroll;
+  resize: none; /* 禁止用户手动调整大小 */
+  //box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.log-box:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
 </style>
+

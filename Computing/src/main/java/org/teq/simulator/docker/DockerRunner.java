@@ -8,6 +8,7 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
+import com.google.common.util.concurrent.AtomicDoubleArray;
 import org.teq.configurator.ExecutorParameters;
 import org.teq.configurator.SimulatorConfigurator;
 import org.apache.logging.log4j.LogManager;
@@ -316,8 +317,14 @@ public class DockerRunner {
         }
     }
 
+    //cpu and memory usage at this moment, concurrency is supported
+    public AtomicDoubleArray cpuUsageArray;
+    public AtomicDoubleArray memoryUsageArray;
+
     //deprecated: have bug
     public void beginDockerMetricsCollection(List<BlockingQueue<Double>>cpuQueueList, List<BlockingQueue<Double>>memoryQueueList){
+        cpuUsageArray = new AtomicDoubleArray(DockerRuntimeData.getNodeNameList().size());
+        memoryUsageArray = new AtomicDoubleArray(DockerRuntimeData.getNodeNameList().size());
         this.cpuQueueList = cpuQueueList;
         this.memoryQueueList = memoryQueueList;
         Thread getterThread =  new Thread(()->{
@@ -366,6 +373,8 @@ public class DockerRunner {
                         try {
                             BlockingQueue<Double> cpuQueue = cpuQueueList.get(finalI);
                             BlockingQueue<Double> memoryQueue = memoryQueueList.get(finalI);
+                            memoryUsageArray.set(finalI, memoryUsage);
+                            cpuUsageArray.set(finalI, cpuUsage * 100);
                             cpuQueue.put(cpuUsage * 100);
                             memoryQueue.put(memoryUsage);
                         } catch (InterruptedException e) {

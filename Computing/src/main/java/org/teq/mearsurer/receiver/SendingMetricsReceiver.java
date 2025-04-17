@@ -1,5 +1,6 @@
 package org.teq.mearsurer.receiver;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -8,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.teq.configurator.unserializable.InfoType;
 import org.teq.mearsurer.BuiltInMetrics;
+import org.teq.simulator.docker.DockerRunner;
 import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.flink.javasocket.CommonDataReceiver;
 import org.teq.utils.utils;
@@ -20,7 +22,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractReceiver implements Runnable{
-
+    static private DockerRunner dockerRunner;
     static private BlockingQueue<Double> overallProcessingLatencyQueue;
     static private BlockingQueue<Double> overallTransferLatencyQueue;
     static private List<BlockingQueue<Double>> processingLatencyQueueList;
@@ -30,11 +32,15 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
     static private BlockingQueue<Double> rawOverallTransferLatencyQueue;
     static private List<BlockingQueue<Double>> rawProcessingLatencyQueueList;
     static private BlockingQueue<Integer> processedQueryQueue;
+    static private BlockingQueue<Double> energyConsumptionQueue;
+    static private BlockingQueue<Double> energyConsumptionTime;
     static private AtomicInteger processedQueryCount = new AtomicInteger(0);
+    static private AtomicDouble energyConsumption = new AtomicDouble(0);
     private Class<T> typeClass;
-    public SendingMetricsReceiver(MetricsDisplayer metricsDisplayer, Class<T> typeClass) {
+    public SendingMetricsReceiver(MetricsDisplayer metricsDisplayer, Class<T> typeClass, DockerRunner dockerRunner) {
         super(metricsDisplayer);
         this.typeClass = typeClass;
+        SendingMetricsReceiver.dockerRunner = dockerRunner;
     }
 
     @Override
@@ -74,6 +80,8 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
         double overallProcessingLatency = (list.get(list.size()-1).getTimestampOut() - first.getTimestampIn())/1000.0/1000.0;
         double overallTransferLatency = 0;
         for(int i=0; i<list.size()-1; i++) {
+            energyConsumption.getAndAdd(transferEnergyParam.get(list.get(i).getFromNodeId())*list.get(i).getPackageLength());
+            energyConsumption.getAndAdd(transferEnergyParam.get(list.get(i).getToNodeId())*list.get(i).getPackageLength());
             overallTransferLatency += (list.get(i+1).getTimestampIn() - list.get(i).getTimestampOut())/1000.0/1000.0;
         }
         try {
@@ -115,8 +123,22 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
         }
         finishStream(set);
     }
+
+    public static List<Double> nodeEnergyParam = new ArrayList<>();
+    public static List<Double> transferEnergyParam = new ArrayList<>();
+    private static <T extends BuiltInMetrics> void calUserDefinedMetrics(T metrics) {
+        int nodeId = metrics.getFromNodeId();
+        energyConsumption.getAndAdd(nodeEnergyParam.get(nodeId)*dockerRunner.cpuUsageArray.get(nodeId));
+    }
+
     @Override
     public void run() {
+        nodeEnergyParam = new ArrayList<>();
+        transferEnergyParam = new ArrayList<>();
+        for(int i=0; i<DockerRuntimeData.getNodeNameList().size(); i++) {
+            nodeEnergyParam.add(1.0);
+            transferEnergyParam.add(0.01);
+        }
         overallProcessingLatencyQueue = new LinkedBlockingQueue<>();
         overallTransferLatencyQueue = new LinkedBlockingQueue<>();
         processingLatencyQueueList = new ArrayList<>();
@@ -124,6 +146,8 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
         rawOverallTransferLatencyQueue = new LinkedBlockingQueue<>();
         rawProcessingLatencyQueueList = new ArrayList<>();
         processedQueryQueue = new LinkedBlockingQueue<>();
+        energyConsumptionQueue = new LinkedBlockingQueue<>();
+        energyConsumptionTime = new LinkedBlockingQueue<>();
         for(int i=0; i<DockerRuntimeData.getLayerList().size(); i++) {
             processingLatencyQueueList.add(new LinkedBlockingQueue<>());
             rawProcessingLatencyQueueList.add(new LinkedBlockingQueue<>());
@@ -140,6 +164,8 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
                 "time/s","processing latency/ms",DockerRuntimeData.getLayerList(),"processing latency", "overview"));
         metricsDisplayer.addChart(new Chart( processedQueryTime,processedQueryQueue,
                 "time/s","processed query","count","processed query","user"));
+        metricsDisplayer.addChart(new Chart( energyConsumptionTime,energyConsumptionQueue,
+                "time/s","energy consumption","Energy Unit","energy consumption","overview"));
         //add a new thread to process the raw data and produce the data per second
         Thread thread = new Thread(new Runnable() {
             @Override
@@ -149,6 +175,10 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
                     try {
 //                       logger.info("a new second");
                         Thread.sleep(1000);
+                        energyConsumptionQueue.put(energyConsumption.get());
+                        energyConsumptionTime.put((double)Math.round((System.currentTimeMillis() - startTime)/1000.0*10.0)/10.0);
+                        energyConsumption.set(0);
+
                         processedQueryQueue.put(processedQueryCount.get());
                         processedQueryTime.put((double)Math.round((System.currentTimeMillis() - startTime)/1000.0*10.0)/10.0);
                         processedQueryCount.set(0);
@@ -175,27 +205,28 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
                             long time = System.currentTimeMillis() - startTime;
                             overallTransferLatencyTime.put((double)Math.round(time/1000.0*10.0)/10.0);
                         }
-                        boolean isEmpty = true;
-                        for(int i=0; i<rawProcessingLatencyQueueList.size(); i++) {
-                            if(!rawProcessingLatencyQueueList.get(i).isEmpty()){
-                                isEmpty = false;
-                                break;
+                        {
+                            boolean isEmpty = true;
+                            for (int i = 0; i < rawProcessingLatencyQueueList.size(); i++) {
+                                if (!rawProcessingLatencyQueueList.get(i).isEmpty()) {
+                                    isEmpty = false;
+                                    break;
+                                }
+                            }
+                            if (!isEmpty) {
+                                for (int i = 0; i < rawProcessingLatencyQueueList.size(); i++) {
+                                    double processingLatency = 0;
+                                    double processingLatencyCount = 0;
+                                    while (!rawProcessingLatencyQueueList.get(i).isEmpty()) {
+                                        processingLatency += rawProcessingLatencyQueueList.get(i).poll();
+                                        processingLatencyCount++;
+                                    }
+                                    processingLatencyQueueList.get(i).put(processingLatency / processingLatencyCount);
+                                }
+                                long time = System.currentTimeMillis() - startTime;
+                                processingLatencyTime.put((double) Math.round(time / 1000.0 * 10) / 10.0);
                             }
                         }
-                        if(isEmpty) {
-                            continue;
-                        }
-                        for(int i=0; i<rawProcessingLatencyQueueList.size(); i++) {
-                            double processingLatency = 0;
-                            double processingLatencyCount = 0;
-                            while(!rawProcessingLatencyQueueList.get(i).isEmpty()) {
-                                processingLatency += rawProcessingLatencyQueueList.get(i).poll();
-                                processingLatencyCount++;
-                            }
-                            processingLatencyQueueList.get(i).put  (processingLatency / processingLatencyCount);
-                        }
-                        long time = System.currentTimeMillis() - startTime;
-                        processingLatencyTime.put((double)Math.round(time/1000.0*10)/10.0);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -211,6 +242,7 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
             @Override
             public T map(T value) throws Exception {
 //                logger.info("receive a new metrics:" + value);
+                calUserDefinedMetrics(value);
                 if(!metricsMap.containsKey(value.getId())) {
                     TreeSet<T> set = new TreeSet<>(Comparator.comparingLong(T::getTimestampIn));
                     set.add(value);
