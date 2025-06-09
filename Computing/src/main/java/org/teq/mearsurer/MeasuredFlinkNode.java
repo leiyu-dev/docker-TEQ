@@ -107,12 +107,12 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
                 }
             }
         }
-        logger.debug("Begin process data: " + dataId);
+        logger.trace("Begin process data: " + dataId);
         BuiltInMetrics metrics = new BuiltInMetrics() ;
         metrics.setTimestampIn(System.nanoTime());
         metrics.setId(dataId);
         metrics.setFromNodeId(getNodeID());
-        logger.debug("Begin metrics: " + metrics);
+        logger.trace("Begin metrics: " + metrics);
         metricsMap.put(dataId,metrics);
     }
 
@@ -129,7 +129,7 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
         metrics.setInfoType(infoType);
         metrics.setTimestampOut(System.nanoTime());
         metrics.setToNodeId(toNodeId);
-        logger.debug("Finish metrics: " + metrics);
+        logger.trace("Finish metrics: " + metrics);
         metricsMap.remove(dataId);
         queue.offer(metrics);
     }
@@ -146,7 +146,7 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
         metrics.setPackageLength(packageLength);
         metrics.setInfoType(infoType);
         metrics.setToNodeId(-1);
-        logger.debug("End metrics: " + metrics);
+        logger.trace("End metrics: " + metrics);
         metricsMap.remove(dataId);
         queue.offer(metrics);
     }

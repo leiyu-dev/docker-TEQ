@@ -19,36 +19,44 @@
     </Appenders>
     <Loggers>
         <!-- Logger for Flink classes -->
-        <Logger name="org.apache.flink" level="debug" additivity="false">
+        <Logger name="org.apache.flink" level="info" additivity="false">
             <AppenderRef ref="FlinkFile"/>
+            <AppenderRef ref="Console">
+                <Filters>
+                    <ThresholdFilter level="error" onMatch="accept" onMismatch="deny"/>
+                </Filters>
+            </AppenderRef>
         </Logger>
 
         <Logger name="org.teq" level="debug" additivity="false">
-<!--            <AppenderRef ref="DebugFile"/>-->
+            <AppenderRef ref="DebugFile">
+                <Filters>
+                    <ThresholdFilter level="debug" onMatch="accept" onMismatch="deny"/>
+                </Filters>
+            </AppenderRef>
 
-<!--            <AppenderRef ref="File">-->
-<!--                <Filters>-->
-<!--                    <ThresholdFilter level="info" onMatch="accept" onMismatch="deny"/>-->
-<!--                </Filters>-->
-<!--            </AppenderRef>-->
+            <AppenderRef ref="File">
+                <Filters>
+                    <ThresholdFilter level="info" onMatch="accept" onMismatch="deny"/>
+                </Filters>
+            </AppenderRef>
 
             <AppenderRef ref="Console">
                 <Filters>
                     <ThresholdFilter level="info" onMatch="accept" onMismatch="deny"/>
                 </Filters>
             </AppenderRef>
+            
             <AppenderRef ref="HttpAppender">
                 <Filters>
                     <ThresholdFilter level="info" onMatch="accept" onMismatch="deny"/>
                 </Filters>
             </AppenderRef>
-
         </Logger>
 
         <Root level="info">
             <AppenderRef ref="Console"/>
-
-<!--            <AppenderRef ref="File"/>-->
+            <AppenderRef ref="File"/>
         </Root>
     </Loggers>
 </Configuration>

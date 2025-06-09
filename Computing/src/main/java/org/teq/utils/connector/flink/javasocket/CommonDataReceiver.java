@@ -46,7 +46,7 @@ public class CommonDataReceiver<T> implements SourceFunction<T> {
             while (isRunning) {
                 String readline;
                 while ((readline = bufferedReader.readLine()) != null) {
-                    logger.debug("receive data: " + readline);
+                    logger.trace("receive data: " + readline);
                     ctx.collect(JSON.parseObject(readline, typeClass));
                 }
             }

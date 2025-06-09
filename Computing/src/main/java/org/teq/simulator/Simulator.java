@@ -17,6 +17,8 @@ import org.apache.logging.log4j.Logger;
 import org.teq.simulator.network.AbstractNetworkHostNode;
 import org.teq.utils.StaticSerializer;
 import org.teq.utils.utils;
+import org.teq.visualizer.FileDisplayer;
+import org.teq.visualizer.MetricsDisplayer;
 import org.teq.visualizer.SocketDisplayer;
 
 import java.io.*;
@@ -28,8 +30,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
+
+/**
+ * @author teq
+ * @version 0.2
+ *
+ * This class is the main class of the simulator.It encapsulates all the behavior during the simulation.
+ */
 public class Simulator {
 
+
+    //state service
     private AtomicInteger state = new AtomicInteger(0);
     public String getState(){
         if(state.get() == 0){
@@ -51,27 +62,35 @@ public class Simulator {
 
     private static final Logger logger = LogManager.getLogger(Simulator.class);
     private int nodeCount = 0;
+
+
+    //module1: docker runner, used to
     private final DockerRunner dockerRunner;
     public DockerRunner getDockerRunner() {
         return dockerRunner;
     }
-    private String startClassImportContent = "import org.teq.configurator.*;\n" +
-            "import java.nio.file.Files;\n" +
-            "import java.nio.file.Path;\n" +
-            "import org.teq.utils.*;\n" +
-            "import java.util.List;\n" ;
-    private String startClassSwitchContent = "";
-    private BackendManager backendManager = new BackendManager(this);
 
     public Simulator(AbstractNetworkHostNode networkHostNode){
+        this(networkHostNode,true, false);
+    }
+
+    public Simulator(AbstractNetworkHostNode networkHostNode, boolean openWebUI){
+        this(networkHostNode,openWebUI,false);
+    }
+
+    public Simulator(AbstractNetworkHostNode networkHostNode, boolean openWebUI, boolean useTCPConnection){
 
         logger.info("Initializing the simulator");
         // this line use TCP connection, if you want to use TCP, uncomment this line
-        // dockerRunner = new DockerRunner(DockerConfigurator.imageName,DockerConfigurator.tcpPort);
+        if(useTCPConnection) {
+            dockerRunner = new DockerRunner(SimulatorConfigurator.imageName, Integer.toString(SimulatorConfigurator.tcpPort));
+        }
 
         // this line use default connection
         // if you want to use default connection(DOCKER_HOST,Unix Socket(linux),npipe(windows)), uncomment this line
-        dockerRunner = new DockerRunner(SimulatorConfigurator.imageName);
+        else {
+            dockerRunner = new DockerRunner(SimulatorConfigurator.imageName);
+        }
 
         //Add the network host node to the node list
         String networkHostName = SimulatorConfigurator.networkHostName;
@@ -79,6 +98,15 @@ public class Simulator {
 
         addConfig(SimulatorConfigurator.class);
         addConfig(ExecutorParameters.class);
+
+        if(openWebUI) {
+            metricsDisplayer = new SocketDisplayer();
+        }
+        else{
+            metricsDisplayer = new FileDisplayer();
+        }
+
+        metricsTransformer = new MetricsTransformer(this, metricsDisplayer);
 
         logger.info("Initializing success");
     }
@@ -127,6 +155,7 @@ public class Simulator {
         return layers.size();
     }
 
+    //TODO: implement algorithm level management
     public int getAlgorithmCount() {
         return 1;
     }
@@ -165,22 +194,58 @@ public class Simulator {
         else {
             nodeName = SimulatorConfigurator.classNamePrefix + nodeName;
         }
-        logger.debug("add node " + nodeName);
+        logger.info("add node " + nodeName);
         addNodeToStartClass(clazz.getName());
         nodes.add(new SimulatorNode(node.parameters,nodeName,nodeType, nodeCount));
         parameters.add(node.parameters);
         nodeCount++;
     }
 
+    //module2: backend manager, used to launch a server providing backend data to the user interface
+    private BackendManager backendManager;
+    public BackendManager getBackendManager() {
+        return backendManager;
+    }
+
+    private MetricsDisplayer metricsDisplayer;
+    public MetricsDisplayer getMetricsDisplayer() {
+        return metricsDisplayer;
+    }
+    /**
+     * This method is used to set the metrics displayer.
+     * It is used when you want to set your own metrics display logic.
+     * @param metricsDisplayer
+     */
+    void setMetricsDisplayer(MetricsDisplayer metricsDisplayer) {
+        this.metricsDisplayer = metricsDisplayer;
+    }
+
+    private MetricsTransformer metricsTransformer;
+    public MetricsTransformer getMetricsTransformer() {
+        return metricsTransformer;
+    }
+    /**
+     * This method is used to set the metrics transformer.
+     * It is used when you want to set your own metrics transform logic.
+     * @param metricsTransformer
+     */
+    void setMetricsTransformer(MetricsTransformer metricsTransformer) {
+        this.metricsTransformer = metricsTransformer;
+    }
+
+
+    //central part: start,stop,restart
     public void start() throws Exception {
         state.set(2);
         utils.startTimer();
-//        LogHandler.redirectConsoleOutput();
+
         logger.info("Starting the simulation");
 
         logger.info("launching the backend");
+        backendManager = new BackendManager(this);
         backendManager.launch();
 
+        logger.info("generating running script and persistent data");
         runAssembleScript();
         writeStartScriptToFile();
         writeStartClassToFile();
@@ -192,7 +257,7 @@ public class Simulator {
             String nodeName = node.nodeName;
             NodeType nodeType = node.nodeType;
             int nodeId = node.nodeId;
-            logger.debug("Running container for class " + nodeName);
+            logger.trace("Running container for class " + nodeName);
             if(nodeType == NodeType.normal) {
                 dockerRunner.createAndStartContainer(nodeName, nodeId, parameters);
                 logger.info("Node " + nodeName + " started");
@@ -203,20 +268,16 @@ public class Simulator {
             }
         }
 
-        SocketDisplayer fileDisplayer = new SocketDisplayer();
-        MetricsTransformer transformer = new MetricsTransformer(this, fileDisplayer);
         try {
-            transformer.beginTransform();
+            metricsTransformer.beginTransform();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        fileDisplayer.display();
+        metricsDisplayer.display();
+
 
         state.set(1);
         // 等待所有节点运行完
-        if(SimulatorConfigurator.cleanUpAfterSimulation){
-            cleanUp();
-        }
     }
 
     public void stop(){
@@ -245,7 +306,7 @@ public class Simulator {
             String nodeName = node.nodeName;
             NodeType nodeType = node.nodeType;
             int nodeId = node.nodeId;
-            logger.debug("Running container for class " + nodeName);
+            logger.trace("Running container for class " + nodeName);
             if(nodeType == NodeType.normal) {
                 dockerRunner.startContainer(nodeName);
                 logger.info("Node " + nodeName + " started");
@@ -260,6 +321,19 @@ public class Simulator {
         state.set(1);
     }
 
+
+    /** module3: Generating the start script and the start class.
+     *  Also generating persistent data.
+     *  May be moved into a separate class in the future
+     */
+
+    private String startClassImportContent = "import org.teq.configurator.*;\n" +
+            "import java.nio.file.Files;\n" +
+            "import java.nio.file.Path;\n" +
+            "import org.teq.utils.*;\n" +
+            "import java.util.List;\n" ;
+    private String startClassSwitchContent = "";
+
     private void runAssembleScript() throws IOException {
         //assemble the docker folder
         //TODO:Windows
@@ -271,7 +345,7 @@ public class Simulator {
         // get the output from the process
         BufferedReader inputReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         while ((line = inputReader.readLine()) != null) {
-            logger.debug("Script Output:"+line);
+            logger.info("Script Output:"+line);
         }
 
         // 获取命令的错误输出

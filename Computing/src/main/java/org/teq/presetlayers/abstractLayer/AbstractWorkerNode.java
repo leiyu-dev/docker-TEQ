@@ -52,7 +52,7 @@ public abstract class AbstractWorkerNode extends MeasuredFlinkNode implements Wo
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
                 beginProcess(packageBean.getId(), packageBean.getTimestampOut(),packageBean.getSrc(),packageBean);
-                logger.debug("Worker Layer received data: {}", packageBean);
+                logger.trace("Worker Layer received data: {}", packageBean);
                 return packageBean;
             }
         }).setParallelism(1);
@@ -66,7 +66,7 @@ public abstract class AbstractWorkerNode extends MeasuredFlinkNode implements Wo
                 else
                     packageBean.setTargetPort(ExecutorParameters.fromWorkerToCodPort);
                 packageBean.setSrc(getNodeName());
-                logger.debug("Worker Layer send data: {}", packageBean);
+                logger.trace("Worker Layer send data: {}", packageBean);
 
                 finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()),
                         JSON.toJSONString(packageBean).length() * 2, packageBean.getType(),packageBean);

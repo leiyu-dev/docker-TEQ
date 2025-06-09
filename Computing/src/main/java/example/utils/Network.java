@@ -18,8 +18,18 @@ import java.util.Random;
 
 public class Network extends AbstractNetworkHostNode {
     private static final String filePath = "dataItem1M+ForLocal.csv";
+
+    /**
+     * this method is used to generate data from the csv file, and it will send them separately to the end devices
+     */
     @Override
     public void dataProcess() {
+        //wait for 10 seconds to make sure the end devices are ready
+        try {
+            Thread.sleep(ExecutorParameters.waitBeforeStart);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         Random random = new Random();
         CommonReader<String[]> csvReader = new CSVReader( filePath, 30);
         CommonDataSource<String[]> dataSource = new DataSetCommonPlayer<String[]>().genPlayer( csvReader);

@@ -97,7 +97,7 @@ public class MultiThreadDataReceiver<T> implements SourceFunction<T> {
             while (isRunning) {
                 String readline;
                 while((readline = bufferedReader.readLine()) != null){
-                    logger.debug("Received data from " + clientSocket.toString() + ": " + readline);
+                    logger.trace("Received data from " + clientSocket.toString() + ": " + readline);
                     T data = JSON.parseObject(readline, typeClass);
                     // 使用 synchronized 确保线程安全
                     synchronized (ctx.getCheckpointLock()) {

@@ -42,7 +42,7 @@ public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
                 beginProcess(packageBean.getId(), packageBean.getTimestampOut(),packageBean.getSrc(),packageBean);
-                logger.debug("End Device Layer received data from Sensor: {}", packageBean);
+                logger.trace("End Device Layer received data from Sensor: {}", packageBean);
                 return packageBean;
             }
         }).setParallelism(1);
@@ -53,7 +53,7 @@ public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements
                 packageBean.setSrc(getNodeName());
                 packageBean.setTargetPort(ExecutorParameters.fromEndToCodPort);
                 finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()),JSON.toJSONString(packageBean).length() * 2, packageBean.getType(),packageBean);
-                logger.debug("End Device Layer send data to Coordinator: {}", packageBean);
+                logger.trace("End Device Layer send data to Coordinator: {}", packageBean);
                 return packageBean;
             }
         }).setParallelism(1);
@@ -63,7 +63,7 @@ public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
                 beginProcess(packageBean.getId(), packageBean.getTimestampOut(),packageBean.getSrc(),packageBean);
-                logger.debug("End Device Layer received data from Sensor: {}", packageBean);
+                logger.trace("End Device Layer received data from Sensor: {}", packageBean);
                 return packageBean;
             }
         }).setParallelism(1);
@@ -73,7 +73,7 @@ public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements
             public PackageBean map(PackageBean packageBean) throws Exception {
                 packageBean.setSrc(getNodeName());
                 endProcess(packageBean.getId(), JSON.toJSONString(packageBean).length() * 2, packageBean.getType(),packageBean);
-                logger.debug("End Device Layer send data to Coordinator: {}", packageBean);
+                logger.trace("End Device Layer send data to Coordinator: {}", packageBean);
                 return packageBean;
             }
         }).setParallelism(1);

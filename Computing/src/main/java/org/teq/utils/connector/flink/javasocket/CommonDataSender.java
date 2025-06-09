@@ -76,7 +76,7 @@ public class CommonDataSender<T> extends RichSinkFunction<T> {
     @Override
     public void invoke(T value, SinkFunction.Context context){
         String msg = JSON.toJSONString(value);
-        logger.debug("common data sender write data {} to socket server", msg);
+        logger.trace("common data sender write data {} to socket server", msg);
         try {
             bufferedWriter.write(msg + "\n");
             bufferedWriter.flush();

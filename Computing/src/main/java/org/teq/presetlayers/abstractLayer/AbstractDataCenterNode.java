@@ -33,7 +33,7 @@ public abstract class AbstractDataCenterNode extends MeasuredFlinkNode implement
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
                 beginProcess(packageBean.getId(), packageBean.getTimestampOut(),packageBean.getSrc(),packageBean);
-                logger.debug("DataCenterLayer: Received data from Worker: {}", packageBean);
+                logger.trace("DataCenterLayer: Received data from Worker: {}", packageBean);
                 return packageBean;
             }
         }).setParallelism(1);
@@ -45,7 +45,7 @@ public abstract class AbstractDataCenterNode extends MeasuredFlinkNode implement
                 packageBean.setSrc(getNodeName());
                 finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()),
                         JSON.toJSONString(packageBean).length() * 2, packageBean.getType(),packageBean);
-                logger.debug("DataCenterLayer: Sent data to Worker: {}", packageBean);
+                logger.trace("DataCenterLayer: Sent data to Worker: {}", packageBean);
                 return packageBean;
             }
         }).setParallelism(1);

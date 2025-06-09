@@ -241,7 +241,6 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
             private Map<UUID,TreeSet<T>> metricsMap = new HashMap<>();
             @Override
             public T map(T value) throws Exception {
-//                logger.info("receive a new metrics:" + value);
                 calUserDefinedMetrics(value);
                 if(!metricsMap.containsKey(value.getId())) {
                     TreeSet<T> set = new TreeSet<>(Comparator.comparingLong(T::getTimestampIn));
@@ -251,7 +250,6 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
                     TreeSet<T> set = metricsMap.get(value.getId());
                     set.add(value);
                     if(set.last().getToNodeId() == -1) { //sink
-//                        SendingMetricsReceiver.logger.info("stream "+value.getId()+" finished");
                         finishStreamTest(set);
                         metricsMap.remove(value.getId());
                     }

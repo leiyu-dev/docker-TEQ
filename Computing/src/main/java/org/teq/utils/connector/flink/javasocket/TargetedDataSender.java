@@ -75,7 +75,7 @@ public class TargetedDataSender<T extends MetricsPackageBean> extends RichSinkFu
         String msg = JSON.toJSONString(value);
         var senderPair = getConnection(value.getTarget(),value.getTargetPort());
         BufferedWriter bufferedWriter = senderPair.getRight();
-        logger.debug("Sending message to " + value.getTarget() + ":" + value.getTargetPort() + " : " + msg);
+        logger.trace("Sending message to " + value.getTarget() + ":" + value.getTargetPort() + " : " + msg);
         try {
             bufferedWriter.write(msg + "\n");
             bufferedWriter.flush();
