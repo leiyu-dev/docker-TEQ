@@ -123,27 +123,37 @@ public class BackendManager {
 
         before((request, response) -> response.header("Access-Control-Allow-Origin", "*"));
         get("/log", (req, res) -> {
+            logger.trace("API Request: GET /log - Retrieving application logs");
             res.type("text/plain");
             String log = HttpAppender.getLogs();
 //            System.out.println("log: " + log);
+            logger.trace("API Response: GET /log - Returned {} characters of log data", log.length());
             return log; // 获取 HttpAppender 中的日志
         });
         get("/app/status", (req, res) -> {
-            int cores = Runtime.getRuntime().availableProcessors();
-            OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-            double systemCpuLoad = osBean.getSystemCpuLoad();
-            long physicalTotalMemory = osBean.getTotalPhysicalMemorySize();
-            long physicalFreeMemory = osBean.getFreePhysicalMemorySize();
-            long startTime = utils.getStartTime();
-            long upTime = (System.currentTimeMillis() - startTime) / 1000;
-            Status status = new Status(simulator.getState(), simulator.getLayerCount(), simulator.getNodeCount(), simulator.getAlgorithmCount(),
-                    String.format("%.2f", systemCpuLoad * 100) + "% / " + cores + " cores",
-                    String.format("%.2f", (physicalTotalMemory - physicalFreeMemory) / 1024.0 / 1024.0 / 1024.0 ) + " GB (buffered) / " +
-                            String.format("%.2f", physicalTotalMemory / 1024.0 / 1024.0 / 1024.0) + " GB",
-                    simulator.getState().equals("RUNNING")  ? upTime/60 + "min" + upTime%60 + "s" : "stopped"
-            );
-            String jsonString = JSON.toJSONString(status);
-            return jsonString;
+            logger.trace("API Request: GET /app/status - Retrieving application status");
+            try {
+                int cores = Runtime.getRuntime().availableProcessors();
+                OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+                double systemCpuLoad = osBean.getSystemCpuLoad();
+                long physicalTotalMemory = osBean.getTotalPhysicalMemorySize();
+                long physicalFreeMemory = osBean.getFreePhysicalMemorySize();
+                long startTime = utils.getStartTime();
+                long upTime = (System.currentTimeMillis() - startTime) / 1000;
+                Status status = new Status(simulator.getState(), simulator.getLayerCount(), simulator.getNodeCount(), simulator.getAlgorithmCount(),
+                        String.format("%.2f", systemCpuLoad * 100) + "% / " + cores + " cores",
+                        String.format("%.2f", (physicalTotalMemory - physicalFreeMemory) / 1024.0 / 1024.0 / 1024.0 ) + " GB (buffered) / " +
+                                String.format("%.2f", physicalTotalMemory / 1024.0 / 1024.0 / 1024.0) + " GB",
+                        simulator.getState().equals("RUNNING")  ? upTime/60 + "min" + upTime%60 + "s" : "stopped"
+                );
+                String jsonString = JSON.toJSONString(status);
+                logger.trace("API Response: GET /app/status - Status: {}, Nodes: {}, Layers: {}", 
+                    simulator.getState(), simulator.getNodeCount(), simulator.getLayerCount());
+                return jsonString;
+            } catch (Exception e) {
+                logger.error("API Error: GET /app/status - Failed to retrieve application status", e);
+                throw e;
+            }
         });
 
 
