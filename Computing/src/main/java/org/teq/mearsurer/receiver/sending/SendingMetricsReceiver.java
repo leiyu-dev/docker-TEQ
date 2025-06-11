@@ -41,6 +41,9 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
     /** Metrics data type */
     private final Class<T> typeClass;
     
+    /** Metrics data processor */
+    private final MetricsDataProcessor dataProcessor;
+    
     /** Chart manager */
     private final ChartManager chartManager;
     
@@ -50,7 +53,7 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
     // ==================== Constructor ====================
     
     /**
-     * Constructor
+     * Constructor with default MetricsDataProcessor
      * 
      * @param metricsDisplayer Metrics data displayer
      * @param typeClass Metrics data type
@@ -61,9 +64,29 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
         this.typeClass = typeClass;
         this.dockerRunner = dockerRunner;
         this.configuration = new MetricsConfiguration();
+        this.dataProcessor = new MetricsDataProcessor(configuration);
         this.chartManager = new ChartManager(metricsDisplayer);
     }
-
+    
+    /**
+     * Constructor with custom MetricsDataProcessor, configuration and chart manager
+     * 
+     * @param metricsDisplayer Metrics data displayer
+     * @param typeClass Metrics data type
+     * @param dockerRunner Docker runner
+     * @param dataProcessor Custom metrics data processor
+     * @param configuration Metrics configuration
+     * @param chartManager Chart manager
+     */
+    public SendingMetricsReceiver(MetricsDisplayer metricsDisplayer, Class<T> typeClass, 
+                                DockerRunner dockerRunner, MetricsDataProcessor dataProcessor, MetricsConfiguration configuration, ChartManager chartManager) {
+        super(metricsDisplayer);
+        this.typeClass = typeClass;
+        this.dockerRunner = dockerRunner;
+        this.configuration = configuration;
+        this.dataProcessor = dataProcessor;
+        this.chartManager = chartManager;
+    }
     
     
     // ==================== Public Methods ====================
@@ -218,7 +241,7 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
      * Process data stream
      */
     private void processDataStream(DataStream<T> stream) {
-        stream.map(new MetricsProcessor<>(configuration))
+        stream.map(new MetricsProcessor<>(dataProcessor))
               .setParallelism(1);
     }
 }

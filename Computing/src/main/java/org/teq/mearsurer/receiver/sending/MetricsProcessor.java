@@ -20,13 +20,13 @@ public class MetricsProcessor<T extends BuiltInMetrics> implements MapFunction<T
     /** Store metrics data grouped by ID */
     private final Map<UUID, TreeSet<T>> metricsMap = new HashMap<>();
     
-    private final MetricsConfiguration configuration;
+    private final MetricsDataProcessor dataProcessor;
     
     // Static reference to CPU usage data - this will be set by the main receiver thread
     private static volatile double[] cpuUsageArray = new double[0];
     
-    public MetricsProcessor(MetricsConfiguration configuration) {
-        this.configuration = configuration;
+    public MetricsProcessor(MetricsDataProcessor dataProcessor) {
+        this.dataProcessor = dataProcessor;
     }
     
     /**
@@ -47,7 +47,7 @@ public class MetricsProcessor<T extends BuiltInMetrics> implements MapFunction<T
             }
             
             // Calculate user-defined metrics with CPU usage value
-            MetricsDataProcessor.calculateUserDefinedMetrics(metrics, cpuUsageValue, configuration);
+            dataProcessor.calculateUserDefinedMetrics(metrics, cpuUsageValue);
             
             // Process metrics stream
             processMetricsStream(metrics);
@@ -92,7 +92,7 @@ public class MetricsProcessor<T extends BuiltInMetrics> implements MapFunction<T
      */
     private void processCompletedStream(TreeSet<T> metricsSet) {
         if (StreamValidator.validateStream(metricsSet)) {
-            MetricsDataProcessor.processCompletedStream(new ArrayList<>(metricsSet), configuration);
+            dataProcessor.processCompletedStream(new ArrayList<>(metricsSet));
         }
     }
 }

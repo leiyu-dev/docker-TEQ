@@ -14,31 +14,42 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Metrics data processor (Static class)
+ * Metrics data processor base class
  * Responsible for processing and calculating various metrics
+ * Can be extended to customize processing behavior
  */
-public class MetricsDataProcessor {
+public class MetricsDataProcessor implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
     
     /** Time unit conversion: nanoseconds to milliseconds */
-    private static final double NANO_TO_MILLI = 1000.0 * 1000.0;
+    protected static final double NANO_TO_MILLI = 1000.0 * 1000.0;
     
-    private static final Logger logger = LogManager.getLogger(MetricsDataProcessor.class);
+    protected static final Logger logger = LogManager.getLogger(MetricsDataProcessor.class);
     
-    // Static data queues
+    // Static data queues (shared across all instances)
     private static BlockingQueue<Double> rawOverallProcessingLatencyQueue;
     private static BlockingQueue<Double> rawOverallTransferLatencyQueue;
     private static List<BlockingQueue<Double>> rawProcessingLatencyQueueList;
     
-    // Static statistical data
+    // Static statistical data (shared across all instances)
     private static final AtomicInteger processedQueryCount = new AtomicInteger(0);
     private static final AtomicDouble energyConsumption = new AtomicDouble(0);
     
-    // Private constructor to prevent instantiation
-    private MetricsDataProcessor() {
+    // Instance configuration
+    protected final MetricsConfiguration configuration;
+    
+    /**
+     * Constructor
+     * 
+     * @param configuration the metrics configuration
+     */
+    public MetricsDataProcessor(MetricsConfiguration configuration) {
+        this.configuration = configuration;
     }
     
     /**
-     * Initialize data processor
+     * Initialize data processor (static initialization)
      */
     public static void initialize() {
         initializeDataQueues();
@@ -60,12 +71,12 @@ public class MetricsDataProcessor {
     
     /**
      * Calculate user-defined metrics
+     * Can be overridden by subclasses to customize energy consumption calculation
      * 
      * @param metrics the metrics data
      * @param cpuUsageValue the CPU usage value for the node (extracted from DockerRunner)
-     * @param configuration the metrics configuration
      */
-    public static <T extends BuiltInMetrics> void calculateUserDefinedMetrics(T metrics, double cpuUsageValue, MetricsConfiguration configuration) {
+    public <T extends BuiltInMetrics> void calculateUserDefinedMetrics(T metrics, double cpuUsageValue) {
         int nodeId = metrics.getFromNodeId();
         if (nodeId >= 0 && nodeId < configuration.getNodeEnergyParams().size()) {
             double nodeEnergy = configuration.getNodeEnergyParams().get(nodeId);
@@ -75,11 +86,11 @@ public class MetricsDataProcessor {
     
     /**
      * Process completed stream
+     * Can be overridden by subclasses to customize stream processing behavior
      * 
      * @param metricsList the list of metrics
-     * @param configuration the metrics configuration
      */
-    public static <T extends BuiltInMetrics> void processCompletedStream(List<T> metricsList, MetricsConfiguration configuration) {
+    public <T extends BuiltInMetrics> void processCompletedStream(List<T> metricsList) {
         processedQueryCount.incrementAndGet();
         
         // Calculate overall processing latency
@@ -88,7 +99,7 @@ public class MetricsDataProcessor {
         logger.info("Added overall processing latency to queue, queue size: {}", rawOverallProcessingLatencyQueue.size());
         
         // Calculate overall transfer latency and energy consumption
-        double overallTransferLatency = calculateOverallTransferLatencyAndEnergy(metricsList, configuration);
+        double overallTransferLatency = calculateOverallTransferLatencyAndEnergy(metricsList);
         addToQueue(rawOverallTransferLatencyQueue, overallTransferLatency);
 
         // Process layer latencies
@@ -97,8 +108,9 @@ public class MetricsDataProcessor {
     
     /**
      * Calculate overall processing latency
+     * Can be overridden by subclasses to customize latency calculation
      */
-    private static <T extends BuiltInMetrics> double calculateOverallProcessingLatency(List<T> metricsList) {
+    protected <T extends BuiltInMetrics> double calculateOverallProcessingLatency(List<T> metricsList) {
         if (metricsList.isEmpty()) return 0.0;
         
         T first = metricsList.get(0);
@@ -109,8 +121,9 @@ public class MetricsDataProcessor {
     
     /**
      * Calculate overall transfer latency and energy consumption
+     * Can be overridden by subclasses to customize transfer processing
      */
-    private static <T extends BuiltInMetrics> double calculateOverallTransferLatencyAndEnergy(List<T> metricsList, MetricsConfiguration configuration) {
+    protected <T extends BuiltInMetrics> double calculateOverallTransferLatencyAndEnergy(List<T> metricsList) {
         double overallTransferLatency = 0.0;
         
         for (int i = 0; i < metricsList.size() - 1; i++) {
@@ -118,7 +131,7 @@ public class MetricsDataProcessor {
             T next = metricsList.get(i + 1);
             
             // Calculate transfer energy consumption
-            calculateTransferEnergy(current, configuration);
+            calculateTransferEnergy(current);
             
             // Calculate transfer latency
             overallTransferLatency += (double)(next.getTimestampIn() - current.getTimestampOut()) / NANO_TO_MILLI;
@@ -129,8 +142,9 @@ public class MetricsDataProcessor {
     
     /**
      * Calculate transfer energy consumption
+     * Can be overridden by subclasses to customize energy calculation
      */
-    private static <T extends BuiltInMetrics> void calculateTransferEnergy(T metrics, MetricsConfiguration configuration) {
+    protected <T extends BuiltInMetrics> void calculateTransferEnergy(T metrics) {
         int fromNodeId = metrics.getFromNodeId();
         int toNodeId = metrics.getToNodeId();
         long packageLength = (long)metrics.getPackageLength();
@@ -148,8 +162,9 @@ public class MetricsDataProcessor {
     
     /**
      * Process layer latency data
+     * Can be overridden by subclasses to customize layer processing
      */
-    private static <T extends BuiltInMetrics> void processLayerLatencies(List<T> metricsList) {
+    protected <T extends BuiltInMetrics> void processLayerLatencies(List<T> metricsList) {
         for (T metrics : metricsList) {
             try {
                 int layerId = DockerRuntimeData.getLayerIdByName(
@@ -171,7 +186,7 @@ public class MetricsDataProcessor {
     /**
      * Safely add data to queue
      */
-    private static void addToQueue(BlockingQueue<Double> queue, double value) {
+    protected static void addToQueue(BlockingQueue<Double> queue, double value) {
         // logger.info("Adding data to queue: {}", value);
         try {
             queue.put(value);
@@ -181,7 +196,7 @@ public class MetricsDataProcessor {
         }
     }
     
-    // Getter methods for retrieving and resetting statistical data
+    // Static getter methods for retrieving and resetting statistical data
     public static double getAndResetEnergyConsumption() {
         return energyConsumption.getAndSet(0);
     }
