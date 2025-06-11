@@ -2,7 +2,7 @@ package presetlayers.simpletest;
 
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.teq.configurator.ExecutorParameters;
+import org.teq.configurator.ExecutorConfig;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.abstractLayer.AbstractWorkerNode;
 import org.teq.utils.DockerRuntimeData;
@@ -13,11 +13,11 @@ public class WorkerNode extends AbstractWorkerNode {
         return info.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean value) throws Exception {
-                if(DockerRuntimeData.getLayerNameByNodeName(value.getSrc()).equals(ExecutorParameters.dataCenterLayerName)){
-                    value.setTarget(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.coordinatorLayerName).get(0));
+                if(DockerRuntimeData.getLayerNameByNodeName(value.getSrc()).equals(ExecutorConfig.dataCenterLayerName)){
+                    value.setTarget(DockerRuntimeData.getNodeNameListByLayerName(ExecutorConfig.coordinatorLayerName).get(0));
                 } else{ //coordinator
                     Thread.sleep(1000);
-                    value.setTarget(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.dataCenterLayerName).get(0));
+                    value.setTarget(DockerRuntimeData.getNodeNameListByLayerName(ExecutorConfig.dataCenterLayerName).get(0));
                 }
                 return value;
             }

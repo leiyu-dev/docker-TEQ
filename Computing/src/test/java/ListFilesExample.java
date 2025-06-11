@@ -1,5 +1,5 @@
 import com.alibaba.fastjson.JSON;
-import org.teq.configurator.SimulatorConfigurator;
+import org.teq.configurator.SimulatorConfig;
 
 import java.io.File;
 

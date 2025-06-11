@@ -1,7 +1,7 @@
 package org.teq.utils;
 
 import com.alibaba.fastjson2.JSON;
-import org.teq.configurator.SimulatorConfigurator;
+import org.teq.configurator.SimulatorConfig;
 import org.teq.node.DockerNodeParameters;
 
 import java.io.BufferedReader;
@@ -28,7 +28,7 @@ public class DockerRuntimeData {
 
     private static Path getPathByEnvironment(String path) {
         if (utils.isInDocker()) return Path.of(path);
-        return Path.of(SimulatorConfigurator.hostPath + "/" + path);
+        return Path.of(SimulatorConfig.hostPath + "/" + path);
     }
 
     public static synchronized List<DockerNodeParameters> getNodeParametersList() {
@@ -37,7 +37,7 @@ public class DockerRuntimeData {
         synchronized (DockerRuntimeData.class){
             if(nodeParametersList == null){
                 nodeParametersList = Collections.synchronizedList(new ArrayList<>());
-                Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/nodeParams" );
+                Path path = getPathByEnvironment(SimulatorConfig.dataFolderName + "/nodeParams" );
                 try {
                     String parametersString = Files.readAllLines(path).get(0);
                     nodeParametersList = JSON.parseArray(parametersString, DockerNodeParameters.class);
@@ -60,7 +60,7 @@ public class DockerRuntimeData {
                 layerBeginList = Collections.synchronizedList(new ArrayList<>());
                 layerEndList = Collections.synchronizedList(new ArrayList<>());
 
-                Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.layerNameFileName);
+                Path path = getPathByEnvironment(SimulatorConfig.dataFolderName + "/" + SimulatorConfig.layerNameFileName);
                 try {
                     List<String> rawLayerList = Files.readAllLines(path);
                     for (String rawLayerString : rawLayerList) {
@@ -85,7 +85,7 @@ public class DockerRuntimeData {
 
     public static List<String> getNodeNameListByLayerName(String layerName) {
         List<String> nodeNameListLayer;
-        Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + layerName + "/" + SimulatorConfigurator.nodeNameFileName);
+        Path path = getPathByEnvironment(SimulatorConfig.dataFolderName + "/" + layerName + "/" + SimulatorConfig.nodeNameFileName);
         try {
             nodeNameListLayer = Files.readAllLines(path);
             if (nodeNameListLayer.get(nodeNameListLayer.size() - 1).isEmpty())
@@ -102,7 +102,7 @@ public class DockerRuntimeData {
 
         synchronized (DockerRuntimeData.class) {
             if (nodeNameList == null) {
-                Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.nodeNameFileName);
+                Path path = getPathByEnvironment(SimulatorConfig.dataFolderName + "/" + SimulatorConfig.nodeNameFileName);
                 try {
                     nodeNameList = Collections.synchronizedList(Files.readAllLines(path));
                     if (nodeNameList.get(nodeNameList.size() - 1).isEmpty())
@@ -138,7 +138,7 @@ public class DockerRuntimeData {
 
     public static String getHostIp() {
         String hostIp;
-        Path path = getPathByEnvironment(SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.hostIpFileName);
+        Path path = getPathByEnvironment(SimulatorConfig.dataFolderName + "/" + SimulatorConfig.hostIpFileName);
         try {
             hostIp = Files.readAllLines(path).get(0);
         } catch (IOException e) {
@@ -151,7 +151,7 @@ public class DockerRuntimeData {
     public static String getNetworkHostNodeName() {
         String networkHostName;
         try (BufferedReader reader = new BufferedReader(new FileReader(
-                SimulatorConfigurator.dataFolderName + "/" + SimulatorConfigurator.nodeNameFileName))) {
+                SimulatorConfig.dataFolderName + "/" + SimulatorConfig.nodeNameFileName))) {
             networkHostName = reader.readLine();
             return networkHostName;
         } catch (IOException e) {

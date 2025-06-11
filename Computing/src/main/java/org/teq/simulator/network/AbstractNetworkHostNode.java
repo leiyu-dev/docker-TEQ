@@ -4,7 +4,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.teq.configurator.SimulatorConfigurator;
+import org.teq.configurator.SimulatorConfig;
 import org.teq.mearsurer.BuiltInMetrics;
 import org.teq.node.AbstractFlinkNode;
 import org.teq.utils.DockerRuntimeData;
@@ -23,8 +23,8 @@ public abstract class AbstractNetworkHostNode extends AbstractFlinkNode {
         for(String nodeName : nodeList){
             System.out.println(nodeName);
         }
-        DataStream<BuiltInMetrics> stream = env.addSource(new MultiThreadDataReceiver<>(SimulatorConfigurator.metricsPort , BuiltInMetrics.class)).returns(TypeInformation.of(BuiltInMetrics.class));
-        DataStreamSink sink = stream.addSink(new CommonDataSender<>(DockerRuntimeData.getHostIp(),SimulatorConfigurator.MetricsReceiverPort,10000,1000,true)).setParallelism(1);
+        DataStream<BuiltInMetrics> stream = env.addSource(new MultiThreadDataReceiver<>(SimulatorConfig.metricsPort , BuiltInMetrics.class)).returns(TypeInformation.of(BuiltInMetrics.class));
+        DataStreamSink sink = stream.addSink(new CommonDataSender<>(DockerRuntimeData.getHostIp(),SimulatorConfig.MetricsReceiverPort,10000,1000,true)).setParallelism(1);
         dataProcess();
     }
     abstract public void dataProcess();

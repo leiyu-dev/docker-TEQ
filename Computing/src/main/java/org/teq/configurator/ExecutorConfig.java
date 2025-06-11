@@ -1,11 +1,6 @@
 package org.teq.configurator;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Properties;
-
-public class ExecutorParameters implements TeqGlobalConfig{
+public class ExecutorConfig implements TeqGlobalConfig{
     public static String endDeviceLayerName = "EndDeviceLayer";
     public static String coordinatorLayerName = "CoordinatorLayer";
     public static String workerLayerName = "WorkerLayer";

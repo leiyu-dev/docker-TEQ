@@ -3,7 +3,7 @@ package org.teq.backend;
 import com.alibaba.fastjson.JSON;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.teq.configurator.SimulatorConfigurator;
+import org.teq.configurator.SimulatorConfig;
 import org.teq.simulator.Simulator;
 
 
@@ -98,7 +98,7 @@ public class BackendManager {
         this.simulator = simulator;
     }
     public void launch() {
-        port(SimulatorConfigurator.restfulPort);
+        port(SimulatorConfig.restfulPort);
         options("/*",
                 (request, response) -> {
 

@@ -9,7 +9,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.teq.mearsurer.MeasuredFlinkNode;
-import org.teq.configurator.ExecutorParameters;
+import org.teq.configurator.ExecutorConfig;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.CoordinatorTask;
 import org.teq.utils.DockerRuntimeData;
@@ -25,15 +25,15 @@ public abstract class AbstractCoordinatorNode extends MeasuredFlinkNode implemen
 
     @Override
     public void dataProcess() throws Exception {
-        int maxNumRetries = ExecutorParameters.maxNumRetries;
-        int retryInterval = ExecutorParameters.retryInterval;
+        int maxNumRetries = ExecutorConfig.maxNumRetries;
+        int retryInterval = ExecutorConfig.retryInterval;
         StreamExecutionEnvironment env = getEnv();
 
-        DataStream<PackageBean> FromEnd = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorParameters.fromEndToCodPort, PackageBean.class))
+        DataStream<PackageBean> FromEnd = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorConfig.fromEndToCodPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
         DataStream<PackageBean> routedToWorker = measureToWorkerRecord(FromEnd);
 
-        DataStream<PackageBean> FromWorker = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorParameters.fromWorkerToCodPort, PackageBean.class))
+        DataStream<PackageBean> FromWorker = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorConfig.fromWorkerToCodPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
         DataStream<PackageBean> routedToEnd = measureToEndRecord(FromWorker);
 
@@ -55,7 +55,7 @@ public abstract class AbstractCoordinatorNode extends MeasuredFlinkNode implemen
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
                 packageBean.setSrc(getNodeName());
-                packageBean.setTargetPort(ExecutorParameters.fromCodToWorkerPort);
+                packageBean.setTargetPort(ExecutorConfig.fromCodToWorkerPort);
                 finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()),
                         JSON.toJSONString(packageBean).length() * 2, packageBean.getType(),packageBean);
                 logger.trace("Coordinator Layer sent data to Worker: {}", packageBean);
@@ -78,7 +78,7 @@ public abstract class AbstractCoordinatorNode extends MeasuredFlinkNode implemen
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
                 packageBean.setSrc(getNodeName());
-                packageBean.setTargetPort(ExecutorParameters.fromCodToEndPort);
+                packageBean.setTargetPort(ExecutorConfig.fromCodToEndPort);
                 finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()),
                         JSON.toJSONString(packageBean).length() * 2, packageBean.getType(),packageBean);
                 logger.trace("Coordinator Layer sent data to Worker: {}", packageBean);

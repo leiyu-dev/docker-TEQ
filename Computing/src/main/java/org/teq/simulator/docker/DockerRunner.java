@@ -9,8 +9,8 @@ import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.google.common.util.concurrent.AtomicDoubleArray;
-import org.teq.configurator.ExecutorParameters;
-import org.teq.configurator.SimulatorConfigurator;
+import org.teq.configurator.ExecutorConfig;
+import org.teq.configurator.SimulatorConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.teq.node.DockerNodeParameters;
@@ -47,7 +47,7 @@ public class DockerRunner {
             // 获取所有相关容器
             List<Container> containers = dockerClient.listContainersCmd()
                     .withShowAll(true)
-                    .withNameFilter(Collections.singletonList(SimulatorConfigurator.classNamePrefix))
+                    .withNameFilter(Collections.singletonList(SimulatorConfig.classNamePrefix))
                     .exec();
 
             List<Future<?>> futures = new ArrayList<>();
@@ -92,7 +92,7 @@ public class DockerRunner {
                 .exec();
 
         for (Container container : containers) {
-            if (container.getNames()[0].startsWith("/"+ SimulatorConfigurator.classNamePrefix)) {
+            if (container.getNames()[0].startsWith("/"+ SimulatorConfig.classNamePrefix)) {
                 dockerClient.removeContainerCmd(container.getId()).withForce(true).exec();
                 logger.info("Deleted container: " + container.getId());
             }
@@ -101,7 +101,7 @@ public class DockerRunner {
     private void deleteNetwork(){
         var networks = dockerClient.listNetworksCmd().exec();
         String networkId = networks.stream()
-                .filter(network -> network.getName().equals(SimulatorConfigurator.networkName))
+                .filter(network -> network.getName().equals(SimulatorConfig.networkName))
                 .map(network -> network.getId())
                 .findFirst()
                 .orElse(null);
@@ -131,13 +131,13 @@ public class DockerRunner {
         deleteNetwork();
         dockerNetworkController = new DockerNetworkController(dockerClient);
         CreateNetworkResponse network = dockerClient.createNetworkCmd()
-                .withName(SimulatorConfigurator.networkName)
+                .withName(SimulatorConfig.networkName)
                 .withDriver("bridge") // 使用桥接网络
-                .withIpam(new Ipam().withConfig(new Config().withSubnet(SimulatorConfigurator.networkSubnet).withGateway(SimulatorConfigurator.networkGateway)))
+                .withIpam(new Ipam().withConfig(new Config().withSubnet(SimulatorConfig.networkSubnet).withGateway(SimulatorConfig.networkGateway)))
                 .exec();
         Network teqNetwork = dockerClient.inspectNetworkCmd().withNetworkId(network.getId()).exec();
         String gateway = teqNetwork.getIpam().getConfig().get(0).getGateway();
-        utils.writeStringToFile(SimulatorConfigurator.dataFolderPath + "/" + SimulatorConfigurator.hostIpFileName, gateway);
+        utils.writeStringToFile(SimulatorConfig.dataFolderPath + "/" + SimulatorConfig.hostIpFileName, gateway);
         logger.info("Gateway: " + gateway);
         logger.info("Create network" + network.getId());
     }
@@ -181,10 +181,10 @@ public class DockerRunner {
 
     public void createAndStartContainer(String containerName, int containerId, DockerNodeParameters parameters){
         logger.info("Running container " + containerName);
-        Volume volume = new Volume(SimulatorConfigurator.volumePath);
+        Volume volume = new Volume(SimulatorConfig.volumePath);
         HostConfig hostConfig = HostConfig.newHostConfig()
-                .withBinds(new Bind(SimulatorConfigurator.hostPath, volume))  // 本地文件夹路径
-                .withNetworkMode(SimulatorConfigurator.networkName);
+                .withBinds(new Bind(SimulatorConfig.hostPath, volume))  // 本地文件夹路径
+                .withNetworkMode(SimulatorConfig.networkName);
 
         /* CPU restriction */
         if(parameters.getCpuRestrictType() == DockerNodeParameters.CpuRestrictType.ROUGH){
@@ -212,8 +212,8 @@ public class DockerRunner {
 
         String[] command = {
             "bash", "-c",
-            "chmod -R 777 " + SimulatorConfigurator.volumePath + " && " +
-            (ExecutorParameters.useFixedLatency ? "" :
+            "chmod -R 777 " + SimulatorConfig.volumePath + " && " +
+            (ExecutorConfig.useFixedLatency ? "" :
             "tc qdisc add dev eth0 root handle 1: htb default 1 && " +
             "tc class add dev eth0 parent 1: classid 1:1 htb rate " + parameters.getNetworkOutBandwidth() + "kbps ceil " + parameters.getNetworkOutBandwidth() + "kbps && " +
             "tc qdisc add dev eth0 parent 1:1 handle 10: netem delay "+ parameters.getNetworkOutLatency() +"ms && " +
@@ -227,7 +227,7 @@ public class DockerRunner {
             "tc class add dev ifb0 parent 2: classid 2:22 htb rate " + parameters.getNetworkInBandwidth() + "kbps ceil " + parameters.getNetworkInBandwidth() + "kbps && " +
             "tc qdisc add dev ifb0 parent 2:22 handle 20: netem delay "+ parameters.getNetworkInLatency() +"ms && "
             ) +
-            "bash "+ SimulatorConfigurator.volumePath + "/" + SimulatorConfigurator.startScriptName
+            "bash "+ SimulatorConfig.volumePath + "/" + SimulatorConfig.startScriptName
         };
         String[] env = {
             "NODE_ID=" + containerId,
@@ -244,7 +244,7 @@ public class DockerRunner {
                 .exec();
 
         dockerClient.startContainerCmd(container.getId()).exec();
-        if(SimulatorConfigurator.getStdout){
+        if(SimulatorConfig.getStdout){
             LogContainerCmd logContainerCmd = dockerClient.logContainerCmd(container.getId())
                     .withStdOut(true)  // 获取标准输出
                     .withStdErr(true)  // 获取标准错误
@@ -322,7 +322,6 @@ public class DockerRunner {
     public AtomicDoubleArray cpuUsageArray;
     public AtomicDoubleArray memoryUsageArray;
 
-    //deprecated: have bug
     public void beginDockerMetricsCollection(List<BlockingQueue<Double>>cpuQueueList, List<BlockingQueue<Double>>memoryQueueList){
         cpuUsageArray = new AtomicDoubleArray(DockerRuntimeData.getNodeNameList().size());
         memoryUsageArray = new AtomicDoubleArray(DockerRuntimeData.getNodeNameList().size());
@@ -462,79 +461,6 @@ public class DockerRunner {
         getterThread.start();
     }
 
-
-    //TODO: use better ways
-    public void beginDockerMetricsCollectionTry(List<BlockingQueue<Double>> cpuQueueList, List<BlockingQueue<Double>> memoryQueueList) throws Exception {
-        Thread getterThread = new Thread(() -> {
-            List<String> nodeList = DockerRuntimeData.getNodeNameList();
-            ExecutorService executorService = Executors.newFixedThreadPool(nodeList.size()); // 使用线程池并行执行任务
-            while (true) {
-                List<Future<?>> futures = new ArrayList<>();
-                for (int i = 0; i < nodeList.size(); i++) {
-                    int index = i; // 避免 Lambda 表达式中的变量捕获问题
-                    String containerName = nodeList.get(index);
-                    futures.add(executorService.submit(() -> {
-                        try {
-                            ProcessBuilder processBuilder = new ProcessBuilder(
-                                    "docker", "stats", containerName, "--no-stream", "--format",
-                                    "{{.Container}},{{.CPUPerc}},{{.MemUsage}}"
-                            );
-                            Process process = processBuilder.start();
-
-                            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                            String line;
-                            while ((line = reader.readLine()) != null) {
-                                if (line.startsWith(containerName + ",")) {
-                                    String[] stats = line.split(",");
-                                    String containerRead = stats[0];
-
-                                    Double cpuUsage = Double.parseDouble(stats[1].split("%")[0]);
-
-                                    Double memUsage;
-                                    if (stats[2].contains("GiB / "))
-                                        memUsage = Double.parseDouble(stats[2].split("GiB / ")[0]) * 1000.0;
-                                    else if (stats[2].contains("MiB / "))
-                                        memUsage = Double.parseDouble(stats[2].split("MiB")[0]);
-                                    else if (stats[2].contains("KiB / "))
-                                        memUsage = Double.parseDouble(stats[2].split("KiB")[0]) / 1000.0;
-                                    else
-                                        break;
-
-                                    if (containerRead.equals(containerName)) {
-                                        BlockingQueue<Double> cpuQueue = cpuQueueList.get(index);
-                                        BlockingQueue<Double> memoryQueue = memoryQueueList.get(index);
-                                        logger.info("CPU: " + cpuUsage + "%, Memory: " + memUsage + "MB" + " for " + containerName);
-                                        cpuQueue.put(cpuUsage);
-                                        memoryQueue.put(memUsage / 1024.0);
-                                    }
-                                }
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            throw new RuntimeException(e);
-                        }
-                    }));
-                }
-
-                // 等待所有任务完成
-                for (Future<?> future : futures) {
-                    try {
-                        future.get();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
-        getterThread.start();
-    }
-
     public void cleanUp(){
         deleteAllContainers();
     }
@@ -559,17 +485,17 @@ public class DockerRunner {
     }
 
     /*
-String[] command = {
-"tc qdisc add dev eth0 root handle 1: htb default 1 && " +
-"tc class add dev eth0 parent 1: classid 1:1 htb rate " + parameters.getNetworkOutBandwidth() + "kbps ceil " + parameters.getNetworkOutBandwidth() + "kbps && " +
-"tc qdisc add dev eth0 parent 1:1 handle 10: netem delay "+ parameters.getNetworkOutLatency() +"ms && " +
-"tc class add dev eth0 parent 1: classid 1:2 htb rate 100mbit ceil 100mbit && " +
-"tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 match ip tos 0x10 0xff flowid 1:2 && " +
-"bash "+ SimulatorConfigurator.volumePath + "/" + SimulatorConfigurator.startScriptName
-};
+        String[] command = {
+        "tc qdisc add dev eth0 root handle 1: htb default 1 && " +
+        "tc class add dev eth0 parent 1: classid 1:1 htb rate " + parameters.getNetworkOutBandwidth() + "kbps ceil " + parameters.getNetworkOutBandwidth() + "kbps && " +
+        "tc qdisc add dev eth0 parent 1:1 handle 10: netem delay "+ parameters.getNetworkOutLatency() +"ms && " +
+        "tc class add dev eth0 parent 1: classid 1:2 htb rate 100mbit ceil 100mbit && " +
+        "tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 match ip tos 0x10 0xff flowid 1:2 && " +
+        "bash "+ SimulatorConfigurator.volumePath + "/" + SimulatorConfigurator.startScriptName
+        };
      */
     public void changeNetworkOut(String containerName, double outBandwidth, double outLatency) throws IllegalArgumentException {
-        if(ExecutorParameters.useFixedLatency){
+        if(ExecutorConfig.useFixedLatency){
             return;
         }
         if (outBandwidth <= 0) {
@@ -609,7 +535,7 @@ String[] command = {
         }
     }
     public void changeNetworkIn(String containerName, double inBandwidth, double inLatency) throws IllegalArgumentException {
-        if(ExecutorParameters.useFixedLatency){
+        if(ExecutorConfig.useFixedLatency){
             return;
         }
         if (inBandwidth <= 0) {

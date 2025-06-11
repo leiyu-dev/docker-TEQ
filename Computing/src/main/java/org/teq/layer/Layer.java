@@ -1,7 +1,7 @@
 package org.teq.layer;
 
 import org.apache.commons.lang3.SerializationUtils;
-import org.teq.configurator.SimulatorConfigurator;
+import org.teq.configurator.SimulatorConfig;
 import org.teq.node.AbstractDockerNode;
 import org.teq.node.DockerNodeParameters;
 

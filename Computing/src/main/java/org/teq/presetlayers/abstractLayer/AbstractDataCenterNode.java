@@ -9,7 +9,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.teq.mearsurer.MeasuredFlinkNode;
-import org.teq.configurator.ExecutorParameters;
+import org.teq.configurator.ExecutorConfig;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.DataCenterTask;
 import org.teq.utils.DockerRuntimeData;
@@ -20,10 +20,10 @@ public abstract class AbstractDataCenterNode extends MeasuredFlinkNode implement
     private static final Logger logger = LogManager.getLogger(AbstractEndDeviceNode.class);
     @Override
     public void dataProcess() throws Exception {
-        int maxNumRetries = ExecutorParameters.maxNumRetries;
-        int retryInterval = ExecutorParameters.retryInterval;
+        int maxNumRetries = ExecutorConfig.maxNumRetries;
+        int retryInterval = ExecutorConfig.retryInterval;
         StreamExecutionEnvironment env = getEnv();
-        DataStream<PackageBean> FromWorker = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorParameters.fromWorkerToCenterPort, PackageBean.class))
+        DataStream<PackageBean> FromWorker = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorConfig.fromWorkerToCenterPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
         DataStream<PackageBean> modifiedInfo = measurerDataCenterRecord(FromWorker);
         DataStreamSink ToWorker = modifiedInfo.addSink(new TargetedDataSender<>(maxNumRetries,retryInterval));
@@ -41,7 +41,7 @@ public abstract class AbstractDataCenterNode extends MeasuredFlinkNode implement
         return modifiedMap.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                packageBean.setTargetPort(ExecutorParameters.fromCenterToWorkerPort);
+                packageBean.setTargetPort(ExecutorConfig.fromCenterToWorkerPort);
                 packageBean.setSrc(getNodeName());
                 finishProcess(packageBean.getId(), DockerRuntimeData.getNodeIdByName(packageBean.getTarget()),
                         JSON.toJSONString(packageBean).length() * 2, packageBean.getType(),packageBean);

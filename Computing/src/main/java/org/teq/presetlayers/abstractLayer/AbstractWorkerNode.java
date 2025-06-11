@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.logging.log4j.*;
-import org.teq.configurator.ExecutorParameters;
+import org.teq.configurator.ExecutorConfig;
 import org.teq.mearsurer.MeasuredFlinkNode;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.WorkerTask;
@@ -33,13 +33,13 @@ public abstract class AbstractWorkerNode extends MeasuredFlinkNode implements Wo
 
     @Override
     public void dataProcess() throws Exception {
-        int maxNumRetries = ExecutorParameters.maxNumRetries;
-        int retryInterval = ExecutorParameters.retryInterval;
+        int maxNumRetries = ExecutorConfig.maxNumRetries;
+        int retryInterval = ExecutorConfig.retryInterval;
         StreamExecutionEnvironment env = getEnv();
-        DataStream<PackageBean> FromCenter = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorParameters.fromCenterToWorkerPort, PackageBean.class))
+        DataStream<PackageBean> FromCenter = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorConfig.fromCenterToWorkerPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
 
-        DataStream<PackageBean> FromCod =  env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorParameters.fromCodToWorkerPort, PackageBean.class))
+        DataStream<PackageBean> FromCod =  env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorConfig.fromCodToWorkerPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
 
         DataStream<PackageBean> info = FromCenter.union(FromCod);
@@ -61,10 +61,10 @@ public abstract class AbstractWorkerNode extends MeasuredFlinkNode implements Wo
         return transformedWorkers.map(new MapFunction<PackageBean, PackageBean>() {
             @Override
             public PackageBean map(PackageBean packageBean) throws Exception {
-                if(DockerRuntimeData.getLayerNameByNodeName(packageBean.getTarget()).equals(ExecutorParameters.dataCenterLayerName))
-                    packageBean.setTargetPort(ExecutorParameters.fromWorkerToCenterPort);
+                if(DockerRuntimeData.getLayerNameByNodeName(packageBean.getTarget()).equals(ExecutorConfig.dataCenterLayerName))
+                    packageBean.setTargetPort(ExecutorConfig.fromWorkerToCenterPort);
                 else
-                    packageBean.setTargetPort(ExecutorParameters.fromWorkerToCodPort);
+                    packageBean.setTargetPort(ExecutorConfig.fromWorkerToCodPort);
                 packageBean.setSrc(getNodeName());
                 logger.trace("Worker Layer send data: {}", packageBean);
 

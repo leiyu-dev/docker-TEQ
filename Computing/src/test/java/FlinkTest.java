@@ -3,14 +3,14 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.teq.configurator.SimulatorConfigurator;
+import org.teq.configurator.SimulatorConfig;
 
 public class FlinkTest {
     public static void main(String[] args) {
         Configuration conf = new Configuration();
         conf.setInteger(RestOptions.PORT, 8777);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
-        String filePath = SimulatorConfigurator.hostPath + "/file.txt";
+        String filePath = SimulatorConfig.hostPath + "/file.txt";
         DataStream<String> input = env.readTextFile(filePath);
         process(input);
         input.print();

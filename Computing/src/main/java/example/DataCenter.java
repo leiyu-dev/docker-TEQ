@@ -12,7 +12,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.util.Collector;
-import org.teq.configurator.ExecutorParameters;
+import org.teq.configurator.ExecutorConfig;
 import org.teq.configurator.unserializable.InfoType;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.abstractLayer.AbstractDataCenterNode;
@@ -38,7 +38,7 @@ public class DataCenter extends AbstractDataCenterNode {
 
     @Override
     public DataStream<PackageBean> transform(DataStream<PackageBean> info) {
-        int workerNum = DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.workerLayerName).size();
+        int workerNum = DockerRuntimeData.getNodeNameListByLayerName(ExecutorConfig.workerLayerName).size();
         // 如果要使用状态编程，必须将流转化为KeyedStream!!!!
         KeyedStream<PackageBean, String> centerStream = info.keyBy(new KeySelector<PackageBean, String>() {
             @Override
@@ -66,8 +66,8 @@ public class DataCenter extends AbstractDataCenterNode {
                     querySrc.put(id, packageBean);
                     queryState.put(id,0);
                     for (int i = 0; i < workerNum; i++) {
-                        collector.collect(new PackageBean(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.dataCenterLayerName).get(0),
-                                DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.workerLayerName).get(i),
+                        collector.collect(new PackageBean(DockerRuntimeData.getNodeNameListByLayerName(ExecutorConfig.dataCenterLayerName).get(0),
+                                DockerRuntimeData.getNodeNameListByLayerName(ExecutorConfig.workerLayerName).get(i),
                                 InfoType.InteriorQuery, packageBean.getObject()));
                     }
                 }
@@ -85,8 +85,8 @@ public class DataCenter extends AbstractDataCenterNode {
                             ans.add(Integer.toString(ansSet.get(word)));
                         }
                         Random random = new Random();
-                        collector.collect(new PackageBean(p.getId(), p.getSrc(), DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.dataCenterLayerName).get(random.nextInt(workerNum)),
-                              ExecutorParameters.fromCenterToWorkerPort  , InfoType.Respond, ans));
+                        collector.collect(new PackageBean(p.getId(), p.getSrc(), DockerRuntimeData.getNodeNameListByLayerName(ExecutorConfig.dataCenterLayerName).get(random.nextInt(workerNum)),
+                              ExecutorConfig.fromCenterToWorkerPort  , InfoType.Respond, ans));
                     }
                 }
             }

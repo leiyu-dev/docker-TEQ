@@ -2,6 +2,7 @@ package org.teq.mearsurer.receiver;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.teq.configurator.MetricsConfig;
 import org.teq.simulator.Simulator;
 import org.teq.simulator.docker.DockerRunner;
 import org.teq.utils.DockerRuntimeData;
@@ -40,7 +41,7 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
             memoryUsageQueueList.add(new LinkedBlockingQueue<>());
         }
 
-        // TimeChart内部会自动管理Y轴队列，不需要手动创建
+        // TimeChart will manage the Y-axis queues internally, no need to create them manually
 
         DockerRunner dockerRunner = simulator.getDockerRunner();
         try {
@@ -92,7 +93,7 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
                     }
                 }
 
-                // 准备CPU和内存使用率数据
+                // prepare CPU and memory usage data
                 List<Double> cpuUsageData = new ArrayList<>();
                 List<Double> memoryUsageData = new ArrayList<>();
                 
@@ -108,13 +109,13 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
                     }
                 }
                 
-                // 只有当有数据时才添加到图表
+                // only add to chart when there is data
                 if (hasData) {
                     cpuTimeChart.addDataPoint(cpuUsageData);
                     memoryTimeChart.addDataPoint(memoryUsageData);
                 }
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(MetricsConfig.dockerMetricsDisplayInterval);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }

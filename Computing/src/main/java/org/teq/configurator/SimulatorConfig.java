@@ -1,6 +1,6 @@
 package org.teq.configurator;
 
-public class SimulatorConfigurator implements TeqGlobalConfig{
+public class SimulatorConfig implements TeqGlobalConfig{
     public static String volumePath = "/var/lib/teq";
     public static String volumeFolderName = "docker";
     public static String startScriptName = "run.sh";

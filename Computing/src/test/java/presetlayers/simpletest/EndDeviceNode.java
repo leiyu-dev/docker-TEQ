@@ -5,7 +5,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.teq.configurator.unserializable.InfoType;
 import org.teq.presetlayers.abstractLayer.AbstractEndDeviceNode;
-import org.teq.configurator.ExecutorParameters;
+import org.teq.configurator.ExecutorConfig;
 import org.teq.presetlayers.PackageBean;
 import org.teq.utils.DockerRuntimeData;
 
@@ -14,10 +14,10 @@ public class EndDeviceNode extends AbstractEndDeviceNode {
     protected DataStream<PackageBean> getSource() {
         String filePath = "./file.txt";
         StreamExecutionEnvironment env = getEnv();
-        if(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.endDeviceLayerName).get(0).equals(getNodeName())) {//only the first end device node reads the file
+        if(DockerRuntimeData.getNodeNameListByLayerName(ExecutorConfig.endDeviceLayerName).get(0).equals(getNodeName())) {//only the first end device node reads the file
             DataStream<String> input = env.readTextFile(filePath);
             return input.map((MapFunction<String, PackageBean>) value -> new PackageBean(getNodeName(),
-                    DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.coordinatorLayerName).get(0),
+                    DockerRuntimeData.getNodeNameListByLayerName(ExecutorConfig.coordinatorLayerName).get(0),
                     InfoType.Data, value)).name("Data Source");
         }
         else { // return an empty data stream

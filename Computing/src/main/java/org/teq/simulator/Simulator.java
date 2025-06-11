@@ -3,8 +3,8 @@ package org.teq.simulator;
 import com.alibaba.fastjson.JSON;
 import org.teq.backend.BackendManager;
 import org.teq.backend.LogHandler;
-import org.teq.configurator.ExecutorParameters;
-import org.teq.configurator.SimulatorConfigurator;
+import org.teq.configurator.ExecutorConfig;
+import org.teq.configurator.SimulatorConfig;
 import org.teq.configurator.TeqGlobalConfig;
 import org.teq.layer.Layer;
 import org.teq.mearsurer.MetricsTransformer;
@@ -83,21 +83,21 @@ public class Simulator {
         logger.info("Initializing the simulator");
         // this line use TCP connection, if you want to use TCP, uncomment this line
         if(useTCPConnection) {
-            dockerRunner = new DockerRunner(SimulatorConfigurator.imageName, Integer.toString(SimulatorConfigurator.tcpPort));
+            dockerRunner = new DockerRunner(SimulatorConfig.imageName, Integer.toString(SimulatorConfig.tcpPort));
         }
 
         // this line use default connection
         // if you want to use default connection(DOCKER_HOST,Unix Socket(linux),npipe(windows)), uncomment this line
         else {
-            dockerRunner = new DockerRunner(SimulatorConfigurator.imageName);
+            dockerRunner = new DockerRunner(SimulatorConfig.imageName);
         }
 
         //Add the network host node to the node list
-        String networkHostName = SimulatorConfigurator.networkHostName;
+        String networkHostName = SimulatorConfig.networkHostName;
         addNode(networkHostNode, networkHostName,NodeType.network);
 
-        addConfig(SimulatorConfigurator.class);
-        addConfig(ExecutorParameters.class);
+        addConfig(SimulatorConfig.class);
+        addConfig(ExecutorConfig.class);
 
         if(openWebUI) {
             metricsDisplayer = new SocketDisplayer();
@@ -167,13 +167,13 @@ public class Simulator {
     public void addLayer(Layer layer){
         int nodeCount = layer.getNodeCount();
         StringBuilder nodeNameContent = new StringBuilder();
-        String layerNodeNameFile = SimulatorConfigurator.dataFolderPath + "/" + layer.getLayerName() + "/" +
-                SimulatorConfigurator.nodeNameFileName;
+        String layerNodeNameFile = SimulatorConfig.dataFolderPath + "/" + layer.getLayerName() + "/" +
+                SimulatorConfig.nodeNameFileName;
         int nodeIdBegin = this.nodeCount;
         for(int i = 0; i < nodeCount; i++){
             AbstractDockerNode node = layer.getFunctionNode();
             node.parameters = layer.getNodeParameter(i);
-            nodeNameContent.append(SimulatorConfigurator.classNamePrefix).append(layer.getNodeName(i)).append("\n");
+            nodeNameContent.append(SimulatorConfig.classNamePrefix).append(layer.getNodeName(i)).append("\n");
             addNode(node,layer.getNodeName(i));
         }
         layers.add(new SimulatorLayer(layer.getLayerName(),nodeIdBegin, this.nodeCount -1));
@@ -189,10 +189,10 @@ public class Simulator {
     private void addNode(AbstractDockerNode node,String nodeName,NodeType nodeType){
         Class<AbstractDockerNode>clazz = (Class<AbstractDockerNode>)node.getClass();
         if(nodeName.isEmpty()){
-            nodeName = SimulatorConfigurator.classNamePrefix + nodeCount + "_auto_name";
+            nodeName = SimulatorConfig.classNamePrefix + nodeCount + "_auto_name";
         }
         else {
-            nodeName = SimulatorConfigurator.classNamePrefix + nodeName;
+            nodeName = SimulatorConfig.classNamePrefix + nodeName;
         }
         logger.info("add node " + nodeName);
         addNodeToStartClass(clazz.getName());
@@ -365,9 +365,9 @@ public class Simulator {
         logger.info("Writing start script to file...");
         String scriptContent = "#!/bin/bash\n" +
                 "cd \"$(dirname \"${BASH_SOURCE[0]}\")\"\n" +
-                "java -cp ./lib/*:. " + SimulatorConfigurator.StartPackageName + "." + SimulatorConfigurator.StartClassName + "\n";
+                "java -cp ./lib/*:. " + SimulatorConfig.StartPackageName + "." + SimulatorConfig.StartClassName + "\n";
 
-        String fileName = SimulatorConfigurator.hostPath + "/" + SimulatorConfigurator.startScriptName;
+        String fileName = SimulatorConfig.hostPath + "/" + SimulatorConfig.startScriptName;
 
         utils.writeStringToFile(fileName,scriptContent);
         logger.info("Start script saved as " + fileName);
@@ -388,9 +388,9 @@ public class Simulator {
         }
 
         logger.info("Writing start class to file...");
-        String classContent = "package " + SimulatorConfigurator.StartPackageName + ";\n" +
+        String classContent = "package " + SimulatorConfig.StartPackageName + ";\n" +
                 startClassImportContent +
-                "public class "+ SimulatorConfigurator.StartClassName +"{\n" +
+                "public class "+ SimulatorConfig.StartClassName +"{\n" +
                 "    public static void main(String[] args) throws Exception{\n" +
                 "        Path path = Path.of(SimulatorConfigurator.dataFolderName + \"/\" + SimulatorConfigurator.parametersClassFileName);\n" +
                 "            List<String> parametersClassNames = Files.readAllLines(path);\n" +
@@ -414,9 +414,9 @@ public class Simulator {
                 "    }\n" +
                 "}\n";
 
-        String fileName = SimulatorConfigurator.hostPath + "/" +
-                SimulatorConfigurator.StartPackageName.replace(".","/") + "/" +
-                SimulatorConfigurator.StartClassName + ".java";
+        String fileName = SimulatorConfig.hostPath + "/" +
+                SimulatorConfig.StartPackageName.replace(".","/") + "/" +
+                SimulatorConfig.StartClassName + ".java";
 
         utils.writeStringToFile(fileName,classContent);
         logger.info("start class saved as" + fileName);
@@ -429,7 +429,7 @@ public class Simulator {
 
         // 使用编译器编译文件
         int result = compiler.run(null, null, null,"-classpath",
-                SimulatorConfigurator.hostPath + "/", fileName);
+                SimulatorConfig.hostPath + "/", fileName);
         if (result == 0) {
             logger.info(fileName + " compiled successfully");
         } else {
@@ -440,7 +440,7 @@ public class Simulator {
 
     private void writeRuntimeData(){
         //write the node name file
-        String nodeNameFilePath = SimulatorConfigurator.dataFolderPath + "/" + SimulatorConfigurator.nodeNameFileName;
+        String nodeNameFilePath = SimulatorConfig.dataFolderPath + "/" + SimulatorConfig.nodeNameFileName;
         StringBuilder nodeNameContent = new StringBuilder();
         for(SimulatorNode node : nodes){
             nodeNameContent.append(node.nodeName).append("\n");
@@ -450,7 +450,7 @@ public class Simulator {
 
 
         //write the layer name file
-        String layerNamePath = SimulatorConfigurator.dataFolderPath + "/" + SimulatorConfigurator.layerNameFileName;
+        String layerNamePath = SimulatorConfig.dataFolderPath + "/" + SimulatorConfig.layerNameFileName;
         StringBuilder layerNameContent = new StringBuilder();
         for(SimulatorLayer layer : layers){
             layerNameContent.append(layer.layerName).append(",").append(layer.nodeIdBegin).append(",").append(layer.nodeIdEnd).append("\n");
@@ -459,7 +459,7 @@ public class Simulator {
         logger.info("Layer name file saved as " + layerNamePath);
 
         //write the config parameters class name file
-        String ParametersPath = SimulatorConfigurator.dataFolderPath + "/" + SimulatorConfigurator.parametersClassFileName;
+        String ParametersPath = SimulatorConfig.dataFolderPath + "/" + SimulatorConfig.parametersClassFileName;
         StringBuilder parametersContent = new StringBuilder();
         for(Class<? extends TeqGlobalConfig> config : configs){
             parametersContent.append(config.getName()).append("\n");
@@ -469,7 +469,7 @@ public class Simulator {
 
 
         //write the config parameters
-        utils.writeStringToFile(SimulatorConfigurator.dataFolderPath + "/config/configs","here are the configs");
+        utils.writeStringToFile(SimulatorConfig.dataFolderPath + "/config/configs","here are the configs");
         for(Class<? extends TeqGlobalConfig> config : configs){
             String conf = null;
             try {
@@ -477,11 +477,11 @@ public class Simulator {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            utils.writeStringToFile(SimulatorConfigurator.dataFolderPath + "/config/" + config.getName() + ".json",conf);
+            utils.writeStringToFile(SimulatorConfig.dataFolderPath + "/config/" + config.getName() + ".json",conf);
         }
 
         //write the node configs
-        utils.writeStringToFile(SimulatorConfigurator.dataFolderPath + "/nodeParams", JSON.toJSONString(parameters));
+        utils.writeStringToFile(SimulatorConfig.dataFolderPath + "/nodeParams", JSON.toJSONString(parameters));
 
     }
 

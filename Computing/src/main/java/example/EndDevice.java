@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.teq.configurator.ExecutorParameters;
+import org.teq.configurator.ExecutorConfig;
 import org.teq.configurator.unserializable.InfoType;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.abstractLayer.AbstractEndDeviceNode;
@@ -16,7 +16,7 @@ import org.teq.utils.connector.flink.javasocket.MultiThreadDataReceiver;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.teq.configurator.ExecutorParameters.coordinatorLayerName;
+import static org.teq.configurator.ExecutorConfig.coordinatorLayerName;
 
 public class EndDevice extends AbstractEndDeviceNode {
     private static final Logger logger = LogManager.getLogger(EndDevice.class);
@@ -25,7 +25,7 @@ public class EndDevice extends AbstractEndDeviceNode {
     @Override
     protected DataStream<PackageBean> getSource() {
         StreamExecutionEnvironment env = getEnv();
-        return env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorParameters.fromNetworkToEndPort, PackageBean.class)).
+        return env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorConfig.fromNetworkToEndPort, PackageBean.class)).
                 returns(PackageBean.class).
                 map(new MapFunction<PackageBean, PackageBean>() {
                     @Override
@@ -33,7 +33,7 @@ public class EndDevice extends AbstractEndDeviceNode {
                         String[] s = ((List<String>)packageBean.getObject()).toArray(new String[0]);
                     return new PackageBean(getNodeName(),
                             DockerRuntimeData.getNodeNameListByLayerName(coordinatorLayerName).get(0),
-                            ExecutorParameters.fromEndToCodPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s),
+                            ExecutorConfig.fromEndToCodPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s),
                             packageBean.getTimestampOut());
                     }
                 });

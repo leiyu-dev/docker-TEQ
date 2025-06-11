@@ -3,7 +3,7 @@ package org.teq.visualizer;
 import akka.japi.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.teq.configurator.SimulatorConfigurator;
+import org.teq.configurator.SimulatorConfig;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,7 +27,7 @@ public class FileDisplayer extends MetricsDisplayer{
     @Override
     public void display(){
         for(Chart chart: chartList){
-            String fileName = SimulatorConfigurator.projectPath + "/statistics/" + chart.getTitle() + ".txt";
+            String fileName = SimulatorConfig.projectPath + "/statistics/" + chart.getTitle() + ".txt";
             File file = new File(fileName);
             File nodeNameFile = new File(fileName);
             File parentDir = nodeNameFile.getParentFile();
@@ -47,7 +47,7 @@ public class FileDisplayer extends MetricsDisplayer{
         Thread thread = new Thread(() -> {
             while(true){
                 try {
-                    Thread.sleep(SimulatorConfigurator.displayInterval);
+                    Thread.sleep(SimulatorConfig.displayInterval);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

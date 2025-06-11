@@ -6,7 +6,7 @@ import com.github.dockerjava.api.command.StatsCmd;
 import com.github.dockerjava.api.model.Statistics;
 import com.github.dockerjava.core.InvocationBuilder;
 import node.commontest.NetworkHostNode;
-import org.teq.configurator.SimulatorConfigurator;
+import org.teq.configurator.SimulatorConfig;
 import org.teq.node.DefaultDockerNode;
 import org.teq.simulator.Simulator;
 import org.teq.simulator.docker.DockerRunner;

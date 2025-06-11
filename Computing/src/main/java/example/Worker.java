@@ -9,7 +9,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.util.Collector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.teq.configurator.ExecutorParameters;
+import org.teq.configurator.ExecutorConfig;
 import org.teq.configurator.unserializable.InfoType;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.abstractLayer.AbstractWorkerNode;
@@ -70,14 +70,14 @@ public class Worker extends AbstractWorkerNode {
                         collector.collect(packageBean);
                     }
                     else if(type.equals("Global")) { // send to Center to get global data
-                        packageBean.setTarget(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.dataCenterLayerName).get(0));
+                        packageBean.setTarget(DockerRuntimeData.getNodeNameListByLayerName(ExecutorConfig.dataCenterLayerName).get(0));
                         collector.collect(packageBean);
                     }
                 }
                 else if(packageBean.getType() == InfoType.InteriorQuery) { // this stream comes from Center, we need to respond to it
                     List<String> object = JSONObject.parseArray(packageBean.getObject().toString(), String.class);
                     List<String> ans = respondLocalQuery(object, true);
-                    packageBean.setTarget(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.dataCenterLayerName).get(0));
+                    packageBean.setTarget(DockerRuntimeData.getNodeNameListByLayerName(ExecutorConfig.dataCenterLayerName).get(0));
                     packageBean.setType(InfoType.InteriorRespond);
                     packageBean.setObject(ans);
                     collector.collect(packageBean);

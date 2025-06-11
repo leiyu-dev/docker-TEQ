@@ -2,7 +2,7 @@ package example.utils;
 
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.teq.configurator.ExecutorParameters;
+import org.teq.configurator.ExecutorConfig;
 import org.teq.configurator.unserializable.InfoType;
 import org.teq.presetlayers.PackageBean;
 import org.teq.simulator.network.AbstractNetworkHostNode;
@@ -26,7 +26,7 @@ public class Network extends AbstractNetworkHostNode {
     public void dataProcess() {
         //wait for 10 seconds to make sure the end devices are ready
         try {
-            Thread.sleep(ExecutorParameters.waitBeforeStart);
+            Thread.sleep(ExecutorConfig.waitBeforeStart);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -37,9 +37,9 @@ public class Network extends AbstractNetworkHostNode {
         env.addSource(dataSource).
                 returns(String[].class).
                 map((MapFunction<String[], PackageBean>) s -> new PackageBean(getNodeName(),
-                        DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.endDeviceLayerName).get(
-                                random.nextInt(DockerRuntimeData.getNodeNameListByLayerName(ExecutorParameters.endDeviceLayerName).size())),
-                        ExecutorParameters.fromNetworkToEndPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s), System.nanoTime())).
-                addSink(new TargetedDataSender<>(ExecutorParameters.maxNumRetries, ExecutorParameters.retryInterval)).setParallelism(1);
+                        DockerRuntimeData.getNodeNameListByLayerName(ExecutorConfig.endDeviceLayerName).get(
+                                random.nextInt(DockerRuntimeData.getNodeNameListByLayerName(ExecutorConfig.endDeviceLayerName).size())),
+                        ExecutorConfig.fromNetworkToEndPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s), System.nanoTime())).
+                addSink(new TargetedDataSender<>(ExecutorConfig.maxNumRetries, ExecutorConfig.retryInterval)).setParallelism(1);
     }
 }

@@ -4,8 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.github.dockerjava.core.DockerContextMetaFile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.teq.configurator.ExecutorParameters;
-import org.teq.configurator.SimulatorConfigurator;
+import org.teq.configurator.ExecutorConfig;
+import org.teq.configurator.SimulatorConfig;
 import org.teq.configurator.unserializable.InfoType;
 import org.teq.node.AbstractFlinkNode;
 import org.teq.node.DockerNodeParameters;
@@ -33,7 +33,7 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
         @Override
         public void run() {
             String serverHost = DockerRuntimeData.getNetworkHostNodeName();
-            int serverPort = SimulatorConfigurator.metricsPort;
+            int serverPort = SimulatorConfig.metricsPort;
 
             Socket socket = null;
             OutputStream outputStream = null;
@@ -94,7 +94,7 @@ public abstract class MeasuredFlinkNode extends AbstractFlinkNode {
     //TODO: decouple the sleep and metrics collection
     static public void beginProcess(UUID dataId, long timestampOut, String srcNodeName, MetricsPackageBean metricsPackageBean){
         long timestampIn = System.nanoTime();
-        if(ExecutorParameters.useFixedLatency && srcNodeName != null && !srcNodeName.isEmpty()){
+        if(ExecutorConfig.useFixedLatency && srcNodeName != null && !srcNodeName.isEmpty()){
             long shouldSleep = DockerRuntimeData.getNodeParametersByNodeName(srcNodeName).getFixedOutLatency()
                     + DockerRuntimeData.getNodeParametersByNodeName(getNodeName()).getFixedInLatency()
                     - (timestampIn - timestampOut)/1000000;
