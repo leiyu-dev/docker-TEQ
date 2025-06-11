@@ -343,8 +343,8 @@ public class DockerRunner {
                     @Override
                     public void onNext(Statistics stats) {
                         if (shouldStop.get()) {
-                            System.out.println("Stopping execution...");
-                            throw new RuntimeException("Stopping execution...");
+                            logger.debug("Stopping docker metrics collection for node " + containerName);
+                            throw new RuntimeException("Stopping docker metrics collection for node " + containerName);
                         }
 
                         try {
@@ -413,8 +413,8 @@ public class DockerRunner {
                 @Override
                 public void onNext(Statistics stats) {
                     if (shouldStop.get()) {
-                        System.out.println("Stopping execution...");
-                        throw new RuntimeException("Stopping execution...");
+                        logger.debug("Stopping docker metrics collection for node " + containerName);
+                        throw new RuntimeException("Stopping docker metrics collection for node " + containerName);
                     }
                     try {
                         TimeUnit.SECONDS.sleep(1);

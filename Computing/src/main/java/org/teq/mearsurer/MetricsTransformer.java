@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.teq.mearsurer.receiver.AbstractReceiver;
 import org.teq.mearsurer.receiver.DockerMetricsReceiver;
-import org.teq.mearsurer.receiver.SendingMetricsReceiver;
+import org.teq.mearsurer.receiver.sending.SendingMetricsReceiver;
 import org.teq.simulator.Simulator;
 import org.teq.visualizer.MetricsDisplayer;
 

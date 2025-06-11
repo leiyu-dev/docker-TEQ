@@ -64,7 +64,7 @@ public class Simulator {
     private int nodeCount = 0;
 
 
-    //module1: docker runner, used to
+    //module1: docker runner, used to launch the docker container
     private final DockerRunner dockerRunner;
     public DockerRunner getDockerRunner() {
         return dockerRunner;
