@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class utils {
     private static final Logger logger = LogManager.getLogger(utils.class);
@@ -52,11 +53,11 @@ public class utils {
         return inDocker != null && inDocker.equals("1");
     }
 
-    static long startTime = 0;
+    static AtomicLong startTime = new AtomicLong(0);
     static public void startTimer() {
-        startTime = System.currentTimeMillis();
+        startTime.set(System.currentTimeMillis());
     }
-    static public long getStartTime(){
+    static public AtomicLong getStartTime(){
         return startTime;
     }
 

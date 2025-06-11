@@ -2,19 +2,14 @@ package org.teq.mearsurer.receiver;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.slf4j.ILoggerFactory;
 import org.teq.simulator.Simulator;
 import org.teq.simulator.docker.DockerRunner;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.utils;
-import org.teq.visualizer.Chart;
+import org.teq.visualizer.TimeChart;
 import org.teq.visualizer.MetricsDisplayer;
 
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -45,12 +40,7 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
             memoryUsageQueueList.add(new LinkedBlockingQueue<>());
         }
 
-        List<BlockingQueue<Double>> cpuUsageLayerList = new ArrayList<>();//for each layer
-        List<BlockingQueue<Double>> memoryUsageLayerList = new ArrayList<>();
-        for (int i = 0; i < layerList.size(); i++) {
-            cpuUsageLayerList.add(new LinkedBlockingQueue<>());
-            memoryUsageLayerList.add(new LinkedBlockingQueue<>());
-        }
+        // TimeChart内部会自动管理Y轴队列，不需要手动创建
 
         DockerRunner dockerRunner = simulator.getDockerRunner();
         try {
@@ -59,11 +49,11 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
             throw new RuntimeException(e);
         }
 
-        BlockingQueue<Double>cpuTimeQueue = new LinkedBlockingQueue<>();
-        BlockingQueue<Double>memoryTimeQueue = new LinkedBlockingQueue<>();
-
-        metricsDisplayer.addChart(new Chart(cpuTimeQueue, cpuUsageLayerList, "time/s", "cpu usage/%",DockerRuntimeData.getLayerList(), " cpu usage","overview"));
-        metricsDisplayer.addChart(new Chart(memoryTimeQueue, memoryUsageLayerList, "time/s", "memory usage/MB",DockerRuntimeData.getLayerList(),  " memory usage","overview"));
+        TimeChart<Double> cpuTimeChart = new TimeChart<>("cpu usage/%", DockerRuntimeData.getLayerList(), " cpu usage", "overview");
+        TimeChart<Double> memoryTimeChart = new TimeChart<>("memory usage/MB", DockerRuntimeData.getLayerList(), " memory usage", "overview");
+        
+        metricsDisplayer.addChart(cpuTimeChart);
+        metricsDisplayer.addChart(memoryTimeChart);
 
 
         Thread thread = new Thread(() ->{
@@ -75,7 +65,6 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
                 cpuUsageLayerListSum.add(0.0);
                 memoryUsageLayerListSum.add(0.0);
             }
-            long startTime = utils.getStartTime();
             while (true) {
                 //set to 0
                 for (int i = 0; i < layerList.size(); i++) {
@@ -103,24 +92,26 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
                     }
                 }
 
+                // 准备CPU和内存使用率数据
+                List<Double> cpuUsageData = new ArrayList<>();
+                List<Double> memoryUsageData = new ArrayList<>();
+                
+                boolean hasData = false;
                 for (int i = 0; i < layerList.size(); i++) {
                     if (nodeCountList.get(i) == 0) {
-                        continue;
-                    }
-                    try {
-//                        logger.info("for layer " + layerList.get(i) + "add cpu: " + cpuUsageLayerListSum.get(i) / nodeCountList.get(i) + " memory: " + memoryUsageLayerListSum.get(i) / nodeCountList.get(i));
-                        cpuUsageLayerList.get(i).put(cpuUsageLayerListSum.get(i) / nodeCountList.get(i));
-                        memoryUsageLayerList.get(i).put(memoryUsageLayerListSum.get(i) / nodeCountList.get(i) * 1024.0);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                        cpuUsageData.add(0.0);
+                        memoryUsageData.add(0.0);
+                    } else {
+                        cpuUsageData.add(cpuUsageLayerListSum.get(i) / nodeCountList.get(i));
+                        memoryUsageData.add(memoryUsageLayerListSum.get(i) / nodeCountList.get(i) * 1024.0);
+                        hasData = true;
                     }
                 }
-                long currentTime = System.currentTimeMillis();
-                try {
-                    cpuTimeQueue.put( Math.round((currentTime - startTime) / 1000.0 * 10.0) / 10.0);
-                    memoryTimeQueue.put( Math.round((currentTime - startTime) / 1000.0 * 10.0) / 10.0);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                
+                // 只有当有数据时才添加到图表
+                if (hasData) {
+                    cpuTimeChart.addDataPoint(cpuUsageData);
+                    memoryTimeChart.addDataPoint(memoryUsageData);
                 }
                 try {
                     Thread.sleep(1000);

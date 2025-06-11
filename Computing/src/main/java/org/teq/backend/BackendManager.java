@@ -8,9 +8,7 @@ import org.teq.simulator.Simulator;
 
 
 import java.lang.management.ManagementFactory;
-import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.sun.management.OperatingSystemMXBean;
 import org.teq.utils.utils;
@@ -138,8 +136,8 @@ public class BackendManager {
                 double systemCpuLoad = osBean.getSystemCpuLoad();
                 long physicalTotalMemory = osBean.getTotalPhysicalMemorySize();
                 long physicalFreeMemory = osBean.getFreePhysicalMemorySize();
-                long startTime = utils.getStartTime();
-                long upTime = (System.currentTimeMillis() - startTime) / 1000;
+                AtomicLong startTime = utils.getStartTime();
+                long upTime = (System.currentTimeMillis() - startTime.get()) / 1000;
                 Status status = new Status(simulator.getState(), simulator.getLayerCount(), simulator.getNodeCount(), simulator.getAlgorithmCount(),
                         String.format("%.2f", systemCpuLoad * 100) + "% / " + cores + " cores",
                         String.format("%.2f", (physicalTotalMemory - physicalFreeMemory) / 1024.0 / 1024.0 / 1024.0 ) + " GB (buffered) / " +

@@ -42,6 +42,38 @@ public class Chart<X,Y>{
         this.setTitle(title);
         this.setType(type);
     }
+    
+    /**
+     * Constructor that creates BlockingQueues internally (multiple Y-axis data series)
+     */
+    public Chart(String xLabel, String yLabel, List<String> dataLabel, String title, String type){
+        this.setxAxis(new java.util.concurrent.LinkedBlockingQueue<>());
+        
+        List<BlockingQueue<Y>> yAxisQueues = new java.util.ArrayList<>();
+        for (int i = 0; i < dataLabel.size(); i++) {
+            yAxisQueues.add(new java.util.concurrent.LinkedBlockingQueue<>());
+        }
+        this.setyAxis(yAxisQueues);
+        
+        this.setxLabel(xLabel);
+        this.setyLabel(yLabel);
+        this.setDataLabel(dataLabel);
+        this.setTitle(title);
+        this.setType(type);
+    }
+    
+    /**
+     * Constructor that creates BlockingQueues internally (single Y-axis data series)
+     */
+    public Chart(String xLabel, String yLabel, String dataLabel, String title, String type){
+        this.setxAxis(new java.util.concurrent.LinkedBlockingQueue<>());
+        this.setyAxis(List.of(new java.util.concurrent.LinkedBlockingQueue<>()));
+        this.setxLabel(xLabel);
+        this.setyLabel(yLabel);
+        this.setDataLabel(List.of(dataLabel));
+        this.setTitle(title);
+        this.setType(type);
+    }
 
     /**
      * it is the user's duty to ensure that two BlockingQueues have the same size at any time,
@@ -63,6 +95,35 @@ public class Chart<X,Y>{
 
     public void setyAxis(List<BlockingQueue<Y>> yAxis) {
         this.yAxis = yAxis;
+    }
+
+    /**
+     * Add data point (multiple Y-axis data)
+     * Adds X-axis data and corresponding Y-axis data to their respective queues
+     */
+    public void addDataPoint(X xValue, List<Y> yValues) {
+        if (yValues.size() != yAxis.size()) {
+            throw new IllegalArgumentException("Number of Y-axis data does not match number of queues");
+        }
+        
+        try {
+            // Add X-axis data
+            xAxis.put(xValue);
+            
+            // Add Y-axis data
+            for (int i = 0; i < yValues.size(); i++) {
+                yAxis.get(i).put(yValues.get(i));
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Interrupted while adding data point", e);
+        }
+    }
+    
+    /**
+     * Add data point (single Y-axis data)
+     */
+    public void addDataPoint(X xValue, Y yValue) {
+        addDataPoint(xValue, List.of(yValue));
     }
 
     public String getxLabel() {

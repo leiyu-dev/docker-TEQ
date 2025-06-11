@@ -12,8 +12,7 @@ import org.teq.mearsurer.BuiltInMetrics;
 import org.teq.simulator.docker.DockerRunner;
 import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.flink.javasocket.CommonDataReceiver;
-import org.teq.utils.utils;
-import org.teq.visualizer.Chart;
+import org.teq.visualizer.TimeChart;
 import org.teq.visualizer.MetricsDisplayer;
 
 import java.util.*;
@@ -23,17 +22,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractReceiver implements Runnable{
     static private DockerRunner dockerRunner;
-    static private BlockingQueue<Double> overallProcessingLatencyQueue;
-    static private BlockingQueue<Double> overallTransferLatencyQueue;
-    static private List<BlockingQueue<Double>> processingLatencyQueueList;
 
-    //raw data will be processed first, then produce one data per second into the above queue
+    //raw data will be processed first, then produce one data per second to TimeChart
     static private BlockingQueue<Double> rawOverallProcessingLatencyQueue;
     static private BlockingQueue<Double> rawOverallTransferLatencyQueue;
     static private List<BlockingQueue<Double>> rawProcessingLatencyQueueList;
-    static private BlockingQueue<Integer> processedQueryQueue;
-    static private BlockingQueue<Double> energyConsumptionQueue;
-    static private BlockingQueue<Double> energyConsumptionTime;
     static private AtomicInteger processedQueryCount = new AtomicInteger(0);
     static private AtomicDouble energyConsumption = new AtomicDouble(0);
     private Class<T> typeClass;
@@ -139,72 +132,65 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
             nodeEnergyParam.add(1.0);
             transferEnergyParam.add(0.01);
         }
-        overallProcessingLatencyQueue = new LinkedBlockingQueue<>();
-        overallTransferLatencyQueue = new LinkedBlockingQueue<>();
-        processingLatencyQueueList = new ArrayList<>();
+        // Initialize only the raw data queues needed for data processing
         rawOverallProcessingLatencyQueue = new LinkedBlockingQueue<>();
         rawOverallTransferLatencyQueue = new LinkedBlockingQueue<>();
         rawProcessingLatencyQueueList = new ArrayList<>();
-        processedQueryQueue = new LinkedBlockingQueue<>();
-        energyConsumptionQueue = new LinkedBlockingQueue<>();
-        energyConsumptionTime = new LinkedBlockingQueue<>();
         for(int i=0; i<DockerRuntimeData.getLayerList().size(); i++) {
-            processingLatencyQueueList.add(new LinkedBlockingQueue<>());
             rawProcessingLatencyQueueList.add(new LinkedBlockingQueue<>());
         }
-        BlockingQueue<Double> overallProcessingLatencyTime = new LinkedBlockingQueue<>();
-        BlockingQueue<Double> overallTransferLatencyTime = new LinkedBlockingQueue<>();
-        BlockingQueue<Double> processingLatencyTime = new LinkedBlockingQueue<>();
-        BlockingQueue<Double> processedQueryTime = new LinkedBlockingQueue<>();
-        metricsDisplayer.addChart(new Chart( overallProcessingLatencyTime,overallProcessingLatencyQueue,
-                "time/s","overall processing latency/ms","latency","overall processing latency","overview"));
-        metricsDisplayer.addChart(new Chart( overallTransferLatencyTime,overallTransferLatencyQueue,
-                "time/s","overall transfer latency/ms","latency","overall transfer latency","overview"));
-        metricsDisplayer.addChart(new Chart( processingLatencyTime,processingLatencyQueueList,
-                "time/s","processing latency/ms",DockerRuntimeData.getLayerList(),"processing latency", "overview"));
-        metricsDisplayer.addChart(new Chart( processedQueryTime,processedQueryQueue,
-                "time/s","processed query","count","processed query","user"));
-        metricsDisplayer.addChart(new Chart( energyConsumptionTime,energyConsumptionQueue,
-                "time/s","energy consumption","Energy Unit","energy consumption","overview"));
+        // Create TimeChart instances - no need for time queues as they are managed automatically
+        TimeChart<Double> overallProcessingLatencyChart = new TimeChart<>("overall processing latency/ms", "latency", "overall processing latency", "overview");
+        TimeChart<Double> overallTransferLatencyChart = new TimeChart<>("overall transfer latency/ms", "latency", "overall transfer latency", "overview");
+        TimeChart<Double> processingLatencyChart = new TimeChart<>("processing latency/ms", DockerRuntimeData.getLayerList(), "processing latency", "overview");
+        TimeChart<Integer> processedQueryChart = new TimeChart<>("processed query", "count", "processed query", "user");
+        TimeChart<Double> energyConsumptionChart = new TimeChart<>("energy consumption", "Energy Unit", "energy consumption", "overview");
+        
+        metricsDisplayer.addChart(overallProcessingLatencyChart);
+        metricsDisplayer.addChart(overallTransferLatencyChart);
+        metricsDisplayer.addChart(processingLatencyChart);
+        metricsDisplayer.addChart(processedQueryChart);
+        metricsDisplayer.addChart(energyConsumptionChart);
         //add a new thread to process the raw data and produce the data per second
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                long startTime = utils.getStartTime();
                 while(true) {
                     try {
 //                       logger.info("a new second");
                         Thread.sleep(1000);
-                        energyConsumptionQueue.put(energyConsumption.get());
-                        energyConsumptionTime.put((double)Math.round((System.currentTimeMillis() - startTime)/1000.0*10.0)/10.0);
+                        
+                        // Add energy consumption data point
+                        energyConsumptionChart.addDataPoint(energyConsumption.get());
                         energyConsumption.set(0);
 
-                        processedQueryQueue.put(processedQueryCount.get());
-                        processedQueryTime.put((double)Math.round((System.currentTimeMillis() - startTime)/1000.0*10.0)/10.0);
+                        // Add processed query data point
+                        processedQueryChart.addDataPoint(processedQueryCount.get());
                         processedQueryCount.set(0);
+                        
+                        // Process overall processing latency
                         double overallProcessingLatency = 0.0;
                         int overallProcessingLatencyCount = 0;
-                        double overallTransferLatency = 0.0;
-                        int overallTransferLatencyCount = 0;
                         while(!rawOverallProcessingLatencyQueue.isEmpty()) {
                             overallProcessingLatency += rawOverallProcessingLatencyQueue.poll();
                             overallProcessingLatencyCount++;
                         }
+                        if(overallProcessingLatencyCount != 0) {
+                            overallProcessingLatencyChart.addDataPoint(overallProcessingLatency / overallProcessingLatencyCount);
+                        }
+                        
+                        // Process overall transfer latency
+                        double overallTransferLatency = 0.0;
+                        int overallTransferLatencyCount = 0;
                         while(!rawOverallTransferLatencyQueue.isEmpty()) {
                             overallTransferLatency += rawOverallTransferLatencyQueue.poll();
                             overallTransferLatencyCount++;
                         }
-                        if(overallProcessingLatencyCount != 0) {
-                            overallProcessingLatencyQueue.put(overallProcessingLatency / overallProcessingLatencyCount);
-                            long time = System.currentTimeMillis() - startTime;
-                            //两位小数
-                            overallProcessingLatencyTime.put((double)Math.round(time/1000.0*10.0)/10.0);
-                        }
                         if(overallTransferLatencyCount != 0) {
-                            overallTransferLatencyQueue.put(overallTransferLatency / overallTransferLatencyCount);
-                            long time = System.currentTimeMillis() - startTime;
-                            overallTransferLatencyTime.put((double)Math.round(time/1000.0*10.0)/10.0);
+                            overallTransferLatencyChart.addDataPoint(overallTransferLatency / overallTransferLatencyCount);
                         }
+                        
+                        // Process processing latency for each layer
                         {
                             boolean isEmpty = true;
                             for (int i = 0; i < rawProcessingLatencyQueueList.size(); i++) {
@@ -214,6 +200,7 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
                                 }
                             }
                             if (!isEmpty) {
+                                List<Double> layerLatencies = new ArrayList<>();
                                 for (int i = 0; i < rawProcessingLatencyQueueList.size(); i++) {
                                     double processingLatency = 0;
                                     double processingLatencyCount = 0;
@@ -221,10 +208,9 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
                                         processingLatency += rawProcessingLatencyQueueList.get(i).poll();
                                         processingLatencyCount++;
                                     }
-                                    processingLatencyQueueList.get(i).put(processingLatency / processingLatencyCount);
+                                    layerLatencies.add(processingLatencyCount > 0 ? processingLatency / processingLatencyCount : 0.0);
                                 }
-                                long time = System.currentTimeMillis() - startTime;
-                                processingLatencyTime.put((double) Math.round(time / 1000.0 * 10) / 10.0);
+                                processingLatencyChart.addDataPoint(layerLatencies);
                             }
                         }
                     } catch (InterruptedException e) {

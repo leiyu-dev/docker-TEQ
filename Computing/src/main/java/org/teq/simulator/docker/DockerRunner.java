@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class DockerRunner {
     private static final Logger logger = LogManager.getLogger(DockerRunner.class);
@@ -400,7 +401,7 @@ public class DockerRunner {
         InspectNode inspectNode = new InspectNode(containerName, cpuQueue, memoryQueue, cpuTimeQueue, memoryTimeQueue);
         inspectNodes.add(inspectNode);
         Thread getterThread =  new Thread(()->{
-            long startTime = utils.getStartTime();
+            AtomicLong startTime = utils.getStartTime();
             StatsCmd statsCmd = dockerClient.statsCmd(containerName);
             statsCmd.exec(new ResultCallback<Statistics>() {
 
@@ -442,8 +443,8 @@ public class DockerRunner {
                         cpuQueue.put(cpuUsage * 100);
                         memoryQueue.put(memoryUsage * 1024.0);
                         long currentTime = System.currentTimeMillis();
-                        cpuTimeQueue.put( Math.round((currentTime - startTime) / 1000.0 * 10.0) / 10.0);
-                        memoryTimeQueue.put( Math.round((currentTime - startTime) / 1000.0 * 10.0) / 10.0);
+                        cpuTimeQueue.put( Math.round((currentTime - startTime.get()) / 1000.0 * 10.0) / 10.0);
+                        memoryTimeQueue.put( Math.round((currentTime - startTime.get()) / 1000.0 * 10.0) / 10.0);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
