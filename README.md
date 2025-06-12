@@ -97,23 +97,23 @@ Web interface will be integrated into the java application in the near future
 ```java
 public class Example {
     public static void main(String[] args) {
-        // 创建节点参数
+        // create node parameters
         DockerNodeParameters param = new DockerNodeParameters();
         param.setCpuUsageRate(0.5);
         
-        // 创建不同类型的节点
+        // different type of node for different layers
         EndDevice endDevice = new EndDevice();
         Coordinator coordinator = new Coordinator();
         Worker worker = new Worker();
         DataCenter dataCenter = new DataCenter();
         
-        // 创建分层架构
+        // layered model
         Layer endDeviceLayer = new Layer(endDevice, 300, "EndDeviceLayer");
         Layer coordinatorLayer = new Layer(coordinator, 1, "CoordinatorLayer");
         Layer workerLayer = new Layer(worker, 3, "WorkerLayer");
         Layer dataCenterLayer = new Layer(dataCenter, 1, "DataCenterLayer");
         
-        // 启动仿真器
+        // start the simulator
         Simulator simulator = new Simulator(new Network());
         simulator.addLayer(endDeviceLayer);
         simulator.addLayer(coordinatorLayer);
