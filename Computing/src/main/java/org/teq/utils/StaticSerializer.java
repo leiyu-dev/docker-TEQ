@@ -20,7 +20,7 @@ public class StaticSerializer {
         return objectMapper.writeValueAsString(staticFields);
     }
 
-    // 从JSON反序列化为静态变量
+    // deserialize from JSON to static variables
     public static void deserializeFromJson(Class<?> clazz, String json) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Object> staticFields = objectMapper.readValue(json, Map.class);
@@ -30,7 +30,7 @@ public class StaticSerializer {
                 field.setAccessible(true);
                 if (staticFields.containsKey(field.getName())) {
                     Object value = staticFields.get(field.getName());
-                    // 如果字段是基本数据类型，需要特殊处理
+                    // if the field is a primitive type, need to special handle
                     if (field.getType().isPrimitive()) {
                         field.set(null, convertToPrimitive(value, field.getType()));
                     } else {
@@ -41,7 +41,7 @@ public class StaticSerializer {
         }
     }
 
-    // 将Object转换为基本数据类型
+    // convert Object to primitive type
     public static Object convertToPrimitive(Object value, Class<?> type) {
         if (type == int.class) {
             return ((Number) value).intValue();

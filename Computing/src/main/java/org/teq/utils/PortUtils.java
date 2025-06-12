@@ -8,18 +8,18 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
- * 端口实用工具类
- * 提供端口可用性检查和等待功能
+ * port utility class
+ * provide port availability check and wait function
  */
 public class PortUtils {
     
     private static final Logger logger = LogManager.getLogger(PortUtils.class);
     
     /**
-     * 检查端口是否可用
+     * check if the port is available
      * 
-     * @param port 要检查的端口
-     * @return true 如果端口可用，false 如果端口被占用
+     * @param port the port to check
+     * @return true if the port is available, false if the port is occupied
      */
     public static boolean isPortAvailable(int port) {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
@@ -31,11 +31,11 @@ public class PortUtils {
     }
     
     /**
-     * 检查端口是否正在被使用
+     * check if the port is in use
      * 
-     * @param host 主机名
-     * @param port 端口号
-     * @return true 如果端口正在被使用，false 如果端口未被使用
+     * @param host the host name
+     * @param port the port number
+     * @return true if the port is in use, false if the port is not in use
      */
     public static boolean isPortInUse(String host, int port) {
         try (Socket socket = new Socket(host, port)) {
@@ -46,12 +46,12 @@ public class PortUtils {
     }
     
     /**
-     * 等待端口变为可用
+     * wait for the port to become available
      * 
-     * @param port 要等待的端口
-     * @param maxWaitTimeMs 最大等待时间（毫秒）
-     * @param checkIntervalMs 检查间隔（毫秒）
-     * @return true 如果端口在指定时间内变为可用，false 如果超时
+     * @param port the port to wait for
+     * @param maxWaitTimeMs the maximum wait time (milliseconds)
+     * @param checkIntervalMs the check interval (milliseconds)
+     * @return true if the port becomes available within the specified time, false if timeout
      */
     public static boolean waitForPortAvailable(int port, long maxWaitTimeMs, long checkIntervalMs) {
         long startTime = System.currentTimeMillis();
@@ -79,12 +79,12 @@ public class PortUtils {
     }
     
     /**
-     * 等待端口变为可用（使用默认参数）
+     * wait for the port to become available (using default parameters)
      * 
-     * @param port 要等待的端口
-     * @return true 如果端口在10秒内变为可用，false 如果超时
+     * @param port the port to wait for
+     * @return true if the port becomes available within 10 seconds, false if timeout
      */
     public static boolean waitForPortAvailable(int port) {
-        return waitForPortAvailable(port, 10000, 500); // 10秒最大等待时间，500毫秒检查间隔
+        return waitForPortAvailable(port, 10000, 500); // 10 seconds maximum wait time, 500 milliseconds check interval
     }
 } 
