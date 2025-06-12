@@ -95,7 +95,7 @@ export default {
     });
 
     const saveDefault = () => {
-      ElMessage.success("配置已保存为默认参数！");
+      ElMessage.success("Configuration saved as default parameters!");
     }
 
     return {
@@ -117,13 +117,13 @@ export default {
     <div class="page-header slide-in-up">
       <div class="header-content">
         <div class="title-section">
-          <h1 class="page-title gradient-text">全局配置管理</h1>
-          <p class="page-subtitle">管理系统全局参数配置，运行时修改可能导致意外行为</p>
+          <h1 class="page-title gradient-text">Global Configuration Management</h1>
+          <p class="page-subtitle">Manage system global parameter configurations. Runtime modifications may cause unexpected behavior</p>
         </div>
         <div class="header-actions">
           <el-select
               v-model="chooseStore.selectedConfig"
-              placeholder="选择配置类"
+              placeholder="Select Configuration Class"
               size="large"
               class="config-selector"
               @change="fetchConfigDetails"
@@ -143,7 +143,7 @@ export default {
             :disabled="!chooseStore.selectedConfig"
           >
             <el-icon><DocumentAdd /></el-icon>
-            保存为默认参数
+            Save as Default Parameters
           </el-button>
         </div>
       </div>
@@ -156,10 +156,10 @@ export default {
           <div class="card-header">
             <div class="header-left">
               <span class="config-title">{{ chooseStore.selectedConfig }}</span>
-              <span class="config-count">{{ configDetails.length }} 个参数</span>
+              <span class="config-count">{{ configDetails.length }} parameters</span>
             </div>
             <div class="header-right">
-              <el-tag type="info" size="small">全局配置</el-tag>
+              <el-tag type="info" size="small">Global Config</el-tag>
             </div>
           </div>
         </template>
@@ -170,7 +170,7 @@ export default {
           class="config-table"
           :header-cell-style="{ backgroundColor: '#f8fafc', color: '#2d3748' }"
         >
-          <el-table-column prop="key" label="参数名称" width="300px">
+          <el-table-column prop="key" label="Parameter Name" width="300px">
             <template #default="scope">
               <div class="param-name">
                 <el-icon class="param-icon"><Setting /></el-icon>
@@ -179,7 +179,7 @@ export default {
             </template>
           </el-table-column>
           
-          <el-table-column prop="value" label="当前值" width="400px">
+          <el-table-column prop="value" label="Current Value" width="400px">
             <template #default="scope">
               <div class="current-value">
                 <el-tag 
@@ -193,12 +193,12 @@ export default {
             </template>
           </el-table-column>
           
-          <el-table-column label="修改配置" min-width="500px">
+          <el-table-column label="Modify Configuration" min-width="500px">
             <template #default="scope">
               <div class="modify-section">
                 <el-input 
                   v-model="scope.row.newValue" 
-                  placeholder="输入新的配置值"
+                  placeholder="Enter new configuration value"
                   class="new-value-input"
                   clearable
                 />
@@ -209,7 +209,7 @@ export default {
                     :disabled="!scope.row.newValue || scope.row.newValue === scope.row.value"
                 >
                   <el-icon><Check /></el-icon>
-                  更新
+                  Update
                 </el-button>
               </div>
             </template>
@@ -220,7 +220,7 @@ export default {
       <!-- 空状态 -->
       <el-card class="empty-card hover-lift" v-else>
         <el-empty 
-          description="请选择一个配置类来查看参数"
+          description="Please select a configuration class to view parameters"
           :image-size="120"
         >
           <template #image>
@@ -229,7 +229,7 @@ export default {
             </div>
           </template>
           <template #description>
-            <span class="empty-text">请选择配置类</span>
+            <span class="empty-text">Please select configuration class</span>
           </template>
         </el-empty>
       </el-card>

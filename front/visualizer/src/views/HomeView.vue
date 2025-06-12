@@ -7,7 +7,7 @@
         <el-card class="status-card hover-lift" :class="statusClass">
           <template #header>
             <div class="card-header">
-              <span class="card-title">系统状态</span>
+              <span class="card-title">System Status</span>
               <div class="status-indicator" :class="statusStore.status.toLowerCase()"></div>
             </div>
           </template>
@@ -36,7 +36,7 @@
                 :disabled="isActionDisabled('start')"
               >
                 <el-icon><VideoPlay /></el-icon>
-                启动
+                Start
               </el-button>
               <el-button 
                 type="danger" 
@@ -46,7 +46,7 @@
                 :disabled="isActionDisabled('stop')"
               >
                 <el-icon><VideoPause /></el-icon>
-                停止
+                Stop
               </el-button>
               <el-button 
                 type="primary" 
@@ -56,7 +56,7 @@
                 :disabled="isActionDisabled('restart')"
               >
                 <el-icon><Refresh /></el-icon>
-                重启
+                Restart
               </el-button>
             </div>
           </div>
@@ -68,21 +68,21 @@
         <el-card class="stats-card hover-lift">
           <template #header>
             <div class="card-header">
-              <span class="card-title">运行统计</span>
+              <span class="card-title">Runtime Statistics</span>
               <el-icon class="card-icon"><DataAnalysis /></el-icon>
             </div>
           </template>
           <div class="stats-content">
             <div class="stat-item">
               <div class="stat-value">{{ statusStore.layers }}</div>
-              <div class="stat-label">运行层数</div>
+              <div class="stat-label">Running Layers</div>
               <div class="stat-icon layers-icon">
                 <el-icon><Stack /></el-icon>
               </div>
             </div>
             <div class="stat-item">
               <div class="stat-value">{{ statusStore.nodes }}</div>
-              <div class="stat-label">运行节点</div>
+              <div class="stat-label">Running Nodes</div>
               <div class="stat-icon nodes-icon">
                 <el-icon><Connection /></el-icon>
               </div>
@@ -101,7 +101,7 @@
         <el-card class="chart-card hover-lift">
           <template #header>
             <div class="card-header">
-              <span class="card-title">节点分布</span>
+              <span class="card-title">Node Distribution</span>
               <el-icon class="card-icon"><PieChart /></el-icon>
             </div>
           </template>
@@ -121,7 +121,7 @@
               </div>
               <div class="metric-info">
                 <div class="metric-value">{{ statusStore.memoryUsage }}</div>
-                <div class="metric-label">内存使用</div>
+                <div class="metric-label">Memory Usage</div>
               </div>
             </div>
           </el-card>
@@ -133,7 +133,7 @@
               </div>
               <div class="metric-info">
                 <div class="metric-value">{{ statusStore.cpuUsage }}</div>
-                <div class="metric-label">CPU使用</div>
+                <div class="metric-label">CPU Usage</div>
               </div>
             </div>
           </el-card>
@@ -145,7 +145,7 @@
               </div>
               <div class="metric-info">
                 <div class="metric-value">{{ statusStore.uptime }}</div>
-                <div class="metric-label">运行时间</div>
+                <div class="metric-label">Uptime</div>
               </div>
             </div>
           </el-card>
@@ -159,22 +159,22 @@
     <el-card class="logs-card hover-lift">
       <template #header>
         <div class="card-header">
-          <span class="card-title">系统日志</span>
+          <span class="card-title">System Logs</span>
           <div class="logs-actions">
             <el-button size="small" type="primary" @click="clearLogs">
               <el-icon><Delete /></el-icon>
-              清空
+              Clear
             </el-button>
             <el-button size="small" @click="refreshLogs">
               <el-icon><Refresh /></el-icon>
-              刷新
+              Refresh
             </el-button>
           </div>
         </div>
       </template>
       <div class="logs-container">
         <div class="logs-wrapper custom-scrollbar">
-          <pre class="logs-content">{{ logsStore.logs || '暂无日志信息...' }}</pre>
+          <pre class="logs-content">{{ logsStore.logs || 'No log information available...' }}</pre>
         </div>
       </div>
     </el-card>
@@ -232,7 +232,7 @@ export default {
       },
       series: [
         {
-          name: '节点分布',
+          name: 'Node Distribution',
           type: 'pie',
           radius: ['40%', '70%'],
           center: ['60%', '50%'],
@@ -264,23 +264,23 @@ export default {
   methods:{
     getStatusText() {
       const statusMap = {
-        'RUNNING': '运行中',
-        'STOPPED': '已停止',
-        'RESTARTING': '重启中',
-        'STOPPING': '停止中',
-        'DISCONNECTED': '连接断开'
+        'RUNNING': 'Running',
+        'STOPPED': 'Stopped',
+        'RESTARTING': 'Restarting',
+        'STOPPING': 'Stopping',
+        'DISCONNECTED': 'Disconnected'
       };
       return statusMap[this.statusStore.status] || this.statusStore.status;
     },
     getStatusDescription() {
       const descMap = {
-        'RUNNING': '系统正常运行中',
-        'STOPPED': '系统已停止运行',
-        'RESTARTING': '系统正在重启',
-        'STOPPING': '系统正在停止',
-        'DISCONNECTED': '无法连接到系统'
+        'RUNNING': 'System is running normally',
+        'STOPPED': 'System has stopped running',
+        'RESTARTING': 'System is restarting',
+        'STOPPING': 'System is stopping',
+        'DISCONNECTED': 'Unable to connect to system'
       };
-      return descMap[this.statusStore.status] || '状态未知';
+      return descMap[this.statusStore.status] || 'Status unknown';
     },
     isActionDisabled(action) {
       const status = this.statusStore.status;
@@ -297,27 +297,27 @@ export default {
     },
     clearLogs() {
       this.logsStore.logs = '';
-      ElMessage.success('日志已清空');
+      ElMessage.success('Logs cleared');
     },
     refreshLogs() {
-      // 刷新日志的逻辑
-      ElMessage.success('日志已刷新');
+      // Logic for refreshing logs
+      ElMessage.success('Logs refreshed');
     },
-          start(){
+    start(){
       if(this.statusStore.status === 'RUNNING'){
-        ElMessage.warning('模拟器已在运行中');
+        ElMessage.warning('Simulator is already running');
         return;
       }
       if(this.statusStore.status === 'RESTARTING'){
-        ElMessage.warning('模拟器正在重启中');
+        ElMessage.warning('Simulator is restarting');
         return;
       }
       if(this.statusStore.status === 'DISCONNECTED'){
-        ElMessage.warning('模拟器连接已断开');
+        ElMessage.warning('Simulator connection is disconnected');
         return;
       }
       if(this.statusStore.status === 'STOPPING'){
-        ElMessage.warning('模拟器正在停止中');
+        ElMessage.warning('Simulator is stopping');
         return;
       }
       //use post /start to start the simulator
@@ -334,30 +334,30 @@ export default {
         throw new Error('Network response was not ok');
       }).then(data => {
         if(data.code === 0){
-          ElMessage.success('模拟器启动成功');
+          ElMessage.success('Simulator started successfully');
           this.statusStore.status = 'RUNNING';
         }else{
           ElMessage.error(data.message);
         }
       }).catch(error => {
-        ElMessage.error('启动失败: ' + error.message);
+        ElMessage.error('Start failed: ' + error.message);
       });
     },
     stop(){
       if(this.statusStore.status === 'STOPPED'){
-        ElMessage.warning('模拟器已经停止');
+        ElMessage.warning('Simulator is already stopped');
         return;
       }
       if(this.statusStore.status === 'DISCONNECTED'){
-        ElMessage.warning('模拟器连接已断开');
+        ElMessage.warning('Simulator connection is disconnected');
         return;
       }
       if(this.statusStore.status === 'RESTARTING'){
-        ElMessage.warning('模拟器正在重启中');
+        ElMessage.warning('Simulator is restarting');
         return;
       }
       if(this.statusStore.status === 'STOPPING'){
-        ElMessage.warning('模拟器正在停止中');
+        ElMessage.warning('Simulator is stopping');
         return;
       }
       //use post /stop to stop the simulator
@@ -374,30 +374,30 @@ export default {
         throw new Error('Network response was not ok');
       }).then(data => {
         if(data.code === 0){
-          ElMessage.success('模拟器已停止');
+          ElMessage.success('Simulator stopped');
           this.statusStore.status = 'STOPPED';
         }else{
           ElMessage.error(data.message);
         }
       }).catch(error => {
-        ElMessage.error('停止失败: ' + error.message);
+        ElMessage.error('Stop failed: ' + error.message);
       });
     },
     restart(){
       if(this.statusStore.status === 'RESTARTING'){
-        ElMessage.warning('模拟器正在重启中');
+        ElMessage.warning('Simulator is restarting');
         return;
       }
       if(this.statusStore.status === 'DISCONNECTED'){
-        ElMessage.warning('模拟器连接已断开');
+        ElMessage.warning('Simulator connection is disconnected');
         return;
       }
       if(this.statusStore.status === 'STOPPED'){
-        ElMessage.warning('模拟器已停止');
+        ElMessage.warning('Simulator is stopped');
         return;
       }
       if(this.statusStore.status === 'STOPPING'){
-        ElMessage.warning('模拟器正在停止中');
+        ElMessage.warning('Simulator is stopping');
         return;
       }
       //use post /restart to restart the simulator
@@ -414,13 +414,13 @@ export default {
         throw new Error('Network response was not ok');
       }).then(data => {
         if(data.code === 0){
-          ElMessage.success('模拟器重启中');
+          ElMessage.success('Simulator restarting');
           this.statusStore.status = 'RESTARTING';
         }else{
           ElMessage.error(data.message);
         }
       }).catch(error => {
-        ElMessage.error('重启失败: ' + error.message);
+        ElMessage.error('Restart failed: ' + error.message);
       });
     },
     async fetchLayers() {
@@ -433,7 +433,7 @@ export default {
         });
         this.layers = response.data;
       } catch (error) {
-        ElMessage.error("获取层级信息失败:", error);
+        ElMessage.error("Failed to fetch layer information:", error);
       }
     },
     async fetchNodes(layer) {
@@ -446,7 +446,7 @@ export default {
         });
         return response.data.length;
       } catch (error) {
-        ElMessage.error("获取节点信息失败:", error);
+        ElMessage.error("Failed to fetch node information:", error);
       }
     },
   }
@@ -733,7 +733,7 @@ export default {
 }
 
 .metric-value {
-  font-size: 24px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 4px;

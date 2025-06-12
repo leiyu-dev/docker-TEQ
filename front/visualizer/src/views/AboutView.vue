@@ -13,11 +13,9 @@
           </div>
         </div>
         <div class="hero-description">
-          <h2 class="description-title">开放且开发者友好的边缘计算查询处理算法测试平台</h2>
+          <h2 class="description-title">Open and Developer-Friendly Testbed for Edge-Based Query Processing Algorithms</h2>
           <p class="description-text">
-            边缘计算非常适合查询快速数据流的群体。然而，虽然边缘计算算法由于其分散性质而难以开发和评估，但缺乏支持工具。
-            例如，当前的模拟器无法执行真实查询。为了纠正这些缺点，我们提出了TEQ，一个专门为边缘计算查询处理算法设计的测试平台，
-            它被明确设计为开放的，支持可扩展的模拟和算法部署，并且对开发者友好，简化了原本广泛的模拟、复杂的算法管理和繁琐的评估。
+            Edge computing is ideally suited for querying populations of fast data streams. However, developing and evaluating edge-based query processing algorithms is challenging due to the decentralized setting and the lack of effective tools. For example, current simulators fail to execute real queries. To rectify these shortcomings, we propose TEQ, a Testbed for Edge-based Query processing algorithms, designed expressly to be open, enabling extensible simulation and algorithm deployment, and to be developer-friendly, simplifying otherwise cumbersome simulation, complex algorithm management, and tedious evaluation.
           </p>
         </div>
       </div>
@@ -26,8 +24,8 @@
     <!-- 特性介绍 -->
     <div class="features-section slide-in-up" style="animation-delay: 0.2s;">
       <div class="section-header">
-        <h2 class="section-title">核心特性</h2>
-        <p class="section-subtitle">TEQ 为边缘计算查询处理提供全面的解决方案</p>
+        <h2 class="section-title">Core Features</h2>
+        <p class="section-subtitle">TEQ provides comprehensive solutions for edge-based query processing</p>
       </div>
       
       <div class="features-grid">
@@ -35,10 +33,10 @@
           <div class="feature-icon simulation-icon">
             <el-icon><Monitor /></el-icon>
           </div>
-          <h3 class="feature-title">可扩展模拟</h3>
+          <h3 class="feature-title">Extensible Simulation</h3>
           <p class="feature-description">
-            支持可扩展的模拟环境，能够模拟真实的边缘计算场景，
-            为算法开发提供真实可靠的测试环境。
+            Supports extensible simulation environments that can simulate real edge computing scenarios,
+            providing authentic and reliable testing environments for algorithm development.
           </p>
         </div>
 
@@ -46,10 +44,10 @@
           <div class="feature-icon algorithm-icon">
             <el-icon><Setting /></el-icon>
           </div>
-          <h3 class="feature-title">算法部署</h3>
+          <h3 class="feature-title">Algorithm Deployment</h3>
           <p class="feature-description">
-            提供简化的算法部署机制，将分散的算法模块转换为可执行的
-            Flink 脚本，大大简化开发流程。
+            Provides simplified algorithm deployment mechanisms, converting decentralized algorithm modules 
+            into executable Flink scripts, greatly simplifying the development process.
           </p>
         </div>
 
@@ -57,10 +55,10 @@
           <div class="feature-icon query-icon">
             <el-icon><Search /></el-icon>
           </div>
-          <h3 class="feature-title">真实查询执行</h3>
+          <h3 class="feature-title">Real Query Execution</h3>
           <p class="feature-description">
-            不同于传统模拟器，TEQ 能够执行真实的查询操作，
-            提供更加准确和可靠的测试结果。
+            Unlike traditional simulators, TEQ can execute real query operations,
+            providing more accurate and reliable test results.
           </p>
         </div>
 
@@ -68,10 +66,10 @@
           <div class="feature-icon data-icon">
             <el-icon><DataAnalysis /></el-icon>
           </div>
-          <h3 class="feature-title">数据回放控制</h3>
+          <h3 class="feature-title">Data Playback Control</h3>
           <p class="feature-description">
-            提供数据和查询回放控制功能，确保在评估过程中
-            数据流的可重现性，保证测试结果的一致性。
+            Provides data and query playback control functionality, ensuring 
+            data stream reproducibility during evaluation and guaranteeing test result consistency.
           </p>
         </div>
 
@@ -79,10 +77,10 @@
           <div class="feature-icon metrics-icon">
             <el-icon><TrendCharts /></el-icon>
           </div>
-          <h3 class="feature-title">指标转换</h3>
+          <h3 class="feature-title">Metrics Transformation</h3>
           <p class="feature-description">
-            将 Flink 指标转换为与用户自定义边缘计算运行时相关的
-            所需指标，提供全面的性能评估。
+            Transforms Flink metrics into desired metrics related to user-defined
+            edge computing runtime, providing comprehensive performance evaluation.
           </p>
         </div>
 
@@ -90,75 +88,11 @@
           <div class="feature-icon opensource-icon">
             <el-icon><Share /></el-icon>
           </div>
-          <h3 class="feature-title">开源协作</h3>
+          <h3 class="feature-title">Open Source Collaboration</h3>
           <p class="feature-description">
-            TEQ 正在开源过程中，目标是吸引外部贡献，
-            推进基于边缘计算的查询技术发展。
+            TEQ is currently in the open-source process, aiming to attract external contributions
+            and drive innovation in edge-based query processing technology.
           </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- 技术架构 -->
-    <div class="architecture-section slide-in-up" style="animation-delay: 0.4s;">
-      <div class="section-header">
-        <h2 class="section-title">技术架构</h2>
-        <p class="section-subtitle">基于现代化技术栈构建的可扩展平台</p>
-      </div>
-      
-      <div class="tech-stack">
-        <div class="tech-category">
-          <h4 class="tech-title">前端技术</h4>
-          <div class="tech-items">
-            <div class="tech-item">
-              <span class="tech-name">Vue.js 3</span>
-              <span class="tech-desc">响应式前端框架</span>
-            </div>
-            <div class="tech-item">
-              <span class="tech-name">Element Plus</span>
-              <span class="tech-desc">UI 组件库</span>
-            </div>
-            <div class="tech-item">
-              <span class="tech-name">ECharts</span>
-              <span class="tech-desc">数据可视化</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="tech-category">
-          <h4 class="tech-title">后端技术</h4>
-          <div class="tech-items">
-            <div class="tech-item">
-              <span class="tech-name">Apache Flink</span>
-              <span class="tech-desc">流处理引擎</span>
-            </div>
-            <div class="tech-item">
-              <span class="tech-name">Spring Boot</span>
-              <span class="tech-desc">后端框架</span>
-            </div>
-            <div class="tech-item">
-              <span class="tech-name">Docker</span>
-              <span class="tech-desc">容器化部署</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="tech-category">
-          <h4 class="tech-title">核心特性</h4>
-          <div class="tech-items">
-            <div class="tech-item">
-              <span class="tech-name">边缘计算</span>
-              <span class="tech-desc">分布式处理</span>
-            </div>
-            <div class="tech-item">
-              <span class="tech-name">流处理</span>
-              <span class="tech-desc">实时数据处理</span>
-            </div>
-            <div class="tech-item">
-              <span class="tech-name">算法测试</span>
-              <span class="tech-desc">性能评估</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -168,35 +102,35 @@
       <el-card class="version-card hover-lift">
         <div class="version-content">
           <div class="version-info">
-            <h3 class="version-title">版本信息</h3>
+            <h3 class="version-title">Version Information</h3>
             <div class="version-details">
               <div class="version-item">
-                <span class="version-label">当前版本：</span>
-                <el-tag type="primary" size="large">v0.1.0</el-tag>
+                <span class="version-label">Current Version:</span>
+                <el-tag type="primary" size="large">v0.2.0</el-tag>
               </div>
               <div class="version-item">
-                <span class="version-label">发布日期：</span>
-                <span class="version-value">2024年1月</span>
-              </div>
-              <div class="version-item">
-                <span class="version-label">开发状态：</span>
-                <el-tag type="warning" size="small">开发中</el-tag>
+                <span class="version-label">Development Status:</span>
+                <el-tag type="warning" size="small">In Development</el-tag>
               </div>
             </div>
           </div>
           <div class="contact-info">
-            <h4 class="contact-title">联系我们</h4>
+            <h4 class="contact-title">Contact Us</h4>
             <p class="contact-text">
-              如果您对 TEQ 项目感兴趣，欢迎与我们联系或参与到开源贡献中来。
+              If you are interested in the TEQ project, please feel free to contact us or participate in open source contributions.
             </p>
             <div class="contact-buttons">
-              <el-button type="primary" size="large">
-                <el-icon><MessageBox /></el-icon>
-                联系我们
+              <el-button type="primary" size="large" @click="openEmail">
+                <el-icon style="margin-right: 10px;"><MessageBox /></el-icon>
+                Contact Us
               </el-button>
-              <el-button type="success" size="large">
-                <el-icon><Share /></el-icon>
-                参与贡献
+              <el-button type="success" size="large" @click="openGitHub">
+                <el-icon style="margin-right: 10px;"><Share /></el-icon>
+                Contribute
+              </el-button>
+              <el-button size="large" @click="openDocumentation">
+                <el-icon style="margin-right: 10px;"><Document /></el-icon>
+                Documentation
               </el-button>
             </div>
           </div>
@@ -205,6 +139,20 @@
     </div>
   </div>
 </template>
+
+<script setup>
+const openGitHub = () => {
+  window.open('https://github.com/leiyu-dev/docker-TEQ', '_blank')
+}
+
+const openEmail = () => {
+  window.open('mailto:devleiyu@gmail.com', '_blank')
+}
+
+const openDocumentation = () => {
+  window.open('https://sudis-zju.github.io/teq/', '_blank')
+}
+</script>
 
 <style scoped>
 .about-container {

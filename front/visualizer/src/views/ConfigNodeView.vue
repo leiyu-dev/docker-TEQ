@@ -4,8 +4,8 @@
     <div class="page-header slide-in-up">
       <div class="header-content">
         <div class="title-section">
-          <h1 class="page-title gradient-text">节点配置管理</h1>
-          <p class="page-subtitle">实时配置节点参数，所有修改将立即生效</p>
+          <h1 class="page-title gradient-text">Node Configuration Management</h1>
+          <p class="page-subtitle">Configure node parameters in real-time, all modifications will take effect immediately</p>
         </div>
       </div>
     </div>
@@ -15,8 +15,8 @@
       <el-card class="selector-card hover-lift">
         <template #header>
           <div class="card-header">
-            <span class="selector-title">节点选择</span>
-            <el-tag type="warning" size="small">实时生效</el-tag>
+            <span class="selector-title">Node Selection</span>
+            <el-tag type="warning" size="small">Real-time Effect</el-tag>
           </div>
         </template>
         
@@ -25,12 +25,12 @@
             <div class="selector-item">
               <label class="selector-label">
                 <el-icon class="label-icon"><Collection /></el-icon>
-                选择层级
+                Select Layer
               </label>
               <el-select
                   size="large"
                   v-model="chooseStore.selectedLayer"
-                  placeholder="请选择层级"
+                  placeholder="Please select layer"
                   class="selector-input"
                   @change="fetchNodes"
                   clearable
@@ -54,12 +54,12 @@
             <div class="selector-item">
               <label class="selector-label">
                 <el-icon class="label-icon"><Connection /></el-icon>
-                选择节点
+                Select Node
               </label>
               <el-select
                   size="large"
                   v-model="chooseStore.selectedNode"
-                  placeholder="请选择节点"
+                  placeholder="Please select node"
                   class="selector-input"
                   @change="fetchConfigNodes"
                   clearable
@@ -68,13 +68,13 @@
                 <el-option
                     v-for="node in nodes"
                     :key="node"
-                    :label="node === 'All nodes' ? '所有节点' : node"
+                    :label="node === 'All nodes' ? 'All Nodes' : node"
                     :value="node"
                 >
                   <div class="option-item">
                     <el-icon v-if="node === 'All nodes'"><Grid /></el-icon>
                     <el-icon v-else><Cpu /></el-icon>
-                    <span>{{ node === 'All nodes' ? '所有节点' : node }}</span>
+                    <span>{{ node === 'All nodes' ? 'All Nodes' : node }}</span>
                   </div>
                 </el-option>
               </el-select>
@@ -84,18 +84,18 @@
           <el-col :span="8">
             <div class="status-info">
               <div class="status-item">
-                <span class="status-label">当前层级：</span>
+                <span class="status-label">Current Layer:</span>
                 <el-tag v-if="chooseStore.selectedLayer" type="primary" size="small">
                   {{ chooseStore.selectedLayer }}
                 </el-tag>
-                <span v-else class="status-empty">未选择</span>
+                <span v-else class="status-empty">Not Selected</span>
               </div>
               <div class="status-item">
-                <span class="status-label">当前节点：</span>
+                <span class="status-label">Current Node:</span>
                 <el-tag v-if="chooseStore.selectedNode" type="success" size="small">
-                  {{ chooseStore.selectedNode === 'All nodes' ? '所有节点' : chooseStore.selectedNode }}
+                  {{ chooseStore.selectedNode === 'All nodes' ? 'All Nodes' : chooseStore.selectedNode }}
                 </el-tag>
-                <span v-else class="status-empty">未选择</span>
+                <span v-else class="status-empty">Not Selected</span>
               </div>
             </div>
           </el-col>
@@ -109,18 +109,18 @@
         <template #header>
           <div class="card-header">
             <div class="header-left">
-              <span class="config-title">节点配置参数</span>
-              <span class="config-count">{{ configNodes.length }} 个参数</span>
+              <span class="config-title">Node Configuration Parameters</span>
+              <span class="config-count">{{ configNodes.length }} parameters</span>
               <el-tag 
                 v-if="chooseStore.selectedNode === 'All nodes'" 
                 type="warning" 
                 size="small"
               >
-                显示节点 0 的当前值
+                Showing current values of node 0
               </el-tag>
             </div>
             <div class="header-right">
-              <el-tag type="success" size="small">节点配置</el-tag>
+              <el-tag type="success" size="small">Node Config</el-tag>
             </div>
           </div>
         </template>
@@ -130,7 +130,7 @@
           class="config-table"
           :header-cell-style="{ backgroundColor: '#f8fafc', color: '#2d3748' }"
         >
-          <el-table-column prop="key" label="参数名称" width="300px">
+          <el-table-column prop="key" label="Parameter Name" width="300px">
             <template #default="scope">
               <div class="param-name">
                 <el-icon class="param-icon"><Setting /></el-icon>
@@ -139,7 +139,7 @@
             </template>
           </el-table-column>
           
-          <el-table-column label="当前值" width="250px">
+          <el-table-column label="Current Value" width="250px">
             <template #default="scope">
               <div class="current-value">
                 <el-tag 
@@ -153,12 +153,12 @@
             </template>
           </el-table-column>
           
-          <el-table-column label="修改配置" min-width="500px">
+          <el-table-column label="Modify Configuration" min-width="500px">
             <template #default="scope">
               <div class="modify-section">
                 <el-input 
                   v-model="scope.row.newValue" 
-                  placeholder="输入新的配置值"
+                  placeholder="Enter new configuration value"
                   class="new-value-input"
                   clearable
                 />
@@ -169,7 +169,7 @@
                     :disabled="!scope.row.newValue || scope.row.newValue === scope.row.value"
                 >
                   <el-icon><Check /></el-icon>
-                  更新
+                  Update
                 </el-button>
               </div>
             </template>
@@ -180,7 +180,7 @@
       <!-- 空状态 -->
       <el-card class="empty-card hover-lift" v-else>
         <el-empty 
-          description="请选择层级和节点来查看配置参数"
+          description="Please select layer and node to view configuration parameters"
           :image-size="120"
         >
           <template #image>
@@ -189,7 +189,7 @@
             </div>
           </template>
           <template #description>
-            <span class="empty-text">请选择层级和节点</span>
+            <span class="empty-text">Please select layer and node</span>
           </template>
         </el-empty>
       </el-card>
@@ -228,7 +228,7 @@ export default {
         const response = await axios.get("http://localhost:8889/algorithm");
         this.algorithms = response.data;
       } catch (error) {
-        ElMessage.error("获取算法列表失败: " + error.message);
+        ElMessage.error("Failed to fetch algorithm list: " + error.message);
       }
     },
     async fetchLayers() {
@@ -240,7 +240,7 @@ export default {
         });
         this.layers = response.data;
       } catch (error) {
-        ElMessage.error("获取层级列表失败: " + error.message);
+        ElMessage.error("Failed to fetch layer list: " + error.message);
       }
     },
     async fetchNodes() {
@@ -257,7 +257,7 @@ export default {
         response.data.push("All nodes")
         this.nodes = response.data;
       } catch (error) {
-        ElMessage.error("获取节点列表失败: " + error.message);
+        ElMessage.error("Failed to fetch node list: " + error.message);
       }
     },
     async fetchConfigNodes() {
@@ -286,7 +286,7 @@ export default {
           })
         }
       } catch (error) {
-        ElMessage.error("获取节点配置失败: " + error.message);
+        ElMessage.error("Failed to fetch node configuration: " + error.message);
       }
     },
     async updateConfig(key, newValue, node) {
@@ -298,13 +298,13 @@ export default {
           value: newValue,
         }).then((response) => {
           if(response.status !== 200)throw new Error(response.data.error);
-          ElMessage.success("节点配置更新成功");
+          ElMessage.success("Node configuration updated successfully");
           this.fetchConfigNodes();
         }).catch( error => {
-          ElMessage.error("节点配置更新失败: " + error.message);
+          ElMessage.error("Failed to update node configuration: " + error.message);
         });
       } catch (error) {
-        ElMessage.error("节点配置更新失败: " + error.message);
+        ElMessage.error("Failed to update node configuration: " + error.message);
       }
     },
   },

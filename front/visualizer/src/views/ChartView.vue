@@ -4,8 +4,8 @@
     <div class="page-header slide-in-up">
       <div class="header-content">
         <div class="title-section">
-          <h1 class="page-title gradient-text">数据可视化中心</h1>
-          <p class="page-subtitle">实时监控系统运行状态，支持多维度数据分析和自定义图表配置</p>
+          <h1 class="page-title gradient-text">Data Visualization Center</h1>
+          <p class="page-subtitle">Real-time monitoring of system status, supporting multi-dimensional data analysis and custom chart configuration</p>
         </div>
       </div>
     </div>
@@ -14,8 +14,8 @@
     <div class="chart-section slide-in-up" style="animation-delay: 0.1s;">
       <div class="section-header">
         <div class="header-left">
-          <h2 class="section-title gradient-text">总览图表</h2>
-          <p class="section-subtitle">系统整体运行状态监控</p>
+          <h2 class="section-title gradient-text">Overview Charts</h2>
+          <p class="section-subtitle">Overall system status monitoring</p>
         </div>
         <div class="header-actions">
           <el-button 
@@ -26,7 +26,7 @@
           >
             <el-icon v-if="showOverview"><Minus /></el-icon>
             <el-icon v-else><Plus /></el-icon>
-            {{ showOverview ? '收起' : '展开' }}
+            {{ showOverview ? 'Collapse' : 'Expand' }}
           </el-button>
         </div>
       </div>
@@ -41,7 +41,7 @@
             <div class="card-header">
               <div class="header-left">
                 <span class="card-title">{{ chartOption.chartTitle }}</span>
-                <el-tag type="success" size="small">实时监控</el-tag>
+                <el-tag type="success" size="small">Real-time</el-tag>
               </div>
               <el-button 
                 type="primary" 
@@ -50,7 +50,7 @@
                 class="view-full-btn"
               >
                 <el-icon><FullScreen /></el-icon>
-                查看详情
+                View Details
               </el-button>
             </div>
           </template>
@@ -60,7 +60,7 @@
 
       <div v-else class="collapsed-info">
         <el-empty 
-          description="总览图表已收起"
+          description="Overview charts collapsed"
           :image-size="60"
         >
           <template #image>
@@ -76,8 +76,8 @@
     <div class="chart-section slide-in-up" style="animation-delay: 0.2s;">
       <div class="section-header">
         <div class="header-left">
-          <h2 class="section-title gradient-text">详细图表</h2>
-          <p class="section-subtitle">节点级别的详细监控数据</p>
+          <h2 class="section-title gradient-text">Detail Charts</h2>
+          <p class="section-subtitle">Detailed monitoring data at node level</p>
         </div>
         <div class="header-actions">
           <el-button 
@@ -88,7 +88,7 @@
           >
             <el-icon v-if="showDetail"><Minus /></el-icon>
             <el-icon v-else><Plus /></el-icon>
-            {{ showDetail ? '收起' : '展开' }}
+            {{ showDetail ? 'Collapse' : 'Expand' }}
           </el-button>
         </div>
       </div>
@@ -98,24 +98,24 @@
           <template #header>
             <div class="card-header">
               <div class="header-left">
-                <span class="card-title">监控配置</span>
-                <el-tag type="info" size="small">实时数据</el-tag>
+                <span class="card-title">Monitoring Configuration</span>
+                <el-tag type="info" size="small">Real-time Data</el-tag>
               </div>
               <div class="header-right">
                 <div class="status-indicators">
                   <div class="status-item">
-                    <span class="status-label">当前层级：</span>
+                    <span class="status-label">Current Layer:</span>
                     <el-tag v-if="selectedLayer" type="primary" size="small">
                       {{ selectedLayer }}
                     </el-tag>
-                    <span v-else class="status-empty">未选择</span>
+                    <span v-else class="status-empty">Not Selected</span>
                   </div>
                   <div class="status-item">
-                    <span class="status-label">当前节点：</span>
+                    <span class="status-label">Current Node:</span>
                     <el-tag v-if="selectedNode" type="success" size="small">
                       {{ selectedNode }}
                     </el-tag>
-                    <span v-else class="status-empty">未选择</span>
+                    <span v-else class="status-empty">Not Selected</span>
                   </div>
                 </div>
               </div>
@@ -125,12 +125,12 @@
             <div class="selector-item">
               <label class="selector-label">
                 <el-icon><Tickets /></el-icon>
-                选择层级
+                Select Layer
               </label>
               <el-select
                 size="large"
                 v-model="selectedLayer"
-                placeholder="选择层级"
+                placeholder="Select Layer"
                 @change="fetchNodes"
                 class="modern-select"
               >
@@ -146,12 +146,12 @@
             <div class="selector-item">
               <label class="selector-label">
                 <el-icon><Monitor /></el-icon>
-                选择节点
+                Select Node
               </label>
               <el-select
                 size="large"
                 v-model="selectedNode"
-                placeholder="选择节点"
+                placeholder="Select Node"
                 class="modern-select"
                 :disabled="!selectedLayer"
               >
@@ -173,7 +173,7 @@
                 :disabled="!selectedLayer || !selectedNode"
               >
                 <el-icon><Plus /></el-icon>
-                添加监控
+                Add Monitoring
               </el-button>
             </div>
           </div>
@@ -189,7 +189,7 @@
               <div class="card-header">
                 <div class="header-left">
                   <span class="card-title">{{ chartOption.chartTitle }}</span>
-                  <el-tag type="warning" size="small" style="margin-right: 10px;">节点监控</el-tag>
+                  <el-tag type="warning" size="small" style="margin-right: 10px;">Node</el-tag>
                 </div>
                 <el-button 
                   type="primary" 
@@ -198,7 +198,7 @@
                   class="view-full-btn"
                 >
                   <el-icon><FullScreen /></el-icon>
-                  查看详情
+                  View Details
                 </el-button>
               </div>
             </template>
@@ -210,18 +210,18 @@
           <div class="empty-icon">
             <el-icon size="64"><DocumentAdd /></el-icon>
           </div>
-          <h3>暂无详细图表</h3>
-          <p>选择层级和节点后点击"添加监控"开始监控数据</p>
+          <h3>No detailed charts</h3>
+          <p>Select layer and node, then click "Add Monitoring" to start monitoring data</p>
           <el-button type="primary" @click="scrollToSelector" class="quick-setup-btn">
             <el-icon><Setting /></el-icon>
-            快速配置
+            Quick Configuration
           </el-button>
         </div>
       </div>
 
       <div v-else class="collapsed-info">
         <el-empty 
-          description="详细图表已收起"
+          description="Detailed charts collapsed"
           :image-size="60"
         >
           <template #image>
@@ -237,8 +237,8 @@
     <div class="chart-section slide-in-up" style="animation-delay: 0.3s;">
       <div class="section-header">
         <div class="header-left">
-          <h2 class="section-title gradient-text">自定义图表</h2>
-          <p class="section-subtitle">用户自定义的监控图表</p>
+          <h2 class="section-title gradient-text">Custom Charts</h2>
+          <p class="section-subtitle">User-defined monitoring charts</p>
         </div>
         <div class="header-actions">
           <el-button 
@@ -249,7 +249,7 @@
           >
             <el-icon v-if="showUser"><Minus /></el-icon>
             <el-icon v-else><Plus /></el-icon>
-            {{ showUser ? '收起' : '展开' }}
+            {{ showUser ? 'Collapse' : 'Expand' }}
           </el-button>
         </div>
       </div>
@@ -265,7 +265,7 @@
               <div class="card-header">
                 <div class="header-left">
                   <span class="card-title">{{ chartOption.chartTitle }}</span>
-                  <el-tag type="info" size="small">自定义</el-tag>
+                  <el-tag type="info" size="small">Custom</el-tag>
                 </div>
                 <el-button 
                   type="primary" 
@@ -274,7 +274,7 @@
                   class="view-full-btn"
                 >
                   <el-icon><FullScreen /></el-icon>
-                  查看详情
+                  View Details
                 </el-button>
               </div>
             </template>
@@ -286,18 +286,17 @@
           <div class="empty-icon">
             <el-icon size="64"><DocumentAdd /></el-icon>
           </div>
-          <h3>暂无自定义图表</h3>
-          <p>您还没有创建任何自定义图表，快来创建第一个吧！</p>
+          <h3>No custom charts</h3>
           <el-button type="success" class="create-chart-btn glow-on-hover">
             <el-icon><Plus /></el-icon>
-            创建图表
+            Create Chart
           </el-button>
         </div>
       </div>
 
       <div v-else class="collapsed-info">
         <el-empty 
-          description="自定义图表已收起"
+          description="Custom charts collapsed"
           :image-size="60"
         >
           <template #image>
@@ -324,10 +323,10 @@
       <div ref="dialogChart" class="dialog-chart-container"></div>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="closeDialog" size="large">关闭</el-button>
+          <el-button @click="closeDialog" size="large">Close</el-button>
           <el-button type="primary" size="large" class="export-btn">
             <el-icon><Download /></el-icon>
-            导出图表
+            Export Chart
           </el-button>
         </span>
       </template>
