@@ -20,11 +20,8 @@ import java.nio.charset.StandardCharsets;
  * This class is designed for stand-alone environments and provides robust 
  * connection handling with automatic reconnection capabilities.
  * 
- * Key features:
- * - Acts as a TCP server listening on a specified port
- * - Automatically deserializes JSON strings to specified type T
- * - Handles connection failures with configurable retry logic
- * - Provides clean resource management and connection cleanup
+ * Due to it's single-threaded nature and its reconnection mechanism, this class is only used in the metrics receiver.
+ * It is not suggested to use this class, use HighPerformanceDataReceiver instead.
  * 
  * Usage: Remember to add .returns(TypeInformation.of(T.class)) when using this
  * source function to avoid type erasure issues in Flink.

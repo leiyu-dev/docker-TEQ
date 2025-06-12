@@ -119,6 +119,10 @@ public class Worker extends AbstractWorkerNode {
                 for (int i = 1; i < 11; i++) {
                     if(!(action = object.get(i)).isEmpty()) {
                         Map<Long, Integer> hashMap = workerState.get(action);
+                        if(hashMap == null) {
+                            logger.error("hashMap is null for action: " + action);
+                            continue;
+                        }
                         int sum = 0;
                         for (long j = start; j < end; j++) {
                             //  System.out.println("worker" + (end - start));

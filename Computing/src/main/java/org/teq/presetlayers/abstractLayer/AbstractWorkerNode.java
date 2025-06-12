@@ -12,7 +12,7 @@ import org.teq.mearsurer.MeasuredFlinkNode;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.WorkerTask;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.flink.javasocket.MultiThreadDataReceiver;
+import org.teq.utils.connector.flink.javasocket.HighPerformanceDataReceiver;
 import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
 
 public abstract class AbstractWorkerNode extends MeasuredFlinkNode implements WorkerTask  {
@@ -36,10 +36,10 @@ public abstract class AbstractWorkerNode extends MeasuredFlinkNode implements Wo
         int maxNumRetries = ExecutorConfig.maxNumRetries;
         int retryInterval = ExecutorConfig.retryInterval;
         StreamExecutionEnvironment env = getEnv();
-        DataStream<PackageBean> FromCenter = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorConfig.fromCenterToWorkerPort, PackageBean.class))
+        DataStream<PackageBean> FromCenter = env.addSource(new HighPerformanceDataReceiver<PackageBean>(ExecutorConfig.fromCenterToWorkerPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
 
-        DataStream<PackageBean> FromCod =  env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorConfig.fromCodToWorkerPort, PackageBean.class))
+        DataStream<PackageBean> FromCod =  env.addSource(new HighPerformanceDataReceiver<PackageBean>(ExecutorConfig.fromCodToWorkerPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
 
         DataStream<PackageBean> info = FromCenter.union(FromCod);

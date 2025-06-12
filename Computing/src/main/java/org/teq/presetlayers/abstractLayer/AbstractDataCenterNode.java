@@ -13,7 +13,7 @@ import org.teq.configurator.ExecutorConfig;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.DataCenterTask;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.flink.javasocket.MultiThreadDataReceiver;
+import org.teq.utils.connector.flink.javasocket.HighPerformanceDataReceiver;
 import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
 
 public abstract class AbstractDataCenterNode extends MeasuredFlinkNode implements DataCenterTask {
@@ -23,7 +23,7 @@ public abstract class AbstractDataCenterNode extends MeasuredFlinkNode implement
         int maxNumRetries = ExecutorConfig.maxNumRetries;
         int retryInterval = ExecutorConfig.retryInterval;
         StreamExecutionEnvironment env = getEnv();
-        DataStream<PackageBean> FromWorker = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorConfig.fromWorkerToCenterPort, PackageBean.class))
+        DataStream<PackageBean> FromWorker = env.addSource(new HighPerformanceDataReceiver<PackageBean>(ExecutorConfig.fromWorkerToCenterPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
         DataStream<PackageBean> modifiedInfo = measurerDataCenterRecord(FromWorker);
         DataStreamSink ToWorker = modifiedInfo.addSink(new TargetedDataSender<>(maxNumRetries,retryInterval));

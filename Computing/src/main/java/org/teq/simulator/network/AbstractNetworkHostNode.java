@@ -9,7 +9,7 @@ import org.teq.mearsurer.BuiltInMetrics;
 import org.teq.node.AbstractFlinkNode;
 import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.flink.javasocket.CommonDataSender;
-import org.teq.utils.connector.flink.javasocket.MultiThreadDataReceiver;
+import org.teq.utils.connector.flink.javasocket.HighPerformanceDataReceiver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +23,7 @@ public abstract class AbstractNetworkHostNode extends AbstractFlinkNode {
         for(String nodeName : nodeList){
             System.out.println(nodeName);
         }
-        DataStream<BuiltInMetrics> stream = env.addSource(new MultiThreadDataReceiver<>(SimulatorConfig.metricsPort , BuiltInMetrics.class)).returns(TypeInformation.of(BuiltInMetrics.class));
+        DataStream<BuiltInMetrics> stream = env.addSource(new HighPerformanceDataReceiver<>(SimulatorConfig.metricsPort , BuiltInMetrics.class)).returns(TypeInformation.of(BuiltInMetrics.class));
         DataStreamSink sink = stream.addSink(new CommonDataSender<>(DockerRuntimeData.getHostIp(),SimulatorConfig.MetricsReceiverPort,10000,1000,true)).setParallelism(1);
         dataProcess();
     }

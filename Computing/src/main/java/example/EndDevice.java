@@ -11,7 +11,7 @@ import org.teq.configurator.unserializable.InfoType;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.abstractLayer.AbstractEndDeviceNode;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.flink.javasocket.MultiThreadDataReceiver;
+import org.teq.utils.connector.flink.javasocket.HighPerformanceDataReceiver;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +25,7 @@ public class EndDevice extends AbstractEndDeviceNode {
     @Override
     protected DataStream<PackageBean> getSource() {
         StreamExecutionEnvironment env = getEnv();
-        return env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorConfig.fromNetworkToEndPort, PackageBean.class)).
+        return env.addSource(new HighPerformanceDataReceiver<PackageBean>(ExecutorConfig.fromNetworkToEndPort, PackageBean.class)).
                 returns(PackageBean.class).
                 map(new MapFunction<PackageBean, PackageBean>() {
                     @Override

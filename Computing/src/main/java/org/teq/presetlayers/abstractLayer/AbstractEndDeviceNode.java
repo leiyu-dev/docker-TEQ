@@ -14,7 +14,7 @@ import org.teq.configurator.ExecutorConfig;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.EndDeviceTask;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.flink.javasocket.MultiThreadDataReceiver;
+import org.teq.utils.connector.flink.javasocket.HighPerformanceDataReceiver;
 import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
 
 
@@ -27,7 +27,7 @@ public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements
     public void dataProcess() throws Exception {
         StreamExecutionEnvironment env = getEnv();
         DataStream<PackageBean> fromSensor = getSource();
-        DataStream<PackageBean> response = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorConfig.fromCodToEndPort, PackageBean.class))
+        DataStream<PackageBean> response = env.addSource(new HighPerformanceDataReceiver<PackageBean>(ExecutorConfig.fromCodToEndPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
 
 

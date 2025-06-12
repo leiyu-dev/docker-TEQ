@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
  * 需要添加 .returns(TypeInformation.of(T.type)) 否则会导致 Flink 异常
  */
 public class MultiThreadDataReceiver<T> implements SourceFunction<T> {
-    private static final Logger logger = LogManager.getLogger(CommonDataReceiver.class);
+    private static final Logger logger = LogManager.getLogger(MultiThreadDataReceiver.class);
     private final Class<T> typeClass;
     private final int port;
     private ServerSocket serverSocket;
@@ -155,6 +155,6 @@ public class MultiThreadDataReceiver<T> implements SourceFunction<T> {
             executorService.shutdownNow();
         }
 
-        logger.info("CommonDataReceiver has been cancelled.");
+        logger.info("MultiThreadDataReceiver has been cancelled.");
     }
 }

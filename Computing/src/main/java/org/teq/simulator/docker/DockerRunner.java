@@ -42,7 +42,7 @@ public class DockerRunner {
     private String imageName;
     private String networkHostName;
     public void closeAllContainers() {
-        ExecutorService executorService = Executors.newFixedThreadPool(10); // 调整线程池大小
+        ExecutorService executorService = Executors.newFixedThreadPool(30); // 使用30个线程并行停止容器
         try {
             // 获取所有相关容器
             List<Container> containers = dockerClient.listContainersCmd()
@@ -72,10 +72,23 @@ public class DockerRunner {
             for (Future<?> future : futures) {
                 future.get();
             }
+            
+            logger.info("All " + containers.size() + " containers stopped successfully");
         } catch (Exception e) {
             logger.error("Failed to close all containers", e);
         } finally {
             executorService.shutdown();
+            try {
+                // 等待线程池关闭，最多等待30秒
+                if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
+                    logger.warn("Thread pool did not terminate gracefully, forcing shutdown");
+                    executorService.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                logger.warn("Interrupted while waiting for thread pool termination");
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -87,14 +100,44 @@ public class DockerRunner {
         logger.info("Container " + containerName + " started successfully");
     }
     private void deleteAllContainers() {
-        List<Container> containers = dockerClient.listContainersCmd()
-                .withShowAll(true) // show all containers (not just running ones)
-                .exec();
+        ExecutorService executorService = Executors.newFixedThreadPool(30); // 使用30个线程并行删除容器
+        try {
+            List<Container> containers = dockerClient.listContainersCmd()
+                    .withShowAll(true) // show all containers (not just running ones)
+                    .exec();
 
-        for (Container container : containers) {
-            if (container.getNames()[0].startsWith("/"+ SimulatorConfig.classNamePrefix)) {
-                dockerClient.removeContainerCmd(container.getId()).withForce(true).exec();
-                logger.info("Deleted container: " + container.getId());
+            List<Future<?>> futures = new ArrayList<>();
+            for (Container container : containers) {
+                if (container.getNames()[0].startsWith("/"+ SimulatorConfig.classNamePrefix)) {
+                    futures.add(executorService.submit(() -> {
+                        try {
+                            dockerClient.removeContainerCmd(container.getId()).withForce(true).exec();
+                            logger.info("Deleted container: " + container.getId());
+                        } catch (Exception e) {
+                            logger.error("Failed to delete container: " + container.getId(), e);
+                        }
+                    }));
+                }
+            }
+
+            // 等待所有删除任务完成
+            for (Future<?> future : futures) {
+                future.get();
+            }
+        } catch (Exception e) {
+            logger.error("Failed to delete all containers", e);
+        } finally {
+            executorService.shutdown();
+            try {
+                // 等待线程池关闭，最多等待30秒
+                if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
+                    logger.warn("Thread pool did not terminate gracefully, forcing shutdown");
+                    executorService.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                logger.warn("Interrupted while waiting for thread pool termination");
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
             }
         }
     }
@@ -180,7 +223,7 @@ public class DockerRunner {
     }
 
     public void createAndStartContainer(String containerName, int containerId, DockerNodeParameters parameters){
-        logger.info("Running container " + containerName);
+        // logger.info("Running container " + containerName);
         Volume volume = new Volume(SimulatorConfig.volumePath);
         HostConfig hostConfig = HostConfig.newHostConfig()
                 .withBinds(new Bind(SimulatorConfig.hostPath, volume))  // 本地文件夹路径
@@ -261,7 +304,7 @@ public class DockerRunner {
 //                throw new RuntimeException(e);
             }
         }
-        logger.info("Container " + containerName + " started successfully");
+        // logger.info("Container " + containerName + " started successfully");
     }
 
     public void waitUntilContainerStopped(){

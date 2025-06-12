@@ -24,6 +24,7 @@ import org.teq.visualizer.SocketDisplayer;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -252,21 +253,7 @@ public class Simulator {
         writeRuntimeData();
 
         logger.info("Starting the nodes");
-        for(SimulatorNode node : nodes){
-            DockerNodeParameters parameters = node.parameters;
-            String nodeName = node.nodeName;
-            NodeType nodeType = node.nodeType;
-            int nodeId = node.nodeId;
-            logger.trace("Running container for class " + nodeName);
-            if(nodeType == NodeType.normal) {
-                dockerRunner.createAndStartContainer(nodeName, nodeId, parameters);
-                logger.info("Node " + nodeName + " started");
-            }
-            else if(nodeType == NodeType.network){
-                dockerRunner.runNetworkHostContainer(nodeName, nodeId);
-                logger.info("Network node started");
-            }
-        }
+        startNodes();
 
         try {
             metricsTransformer.beginTransform();
@@ -301,21 +288,8 @@ public class Simulator {
         writeRuntimeData();
 
         logger.info("Starting the nodes");
-        for(SimulatorNode node : nodes){
-            DockerNodeParameters parameters = node.parameters;
-            String nodeName = node.nodeName;
-            NodeType nodeType = node.nodeType;
-            int nodeId = node.nodeId;
-            logger.trace("Running container for class " + nodeName);
-            if(nodeType == NodeType.normal) {
-                dockerRunner.startContainer(nodeName);
-                logger.info("Node " + nodeName + " started");
-            }
-            else if(nodeType == NodeType.network){
-                dockerRunner.startContainer(nodeName);
-                logger.info("Network node started");
-            }
-        }
+        startNodes();
+        
         Thread thread = new Thread(dockerRunner::recoverCollection);
         thread.start();
         
@@ -326,6 +300,65 @@ public class Simulator {
         }
         
         state.set(1);
+    }
+
+    private void startNodes() throws Exception {
+        // 使用线程池来并行启动容器，线程池大小可根据系统性能调整
+        ExecutorService executorService = Executors.newFixedThreadPool(Math.min(30, nodes.size()));
+        
+        try {
+            List<Future<?>> futures = new ArrayList<>();
+            
+            // 为每个节点创建启动任务
+            for(SimulatorNode node : nodes){
+                futures.add(executorService.submit(() -> {
+                    try {
+                        DockerNodeParameters parameters = node.parameters;
+                        String nodeName = node.nodeName;
+                        NodeType nodeType = node.nodeType;
+                        int nodeId = node.nodeId;
+                        
+                        logger.trace("Running container for class " + nodeName);
+                        
+                        if(nodeType == NodeType.normal) {
+                            dockerRunner.createAndStartContainer(nodeName, nodeId, parameters);
+                            logger.info("Node " + nodeName + " started");
+                        }
+                        else if(nodeType == NodeType.network){
+                            dockerRunner.runNetworkHostContainer(nodeName, nodeId);
+                            logger.info("Network node started");
+                        }
+                    } catch (Exception e) {
+                        logger.error("Failed to start container: " + node.nodeName, e);
+                        throw new RuntimeException("Failed to start container: " + node.nodeName, e);
+                    }
+                }));
+            }
+            
+            // 等待所有容器启动完成
+            for (Future<?> future : futures) {
+                future.get(); // 这会抛出任何在任务中发生的异常
+            }
+            
+            logger.info("All " + nodes.size() + " containers started successfully");
+            
+        } catch (Exception e) {
+            logger.error("Failed to start some containers", e);
+            throw new Exception("Failed to start some containers", e);
+        } finally {
+            executorService.shutdown();
+            try {
+                // 等待线程池关闭，最多等待30秒
+                if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
+                    logger.warn("Thread pool did not terminate gracefully, forcing shutdown");
+                    executorService.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                logger.warn("Interrupted while waiting for thread pool termination");
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
 

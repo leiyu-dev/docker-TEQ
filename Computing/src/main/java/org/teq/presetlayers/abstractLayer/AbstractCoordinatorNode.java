@@ -13,7 +13,7 @@ import org.teq.configurator.ExecutorConfig;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.CoordinatorTask;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.flink.javasocket.MultiThreadDataReceiver;
+import org.teq.utils.connector.flink.javasocket.HighPerformanceDataReceiver;
 import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
 //import org.apache.log4j.PropertyConfigurator;
 
@@ -29,11 +29,11 @@ public abstract class AbstractCoordinatorNode extends MeasuredFlinkNode implemen
         int retryInterval = ExecutorConfig.retryInterval;
         StreamExecutionEnvironment env = getEnv();
 
-        DataStream<PackageBean> FromEnd = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorConfig.fromEndToCodPort, PackageBean.class))
+        DataStream<PackageBean> FromEnd = env.addSource(new HighPerformanceDataReceiver<PackageBean>(ExecutorConfig.fromEndToCodPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
         DataStream<PackageBean> routedToWorker = measureToWorkerRecord(FromEnd);
 
-        DataStream<PackageBean> FromWorker = env.addSource(new MultiThreadDataReceiver<PackageBean>(ExecutorConfig.fromWorkerToCodPort, PackageBean.class))
+        DataStream<PackageBean> FromWorker = env.addSource(new HighPerformanceDataReceiver<PackageBean>(ExecutorConfig.fromWorkerToCodPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
         DataStream<PackageBean> routedToEnd = measureToEndRecord(FromWorker);
 
