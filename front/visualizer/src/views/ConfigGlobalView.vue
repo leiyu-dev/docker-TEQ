@@ -1,111 +1,64 @@
+<!--
+  ConfigGlobalView - Global Configuration Management
+  Main view component for managing system global parameter configurations
+-->
 <script>
-import { ref, reactive, onMounted } from "vue";
-import { ElMessage } from "element-plus";
-import { useChooseStore } from "@/stores/choose.js";
+import { useChooseStore } from '@/stores/choose.js';
+import { useConfigManagement } from '@/composables/useConfigManagement.js';
+import ConfigHeader from '@/components/config/ConfigHeader.vue';
+import ConfigTable from '@/components/config/ConfigTable.vue';
+import ConfigEmptyState from '@/components/config/ConfigEmptyState.vue';
 
 export default {
+  name: 'ConfigGlobalView',
+  components: {
+    ConfigHeader,
+    ConfigTable,
+    ConfigEmptyState,
+  },
   setup() {
+    // Store and composable setup
     const chooseStore = useChooseStore();
-    const options = ref([]);
-    const configDetails = reactive([]); // 存储当前选中配置的详细参数
-
-    // 获取下拉框数据
-    const fetchOptions = () => {
-      fetch("http://localhost:8889/config/name")
-          .then((response) => {
-            if (response.status !== 200) {
-              throw Error("Failed to fetch configurations");
-            }
-            return response.json();
-          })
-          .then((data) => {
-            console.log(data);
-            options.value = data.map((name) => ({ value: name, label: name }));
-          })
-          .catch((error) => {
-            ElMessage.error(error.message);
-          });
-    };
-
-    // 获取选中选项的详细配置
-    const fetchConfigDetails = (selected) => {
-      if (!selected) return;
-
-      fetch(`http://localhost:8889/config/detail?name=${selected}`)
-          .then((response) => {
-            if (response.status !== 200) {
-              throw Error(response.statusText);
-            }
-            return response.json();
-          })
-          .then((data) => {
-            console.log(data);
-            configDetails.length = 0; // 清空之前的数据
-            for (const key in data) {
-              configDetails.push({
-                key: key,
-                value: data[key],
-                newValue: data[key], // 初始化新值为当前值
-              });
-            }
-          })
-          .catch((error) => {
-            ElMessage.error(error.message);
-          });
-    };
-
-    // 提交修改参数请求
-    const updateConfigParameter = (key, newValue, selectedName) => {
-      fetch("http://localhost:8889/config", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: selectedName, key, value: newValue }), // 包含选项名称
-      })
-          .then((response) => {
-            if (response.status !== 200) {
-              throw Error("Failed to update configuration");
-            }
-            fetchConfigDetails(selectedName);
-            ElMessage.success("Configuration updated successfully!");
-          })
-          .catch((error) => {
-            ElMessage.error(error.message);
-          });
-    };
-
-    // 获取值类型对应的标签类型
-    const getValueType = (value) => {
-      if (typeof value === 'boolean') return 'success';
-      if (typeof value === 'number') return 'warning';
-      if (typeof value === 'string') {
-        if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') return 'success';
-        if (!isNaN(value)) return 'warning';
-      }
-      return 'info';
-    };
-
-    // 在组件挂载时获取数据
-    onMounted(() => {
-      fetchOptions();
-      if (chooseStore.selectedConfig) {
-        fetchConfigDetails(chooseStore.selectedConfig);
-      }
-    });
-
-    const saveDefault = () => {
-      ElMessage.success("配置已保存为默认参数！");
-    }
-
-    return {
-      chooseStore,
+    const {
       options,
       configDetails,
-      saveDefault,
+      isLoading,
       fetchConfigDetails,
       updateConfigParameter,
       getValueType,
+      saveAsDefault,
+    } = useConfigManagement(chooseStore);
+
+    // Event handlers
+    const handleConfigChanged = (selectedConfig) => {
+      chooseStore.selectedConfig = selectedConfig;
+      fetchConfigDetails(selectedConfig);
+    };
+
+    const handleUpdateParameter = ({ key, value, configName }) => {
+      updateConfigParameter(key, value, configName);
+    };
+
+    const handleSaveDefault = () => {
+      saveAsDefault();
+    };
+
+    return {
+      // Store
+      chooseStore,
+      
+      // State
+      options,
+      configDetails,
+      isLoading,
+      
+      // Methods
+      getValueType,
+      
+      // Event handlers
+      handleConfigChanged,
+      handleUpdateParameter,
+      handleSaveDefault,
     };
   },
 };
@@ -113,126 +66,29 @@ export default {
 
 <template>
   <div class="config-global-container fade-in">
-    <!-- 页面标题和操作区域 -->
-    <div class="page-header slide-in-up">
-      <div class="header-content">
-        <div class="title-section">
-          <h1 class="page-title gradient-text">全局配置管理</h1>
-          <p class="page-subtitle">管理系统全局参数配置，运行时修改可能导致意外行为</p>
-        </div>
-        <div class="header-actions">
-          <el-select
-              v-model="chooseStore.selectedConfig"
-              placeholder="选择配置类"
-              size="large"
-              class="config-selector"
-              @change="fetchConfigDetails"
-          >
-            <el-option
-                v-for="item in options"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-            ></el-option>
-          </el-select>
-          <el-button 
-            type="primary" 
-            size="large" 
-            @click="saveDefault" 
-            class="save-btn glow-on-hover"
-            :disabled="!chooseStore.selectedConfig"
-          >
-            <el-icon><DocumentAdd /></el-icon>
-            保存为默认参数
-          </el-button>
-        </div>
-      </div>
-    </div>
+    <!-- Page Header with Configuration Selection -->
+    <ConfigHeader
+      :selected-config="chooseStore.selectedConfig"
+      :options="options"
+      :is-loading="isLoading"
+      @config-changed="handleConfigChanged"
+      @save-default="handleSaveDefault"
+    />
 
-    <!-- 配置详情卡片 -->
+    <!-- Configuration Content -->
     <div class="config-content slide-in-up" style="animation-delay: 0.2s;">
-      <el-card class="config-card hover-lift" v-if="configDetails.length !== 0">
-        <template #header>
-          <div class="card-header">
-            <div class="header-left">
-              <span class="config-title">{{ chooseStore.selectedConfig }}</span>
-              <span class="config-count">{{ configDetails.length }} 个参数</span>
-            </div>
-            <div class="header-right">
-              <el-tag type="info" size="small">全局配置</el-tag>
-            </div>
-          </div>
-        </template>
+      <!-- Configuration Table -->
+      <ConfigTable
+        v-if="configDetails.length > 0"
+        :config-name="chooseStore.selectedConfig"
+        :config-details="configDetails"
+        :is-loading="isLoading"
+        :get-value-type="getValueType"
+        @update-parameter="handleUpdateParameter"
+      />
 
-        <!-- 参数配置表格 -->
-        <el-table 
-          :data="configDetails" 
-          class="config-table"
-          :header-cell-style="{ backgroundColor: '#f8fafc', color: '#2d3748' }"
-        >
-          <el-table-column prop="key" label="参数名称" width="300px">
-            <template #default="scope">
-              <div class="param-name">
-                <el-icon class="param-icon"><Setting /></el-icon>
-                <span>{{ scope.row.key }}</span>
-              </div>
-            </template>
-          </el-table-column>
-          
-          <el-table-column prop="value" label="当前值" width="400px">
-            <template #default="scope">
-              <div class="current-value">
-                <el-tag 
-                  :type="getValueType(scope.row.value)" 
-                  effect="light"
-                  size="small"
-                >
-                  {{ scope.row.value }}
-                </el-tag>
-              </div>
-            </template>
-          </el-table-column>
-          
-          <el-table-column label="修改配置" min-width="500px">
-            <template #default="scope">
-              <div class="modify-section">
-                <el-input 
-                  v-model="scope.row.newValue" 
-                  placeholder="输入新的配置值"
-                  class="new-value-input"
-                  clearable
-                />
-                <el-button
-                    type="primary"
-                    @click="updateConfigParameter(scope.row.key, scope.row.newValue, chooseStore.selectedConfig)"
-                    class="update-btn"
-                    :disabled="!scope.row.newValue || scope.row.newValue === scope.row.value"
-                >
-                  <el-icon><Check /></el-icon>
-                  更新
-                </el-button>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-card>
-
-      <!-- 空状态 -->
-      <el-card class="empty-card hover-lift" v-else>
-        <el-empty 
-          description="请选择一个配置类来查看参数"
-          :image-size="120"
-        >
-          <template #image>
-            <div class="empty-icon">
-              <el-icon :size="80"><Setting /></el-icon>
-            </div>
-          </template>
-          <template #description>
-            <span class="empty-text">请选择配置类</span>
-          </template>
-        </el-empty>
-      </el-card>
+      <!-- Empty State -->
+      <ConfigEmptyState v-else />
     </div>
   </div>
 </template>
@@ -243,220 +99,74 @@ export default {
   padding: 20px;
 }
 
-.page-header {
-  margin-bottom: 30px;
+.config-content {
+  margin-bottom: 20px;
 }
 
-.header-content {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
-  border-radius: 16px;
-  padding: 30px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.6s ease-out;
 }
 
-.title-section {
-  margin-bottom: 25px;
+.slide-in-up {
+  animation: slideInUp 0.6s ease-out;
 }
 
-.page-title {
-  font-size: 32px;
-  font-weight: 700;
-  margin: 0 0 8px 0;
+.hover-lift {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.glow-on-hover {
+  transition: box-shadow 0.3s ease;
+}
+
+.glow-on-hover:hover {
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+}
+
+.gradient-text {
   background: linear-gradient(135deg, #667eea, #764ba2);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.page-subtitle {
-  font-size: 16px;
-  color: var(--text-secondary);
-  margin: 0;
-  font-weight: 400;
+/* Keyframe animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-.header-actions {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  flex-wrap: wrap;
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.config-selector {
-  min-width: 300px;
-  flex: 1;
-}
-
-.save-btn {
-  white-space: nowrap;
-  font-weight: 600;
-}
-
-.config-content {
-  margin-bottom: 20px;
-}
-
-.config-card,
-.empty-card {
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0;
-}
-
-.header-left {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.config-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.config-count {
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-}
-
-.config-table {
-  margin-top: 20px;
-}
-
-.param-name {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-}
-
-.param-icon {
-  color: var(--primary-color);
-  font-size: 16px;
-}
-
-.current-value {
-  display: flex;
-  align-items: center;
-}
-
-.modify-section {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.new-value-input {
-  flex: 1;
-  min-width: 200px;
-}
-
-.update-btn {
-  white-space: nowrap;
-  font-weight: 500;
-}
-
-.update-btn:disabled {
-  opacity: 0.5;
-}
-
-.empty-card {
-  min-height: 400px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.empty-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-  color: var(--primary-color);
-  margin: 0 auto 20px;
-}
-
-.empty-text {
-  font-size: 16px;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-/* 表格样式优化 */
-.config-table :deep(.el-table__header) {
-  background: linear-gradient(135deg, #f8fafc, #edf2f7);
-}
-
-.config-table :deep(.el-table__row:hover) {
-  background-color: rgba(102, 126, 234, 0.04);
-}
-
-.config-table :deep(.el-table__cell) {
-  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
-  padding: 16px 12px;
-}
-
-/* 响应式设计 */
+/* Responsive design */
 @media (max-width: 768px) {
   .config-global-container {
     padding: 15px;
   }
-  
-  .header-content {
-    padding: 20px;
-  }
-  
-  .page-title {
-    font-size: 24px;
-  }
-  
-  .header-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .config-selector {
-    min-width: unset;
-  }
-  
-  .modify-section {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .new-value-input {
-    min-width: unset;
-  }
 }
 
 @media (max-width: 480px) {
-  .header-content {
-    padding: 15px;
-  }
-  
-  .page-title {
-    font-size: 20px;
-  }
-  
-  .page-subtitle {
-    font-size: 14px;
+  .config-global-container {
+    padding: 10px;
   }
 }
 </style>

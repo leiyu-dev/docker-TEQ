@@ -65,7 +65,7 @@
                 <path fill="currentColor" d="M512 128 128 447.936V896h255.936V640H640v256h255.936V447.936z" />
               </svg>
             </div>
-            <span class="menu-text">总览</span>
+            <span class="menu-text">Overview</span>
           </el-menu-item>
         </router-link>
 
@@ -83,18 +83,18 @@
                 />
               </svg>
             </div>
-            <span class="menu-text">配置管理</span>
+            <span class="menu-text">Config</span>
           </template>
           <router-link to="/config/global" style="text-decoration: none;">
             <el-menu-item index="/config/global" class="modern-submenu-item">
               <div class="submenu-indicator"></div>
-              <span class="menu-text">全局配置</span>
+              <span class="menu-text">Global</span>
             </el-menu-item>
           </router-link>
           <router-link to="/config/node" style="text-decoration: none;">
             <el-menu-item index="/config/node" class="modern-submenu-item">
               <div class="submenu-indicator"></div>
-              <span class="menu-text">节点配置</span>
+              <span class="menu-text">Node</span>
             </el-menu-item>
           </router-link>
         </el-sub-menu>
@@ -109,7 +109,7 @@
                 />
               </svg>
             </div>
-            <span class="menu-text">数据统计</span>
+            <span class="menu-text">Statistics</span>
           </el-menu-item>
         </router-link>
 
@@ -123,7 +123,7 @@
                 />
               </svg>
             </div>
-            <span class="menu-text">关于</span>
+            <span class="menu-text">About</span>
           </el-menu-item>
         </router-link>
       </el-menu>
