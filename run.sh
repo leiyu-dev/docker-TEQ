@@ -1,1 +1,1 @@
-mvn exec:java -Dexec.mainClass="example.Main"
+mvn exec:java -Dexec.mainClass="example.Example" -pl Computing
