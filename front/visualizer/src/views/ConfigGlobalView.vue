@@ -179,7 +179,7 @@ export default {
             </template>
           </el-table-column>
           
-          <el-table-column prop="value" label="Current Value" width="400px">
+          <el-table-column prop="value" label="Current Value" width="300px">
             <template #default="scope">
               <div class="current-value">
                 <el-tag 
