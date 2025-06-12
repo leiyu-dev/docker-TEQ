@@ -318,6 +318,13 @@ public class Simulator {
         }
         Thread thread = new Thread(dockerRunner::recoverCollection);
         thread.start();
+        
+        // Notify metrics transformer to restart receivers
+        if (metricsTransformer != null) {
+            logger.info("Notifying metrics transformer to restart");
+            metricsTransformer.notifyRestart();
+        }
+        
         state.set(1);
     }
 

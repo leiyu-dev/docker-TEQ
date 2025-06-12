@@ -100,8 +100,8 @@ public class DockerMetricsReceiver extends AbstractReceiver implements Runnable{
                 boolean hasData = false;
                 for (int i = 0; i < layerList.size(); i++) {
                     if (nodeCountList.get(i) == 0) {
-                        cpuUsageData.add(0.0);
-                        memoryUsageData.add(0.0);
+                        cpuUsageData.add(null);
+                        memoryUsageData.add(null);
                     } else {
                         cpuUsageData.add(cpuUsageLayerListSum.get(i) / nodeCountList.get(i));
                         memoryUsageData.add(memoryUsageLayerListSum.get(i) / nodeCountList.get(i) * 1024.0);

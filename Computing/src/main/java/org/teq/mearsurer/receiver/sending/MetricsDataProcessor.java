@@ -56,6 +56,38 @@ public class MetricsDataProcessor implements Serializable {
     }
     
     /**
+     * Reset data processor for restart
+     * Clear all static data and reinitialize
+     */
+    public static void reset() {
+        logger.info("Resetting metrics data processor");
+        
+        // Reset static counters
+        processedQueryCount.set(0);
+        energyConsumption.set(0);
+        
+        // Clear and reinitialize queues
+        if (rawOverallProcessingLatencyQueue != null) {
+            rawOverallProcessingLatencyQueue.clear();
+        }
+        if (rawOverallTransferLatencyQueue != null) {
+            rawOverallTransferLatencyQueue.clear();
+        }
+        if (rawProcessingLatencyQueueList != null) {
+            for (BlockingQueue<Double> queue : rawProcessingLatencyQueueList) {
+                if (queue != null) {
+                    queue.clear();
+                }
+            }
+        }
+        
+        // Reinitialize data queues
+        initializeDataQueues();
+        
+        logger.info("Metrics data processor reset completed");
+    }
+    
+    /**
      * Initialize data queues
      */
     private static void initializeDataQueues() {

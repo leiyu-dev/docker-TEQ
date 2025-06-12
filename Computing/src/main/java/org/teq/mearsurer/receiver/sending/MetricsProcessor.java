@@ -36,6 +36,16 @@ public class MetricsProcessor<T extends BuiltInMetrics> implements MapFunction<T
         cpuUsageArray = Arrays.copyOf(cpuUsage, cpuUsage.length);
     }
     
+    /**
+     * Reset processor state for restart
+     * Clear internal metrics map
+     */
+    public void resetProcessor() {
+        logger.info("Resetting metrics processor state");
+        metricsMap.clear();
+        logger.info("Metrics processor state reset completed");
+    }
+    
     @Override
     public T map(T metrics) throws Exception {
         try {
