@@ -17,9 +17,9 @@ public class Example {
         worker.setParameters(param);
         DataCenter dataCenter = new DataCenter();
         dataCenter.setParameters(param);
-        Layer endDeviceLayer = new Layer(endDevice,300, "EndDeviceLayer");
+        Layer endDeviceLayer = new Layer(endDevice,10, "EndDeviceLayer");
         Layer coordinatorLayer = new Layer(coordinator,1, "CoordinatorLayer");
-        Layer workerLayer = new Layer(worker,3, "WorkerLayer");
+        Layer workerLayer = new Layer(worker,2, "WorkerLayer");
         Layer dataCenterLayer = new Layer(dataCenter,1, "DataCenterLayer");
 
         Simulator simulator = new Simulator(new Network());

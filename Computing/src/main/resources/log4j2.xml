@@ -20,7 +20,7 @@
     <Loggers>
         <!-- Logger for Flink classes -->
         <Logger name="org.apache.flink" level="info" additivity="false">
-            <AppenderRef ref="FlinkFile"/>
+            <!-- <AppenderRef ref="FlinkFile"/> -->
             <AppenderRef ref="Console">
                 <Filters>
                     <ThresholdFilter level="error" onMatch="accept" onMismatch="deny"/>
@@ -29,7 +29,7 @@
         </Logger>
 
         <Logger name="org.teq" level="debug" additivity="false">
-            <AppenderRef ref="DebugFile">
+            <!-- <AppenderRef ref="DebugFile">
                 <Filters>
                     <ThresholdFilter level="debug" onMatch="accept" onMismatch="deny"/>
                 </Filters>
@@ -39,7 +39,7 @@
                 <Filters>
                     <ThresholdFilter level="info" onMatch="accept" onMismatch="deny"/>
                 </Filters>
-            </AppenderRef>
+            </AppenderRef> -->
 
             <AppenderRef ref="Console">
                 <Filters>
@@ -56,7 +56,7 @@
 
         <Root level="info">
             <AppenderRef ref="Console"/>
-            <AppenderRef ref="File"/>
+            <!-- <AppenderRef ref="File"/> -->
         </Root>
     </Loggers>
 </Configuration>
