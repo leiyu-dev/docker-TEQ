@@ -18,6 +18,11 @@ import org.teq.visualizer.MetricsDisplayer;
  * Responsible for receiving, processing and displaying system performance metrics data,
  * including latency, energy consumption and other indicators
  * 
+ * Features:
+ * - Continuous Flink stream processing with auto-reconnection
+ * - Lightweight restart mechanism that only reinitializes data components
+ * - Separate monitoring thread for handling restart requests
+ * 
  * @param <T> Metrics data type that extends BuiltInMetrics
  */
 public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractReceiver implements Runnable {
@@ -32,9 +37,6 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
     
     /** Simulator state check interval (milliseconds) */
     private static final long SIMULATOR_STATE_CHECK_INTERVAL_MS = 1000;
-    
-    /** Maximum retry attempts for Flink stream processing */
-    private static final int MAX_RETRY_ATTEMPTS = 3;
     
     // ==================== Static Variables ====================
     
@@ -118,15 +120,14 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
     /**
      * Request restart of the receiver
      * This method can be called when Simulator restart is detected
+     * Only reinitializes data processing components without stopping Flink job
      */
     public void requestRestart() {
         logger.info("Restart requested for metrics receiver: {}", typeClass.getSimpleName());
         shouldRestart = true;
         
-        // Interrupt current Flink job thread if it exists
-        if (flinkJobThread != null && flinkJobThread.isAlive()) {
-            flinkJobThread.interrupt();
-        }
+        // No longer interrupt Flink job thread as CommonDataReceiver has auto-reconnection
+        logger.info("Data components will be reinitialized while keeping Flink job running");
     }
     
     /**
@@ -135,123 +136,69 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
      */
     @Override
     public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-                // Reset restart flag
-                shouldRestart = false;
-                isRunning = true;
-                
-                // Initialize components
-                initializeComponents();
-                
-                // Start supporting threads
-                startSupportingThreads();
-                
-                // Start Flink stream processing (this will block until job completes or fails)
-                startFlinkStreamProcessingWithRestart();
-                
-            } catch (InterruptedException e) {
-                logger.info("Metrics receiver thread interrupted: {}", typeClass.getSimpleName());
-                Thread.currentThread().interrupt();
-                break;
-            } catch (Exception e) {
-                logger.error("Error in metrics receiver main loop: {}", typeClass.getSimpleName(), e);
-                
-                // Wait before retry
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            } finally {
-                isRunning = false;
-            }
+        try {
+            shouldRestart = false;
+            isRunning = true;
             
-            // Check if we should restart
-            if (shouldRestart) {
-                logger.info("Restarting metrics receiver: {}", typeClass.getSimpleName());
+            // Initialize all components
+            initializeAllComponents();
+            
+            // Start Flink stream processing
+            startFlinkStreamProcessing();
+            
+            // Start restart monitoring thread
+            startRestartMonitoringThread();
+            
+            // Keep main thread alive to handle restarts
+            while (!Thread.currentThread().isInterrupted() && isRunning) {
                 try {
-                    // Wait for port to be completely released
-                    logger.info("Waiting for port {} to be released before restart", SimulatorConfig.MetricsReceiverPort);
-                    if (!PortUtils.waitForPortAvailable(SimulatorConfig.MetricsReceiverPort, 15000, 1000)) {
-                        logger.warn("Port {} may still be in use, proceeding with restart anyway", SimulatorConfig.MetricsReceiverPort);
-                    }
-                    
-                    // Additional wait for Docker containers to be ready
-                    Thread.sleep(2000);
+                    Thread.sleep(SIMULATOR_STATE_CHECK_INTERVAL_MS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     break;
                 }
-            } else {
-                // If not restarting, break the loop
-                logger.info("Metrics receiver stopped: {}", typeClass.getSimpleName());
-                break;
             }
+            
+        } catch (InterruptedException e) {
+            logger.info("Metrics receiver thread interrupted: {}", typeClass.getSimpleName());
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            logger.error("Error in metrics receiver main loop: {}", typeClass.getSimpleName(), e);
+        } finally {
+            isRunning = false;
         }
     }
     
     // ==================== Private Methods ====================
     
     /**
-     * Initialize all components
+     * Initialize all components including configuration, data processor, charts and supporting threads
      */
-    private void initializeComponents() {
-        // 1. Initialize configuration parameters
-        initializeConfiguration();
+    private void initializeAllComponents() {
+        // Initialize configuration parameters
+        configuration.initializeEnergyParameters();
+        logger.info("Configuration parameters initialization completed");
         
-        // 2. Reset and initialize data processor (important for restart scenarios)
+        // Reset and initialize data processor
         MetricsDataProcessor.reset();
         MetricsDataProcessor.initialize();
         
-        // 3. Initialize and register charts
+        // Initialize and register charts
         chartManager.initializeCharts();
         
-        logger.info("Components initialization completed for: {}", typeClass.getSimpleName());
-    }
-    
-    /**
-     * Start supporting threads (data processing and CPU usage update)
-     */
-    private void startSupportingThreads() {
-        // 4. Start data processing thread
-        startDataProcessingThread();
-        
-        // 5. Start CPU usage update thread
-        startCpuUsageUpdateThread();
-        
-        logger.info("Supporting threads started for: {}", typeClass.getSimpleName());
-    }
-    
-    /**
-     * Initialize configuration parameters
-     */
-    private void initializeConfiguration() {
-        configuration.initializeEnergyParameters();
-        logger.info("Configuration parameters initialization completed");
-    }
-    
-    /**
-     * Start data processing thread
-     * Periodically process raw data and update charts
-     */
-    private void startDataProcessingThread() {
+        // Start data processing thread
         Thread processingThread = new Thread(this::processDataPeriodically, "DataProcessor-" + typeClass.getSimpleName());
         processingThread.setDaemon(true);
         processingThread.start();
         logger.info("Data processing thread started");
-    }
-    
-    /**
-     * Start CPU usage update thread
-     * Periodically update CPU usage data for the static processor
-     */
-    private void startCpuUsageUpdateThread() {
+        
+        // Start CPU usage update thread
         Thread cpuUpdateThread = new Thread(this::updateCpuUsagePeriodically, "CpuUsageUpdater-" + typeClass.getSimpleName());
         cpuUpdateThread.setDaemon(true);
         cpuUpdateThread.start();
         logger.info("CPU usage update thread started");
+        
+        logger.info("All components initialization completed for: {}", typeClass.getSimpleName());
     }
     
     /**
@@ -283,16 +230,14 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
             try {
                 Thread.sleep(CPU_USAGE_UPDATE_INTERVAL_MS);
                 
-                if (isRunning) {
+                if (isRunning && dockerRunner.cpuUsageArray != null) {
                     // Extract CPU usage from DockerRunner and set it in MetricsProcessor
-                    if (dockerRunner.cpuUsageArray != null) {
-                        int arraySize = dockerRunner.cpuUsageArray.length();
-                        double[] cpuUsage = new double[arraySize];
-                        for (int i = 0; i < arraySize; i++) {
-                            cpuUsage[i] = dockerRunner.cpuUsageArray.get(i);
-                        }
-                        MetricsProcessor.setCpuUsageArray(cpuUsage);
+                    int arraySize = dockerRunner.cpuUsageArray.length();
+                    double[] cpuUsage = new double[arraySize];
+                    for (int i = 0; i < arraySize; i++) {
+                        cpuUsage[i] = dockerRunner.cpuUsageArray.get(i);
                     }
+                    MetricsProcessor.setCpuUsageArray(cpuUsage);
                 }
             } catch (InterruptedException e) {
                 logger.warn("CPU usage update thread was interrupted");
@@ -306,91 +251,91 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
     }
     
     /**
-     * Start Flink stream processing with restart capability
+     * Start restart monitoring thread
+     * Monitors for restart requests and reinitializes data components
      */
-    private void startFlinkStreamProcessingWithRestart() throws Exception {
-        int retryCount = 0;
-        
-        while (retryCount < MAX_RETRY_ATTEMPTS && !shouldRestart && isRunning) {
-            try {
-                logger.info("Starting Flink stream processing job (attempt {})", retryCount + 1);
-                
-                // Create new Flink job thread
-                flinkJobThread = new Thread(() -> {
-                    try {
-                        startFlinkStreamProcessing();
-                    } catch (Exception e) {
-                        if (!shouldRestart && isRunning) {
-                            logger.error("Flink stream processing failed", e);
-                        } else {
-                            logger.info("Flink stream processing stopped due to restart request");
-                        }
+    private void startRestartMonitoringThread() {
+        Thread restartMonitorThread = new Thread(() -> {
+            while (!Thread.currentThread().isInterrupted() && isRunning) {
+                try {
+                    Thread.sleep(SIMULATOR_STATE_CHECK_INTERVAL_MS);
+                    
+                    if (shouldRestart && isRunning) {
+                        logger.info("Processing restart request for metrics receiver: {}", typeClass.getSimpleName());
+                        
+                        // Reinitialize data components without stopping Flink
+                        logger.info("Reinitializing data components...");
+                        
+                        // Reset and reinitialize data processor
+                        MetricsDataProcessor.reset();
+                        MetricsDataProcessor.initialize();
+                        
+                        // Reinitialize configuration
+                        configuration.initializeEnergyParameters();
+                        
+                        // Reinitialize charts
+                        chartManager.initializeCharts();
+                        
+                        // Reset restart flag
+                        shouldRestart = false;
+                        
+                        logger.info("Data components reinitialized successfully");
                     }
-                }, "FlinkJob-" + typeClass.getSimpleName());
-                
-                flinkJobThread.start();
-                flinkJobThread.join(); // Wait for completion
-                
-                // If we reach here and not restarting, the job completed normally
-                if (!shouldRestart) {
-                    logger.info("Flink stream processing completed normally");
+                } catch (InterruptedException e) {
+                    logger.info("Restart monitoring thread interrupted");
+                    Thread.currentThread().interrupt();
                     break;
-                }
-                
-            } catch (InterruptedException e) {
-                logger.info("Flink stream processing interrupted");
-                Thread.currentThread().interrupt();
-                return;
-            } catch (Exception e) {
-                logger.error("Error in Flink stream processing (attempt {})", retryCount + 1, e);
-                retryCount++;
-                
-                if (retryCount < MAX_RETRY_ATTEMPTS && !shouldRestart) {
-                    // Increase wait time for port conflicts
-                    int waitTime = 3000 + (retryCount * 2000); // 3s, 5s, 7s for successive retries
-                    logger.info("Retrying Flink stream processing in {} ms...", waitTime);
-                    Thread.sleep(waitTime);
-                } else {
-                    logger.error("Max retry attempts reached or restart requested");
-                    break;
+                } catch (Exception e) {
+                    logger.error("Error in restart monitoring thread", e);
                 }
             }
-        }
+        }, "RestartMonitor-" + typeClass.getSimpleName());
+        
+        restartMonitorThread.setDaemon(true);
+        restartMonitorThread.start();
+        logger.info("Restart monitoring thread started");
     }
     
     /**
-     * Start Flink stream processing
+     * Start Flink stream processing in a separate thread
+     * Flink job will run continuously with auto-reconnection capability
      */
     private void startFlinkStreamProcessing() throws Exception {
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(1);
+        // Create and start Flink job thread
+        flinkJobThread = new Thread(() -> {
+            try {
+                logger.info("Starting Flink stream processing job");
+                
+                StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+                env.setParallelism(1);
+                
+                // Create and process data stream
+                DataStream<T> stream = env.addSource(new CommonDataReceiver<>(SimulatorConfig.MetricsReceiverPort, typeClass))
+                                         .returns(TypeInformation.of(typeClass));
+                
+                MetricsProcessor<T> metricsProcessor = new MetricsProcessor<>(dataProcessor);
+                stream.map(metricsProcessor).setParallelism(1);
+                
+                // Execute Flink job (this will block until job completes)
+                logger.info("Executing Flink stream processing job with auto-reconnection");
+                env.execute("MetricsReceiver-" + typeClass.getSimpleName());
+                
+            } catch (Exception e) {
+                if (isRunning) {
+                    logger.error("Flink stream processing failed", e);
+                } else {
+                    logger.info("Flink stream processing stopped");
+                }
+            } finally {
+                isRunning = false;
+            }
+        }, "FlinkJob-" + typeClass.getSimpleName());
         
-        // Create data stream
-        DataStream<T> stream = createDataStream(env);
+        flinkJobThread.setDaemon(true);
+        flinkJobThread.start();
         
-        // Process data stream
-        processDataStream(stream);
-        
-        // Execute Flink job
-        logger.info("Executing Flink stream processing job");
-        env.execute("MetricsReceiver-" + typeClass.getSimpleName());
-    }
-    
-    /**
-     * Create data stream
-     */
-    private DataStream<T> createDataStream(StreamExecutionEnvironment env) {
-        return env.addSource(new CommonDataReceiver<>(SimulatorConfig.MetricsReceiverPort, typeClass))
-                 .returns(TypeInformation.of(typeClass));
-    }
-    
-    /**
-     * Process data stream
-     */
-    private void processDataStream(DataStream<T> stream) {
-        // Create new MetricsProcessor instance for each restart
-        MetricsProcessor<T> metricsProcessor = new MetricsProcessor<>(dataProcessor);
-        stream.map(metricsProcessor)
-              .setParallelism(1);
+        // Wait a moment to ensure Flink job starts
+        Thread.sleep(1000);
+        logger.info("Flink stream processing thread started");
     }
 }
