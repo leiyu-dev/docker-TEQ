@@ -1,11 +1,14 @@
 package org.teq.visualizer;
 
 import com.alibaba.fastjson.annotation.JSONField;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.teq.utils.NullPlaceholder;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
 public class Chart<X,Y>{
+    private static final Logger logger = LoggerFactory.getLogger(Chart.class);
     @JSONField(serialize = false)
     private BlockingQueue<X>xAxis;
 
@@ -112,9 +115,17 @@ public class Chart<X,Y>{
             
             // Add Y-axis data
             for (int i = 0; i < yValues.size(); i++) {
-                yAxis.get(i).put(yValues.get(i));
+                if(yValues.get(i) == null){
+                    @SuppressWarnings("unchecked")
+                    Y placeholder = (Y) new NullPlaceholder();
+                    yAxis.get(i).put(placeholder);
+                }
+                else{
+                    yAxis.get(i).put(yValues.get(i));
+                }
             }
         } catch (InterruptedException e) {
+            logger.error("Interrupted while adding data point", e);
             throw new RuntimeException("Interrupted while adding data point", e);
         }
     }

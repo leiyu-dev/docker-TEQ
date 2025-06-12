@@ -96,7 +96,6 @@ public class MetricsDataProcessor implements Serializable {
         // Calculate overall processing latency
         double overallProcessingLatency = calculateOverallProcessingLatency(metricsList);
         addToQueue(rawOverallProcessingLatencyQueue, overallProcessingLatency);
-        logger.info("Added overall processing latency to queue, queue size: {}", rawOverallProcessingLatencyQueue.size());
         
         // Calculate overall transfer latency and energy consumption
         double overallTransferLatency = calculateOverallTransferLatencyAndEnergy(metricsList);
@@ -206,7 +205,6 @@ public class MetricsDataProcessor implements Serializable {
     }
     
     public static Double calculateAverageOverallProcessingLatency() {
-        // logger.info("Calculating average overall processing latency, queue:{}", rawOverallProcessingLatencyQueue);
         return calculateAverageFromQueue(rawOverallProcessingLatencyQueue);
     }
     
@@ -217,11 +215,18 @@ public class MetricsDataProcessor implements Serializable {
     public static List<Double> calculateLayerProcessingLatencies() {
         List<Double> layerLatencies = new ArrayList<>();
         
+        int dataCount = 0;
+
         for (BlockingQueue<Double> queue : rawProcessingLatencyQueueList) {
             Double average = calculateAverageFromQueue(queue);
-            layerLatencies.add(average != null ? average : 0.0);
+            layerLatencies.add(average);
+            if(average != null){
+                dataCount++;
+            }
         }
-        
+        if(dataCount == 0){
+            return null;
+        }
         return layerLatencies.isEmpty() ? null : layerLatencies;
     }
     
@@ -229,7 +234,6 @@ public class MetricsDataProcessor implements Serializable {
      * Calculate average from queue
      */
     private static Double calculateAverageFromQueue(BlockingQueue<Double> queue) {
-        logger.info("Calculating average from queue: {}", queue);
         if (queue.isEmpty()) return null;
         
         double sum = 0.0;
@@ -240,7 +244,6 @@ public class MetricsDataProcessor implements Serializable {
             sum += value;
             count++;
         }
-        logger.info("Calculated average from queue: {}", sum / count);
         return count > 0 ? sum / count : null;
     }
 }

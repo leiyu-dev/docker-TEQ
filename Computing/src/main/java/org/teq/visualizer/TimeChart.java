@@ -1,5 +1,8 @@
 package org.teq.visualizer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.teq.utils.NullPlaceholder;
 import org.teq.utils.utils;
 
 import java.util.List;
@@ -12,6 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * The x-axis automatically manages time data, users only need to add data to the y-axis
  */
 public class TimeChart<Y> extends Chart<Double, Y> {
+    private static final Logger logger = LoggerFactory.getLogger(TimeChart.class);
     private AtomicLong startTime = null;
     
     /**
@@ -68,9 +72,17 @@ public class TimeChart<Y> extends Chart<Double, Y> {
             
             // Add Y-axis data
             for (int i = 0; i < yValues.size(); i++) {
-                getyAxis().get(i).put(yValues.get(i));
+                if(yValues.get(i) == null){
+                    @SuppressWarnings("unchecked")
+                    Y placeholder = (Y) new NullPlaceholder();
+                    getyAxis().get(i).put(placeholder);
+                }
+                else{
+                    getyAxis().get(i).put(yValues.get(i));
+                }
             }
         } catch (InterruptedException e) {
+            logger.error("Interrupted while adding data point", e);
             throw new RuntimeException("Interrupted while adding data point", e);
         }
     }
