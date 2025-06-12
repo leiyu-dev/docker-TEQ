@@ -352,7 +352,7 @@ public class Simulator {
         // get the output from the process
         BufferedReader inputReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         while ((line = inputReader.readLine()) != null) {
-            logger.info("Script Output:"+line);
+            logger.debug("Script Output:"+line);
         }
 
         // 获取命令的错误输出

@@ -273,8 +273,7 @@ public class SendingMetricsReceiver<T extends BuiltInMetrics> extends AbstractRe
                         // Reinitialize configuration
                         configuration.initializeEnergyParameters();
                         
-                        // Reinitialize charts
-                        chartManager.initializeCharts();
+                        // do not need to reinitialize charts
                         
                         // Reset restart flag
                         shouldRestart = false;

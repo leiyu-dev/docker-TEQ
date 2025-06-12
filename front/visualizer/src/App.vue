@@ -49,7 +49,7 @@
         bottom: 0;
         background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
         border-right: 1px solid rgba(102, 126, 234, 0.1);
-        z-index: 9;
+        z-index: 0;
         box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
       "
     >

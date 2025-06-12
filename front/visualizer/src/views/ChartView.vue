@@ -189,7 +189,7 @@
               <div class="card-header">
                 <div class="header-left">
                   <span class="card-title">{{ chartOption.chartTitle }}</span>
-                  <el-tag type="warning" size="small">节点监控</el-tag>
+                  <el-tag type="warning" size="small" style="margin-right: 10px;">节点监控</el-tag>
                 </div>
                 <el-button 
                   type="primary" 
@@ -312,13 +312,14 @@
     <!-- Chart Dialog -->
     <el-dialog 
       v-model="dialogVisible" 
-      width="85%"
+      width="80%"
       :title="dialogChartTitle"
       destroy-on-close 
       :close-on-click-modal="false" 
       :before-close="closeDialog"
       class="chart-dialog"
       center
+      :modal-class="'chart-dialog-modal'"
     >
       <div ref="dialogChart" class="dialog-chart-container"></div>
       <template #footer>
@@ -374,6 +375,7 @@ export default {
       nodeChartList: [],
       userChartList: [],
       intervalId: null,
+      resizeListener: null,
       chartStore : useChartStore(),
       algorithms: [],
       layers: [],
@@ -395,7 +397,17 @@ export default {
       this.initNode()
       this.initUser()
     },300);
+    
+    // 添加窗口大小变化监听器
+    this.resizeListener = () => {
+      setTimeout(() => {
+        this.resizeAllCharts();
+      }, 100);
+    };
+    window.addEventListener('resize', this.resizeListener);
+    
     this.intervalId = setInterval(() => {
+      // 更新总览图表
       for(let i=0; i<this.defaultChartList.length; i++){
         let chart = this.defaultChartList[i].chart;
         let chartTitle = this.defaultChartList[i].chartTitle;
@@ -403,7 +415,10 @@ export default {
         let seriesList = [];
         for(let j=0; j<this.chartStore.yData[index].length; j++){
           seriesList.push({
-            data: this.chartStore.yData[index][j].slice(-20)
+            data: this.chartStore.yData[index][j].slice(-20),
+            // 保持原有的样式增强
+            animationDuration: 500,
+            animationEasing: 'cubicOut'
           });
         }
         chart.setOption({
@@ -411,8 +426,10 @@ export default {
           xAxis: {
             data: this.chartStore.xData[index].slice(-20)
           }
-        });
+        }, { notMerge: false });
       }
+      
+      // 更新节点图表
       for(let i=0; i<this.nodeChartList.length; i++){
         let chart = this.nodeChartList[i].chart;
         let chartTitle = this.nodeChartList[i].chartTitle;
@@ -420,7 +437,10 @@ export default {
         let seriesList = [];
         for(let j=0; j<this.chartStore.yData[index].length; j++){
           seriesList.push({
-            data: this.chartStore.yData[index][j].slice(-20)
+            data: this.chartStore.yData[index][j].slice(-20),
+            // 保持原有的样式增强
+            animationDuration: 500,
+            animationEasing: 'cubicOut'
           });
         }
         chart.setOption({
@@ -428,8 +448,10 @@ export default {
           xAxis: {
             data: this.chartStore.xData[index].slice(-20)
           }
-        });
+        }, { notMerge: false });
       }
+      
+      // 更新用户图表
       for(let i=0; i<this.userChartList.length; i++){
         let chart = this.userChartList[i].chart;
         let chartTitle = this.userChartList[i].chartTitle;
@@ -437,7 +459,10 @@ export default {
         let seriesList = [];
         for(let j=0; j<this.chartStore.yData[index].length; j++){
           seriesList.push({
-            data: this.chartStore.yData[index][j].slice(-20)
+            data: this.chartStore.yData[index][j].slice(-20),
+            // 保持原有的样式增强
+            animationDuration: 500,
+            animationEasing: 'cubicOut'
           });
         }
         chart.setOption({
@@ -445,14 +470,40 @@ export default {
           xAxis: {
             data: this.chartStore.xData[index].slice(-20)
           }
-        });
+        }, { notMerge: false });
       }
-    }, 3000);
+    }, 1000);
     this.fetchLayers();
   },
   beforeUnmount() {
     if (this.intervalId) {
       clearInterval(this.intervalId);
+    }
+    
+    // 清除窗口大小变化监听器
+    if (this.resizeListener) {
+      window.removeEventListener('resize', this.resizeListener);
+    }
+    
+    // 销毁所有图表实例
+    this.defaultChartList.forEach(chartItem => {
+      if (chartItem.chart && !chartItem.chart.isDisposed()) {
+        chartItem.chart.dispose();
+      }
+    });
+    this.nodeChartList.forEach(chartItem => {
+      if (chartItem.chart && !chartItem.chart.isDisposed()) {
+        chartItem.chart.dispose();
+      }
+    });
+    this.userChartList.forEach(chartItem => {
+      if (chartItem.chart && !chartItem.chart.isDisposed()) {
+        chartItem.chart.dispose();
+      }
+    });
+    
+    if (this.dialogChartInstance) {
+      this.dialogChartInstance.dispose();
     }
   },
   methods:{
@@ -464,10 +515,20 @@ export default {
       });
       this.defaultChartList = [];
       this.chartStore.chartOptions.forEach((option, index) => {
-        const chartRef = this.$refs['chart' + index][0];
-        if (chartRef) {
-          const chart = echarts.init(chartRef, null, {renderer: 'svg'});
-          chart.setOption(option.option);
+        const chartRef = this.$refs['chart' + index];
+        if (chartRef && chartRef[0]) {
+          const chartContainer = chartRef[0];
+          const chart = echarts.init(chartContainer, null, {renderer: 'svg'});
+          
+          // 增强图表样式配置
+          const enhancedOption = this.enhanceChartOption(option.option);
+          chart.setOption(enhancedOption);
+          
+          // 确保图表正确调整大小
+          setTimeout(() => {
+            chart.resize();
+          }, 100);
+          
           this.defaultChartList.push({
             chart: chart,
             chartTitle: option.chartTitle,
@@ -478,11 +539,29 @@ export default {
       });
     },
     initNode(){
+      // 清理现有的节点图表
+      this.nodeChartList.forEach(chartItem => {
+        if (chartItem.chart && !chartItem.chart.isDisposed()) {
+          chartItem.chart.dispose();
+        }
+      });
+      this.nodeChartList = [];
+      
       this.chartStore.chartOptionsNode.forEach((option, index) => {
-        const chartRef = this.$refs['chart' + (index + 10000)][0];
-        if (chartRef) {
-          const chart = echarts.init(chartRef, null, {renderer: 'svg'});
-          chart.setOption(option.option);
+        const chartRef = this.$refs['chart' + (index + 10000)];
+        if (chartRef && chartRef[0]) {
+          const chartContainer = chartRef[0];
+          const chart = echarts.init(chartContainer, null, {renderer: 'svg'});
+          
+          // 增强图表样式配置
+          const enhancedOption = this.enhanceChartOption(option.option);
+          chart.setOption(enhancedOption);
+          
+          // 确保图表正确调整大小
+          setTimeout(() => {
+            chart.resize();
+          }, 100);
+          
           this.nodeChartList.push({
             chart: chart,
             chartTitle: option.chartTitle,
@@ -494,10 +573,20 @@ export default {
     },
     initUser(){
       this.chartStore.chartOptionsUser.forEach((option, index) => {
-        const chartRef = this.$refs['chart' + (index + 20000)][0];
-        if (chartRef) {
-          const chart = echarts.init(chartRef, null, {renderer: 'svg'});
-          chart.setOption(option.option);
+        const chartRef = this.$refs['chart' + (index + 20000)];
+        if (chartRef && chartRef[0]) {
+          const chartContainer = chartRef[0];
+          const chart = echarts.init(chartContainer, null, {renderer: 'svg'});
+          
+          // 增强图表样式配置
+          const enhancedOption = this.enhanceChartOption(option.option);
+          chart.setOption(enhancedOption);
+          
+          // 确保图表正确调整大小
+          setTimeout(() => {
+            chart.resize();
+          }, 100);
+          
           this.userChartList.push({
             chart: chart,
             chartTitle: option.chartTitle,
@@ -592,16 +681,46 @@ export default {
            node: this.selectedNode,
          });
          const chartList = await response.data;
+         
+         // 先添加所有图表到store
          for (const rawChart of chartList) {
            console.log("add chart", rawChart);
            this.chartStore.addChart(rawChart);
-           await this.$nextTick(() => {
-             let index = this.chartStore.chartOptionsNode.length - 1;
-             let option = this.chartStore.chartOptionsNode[index];
-             const chartRef = this.$refs['chart' + (index + 10000)][0];
-             if (chartRef) {
-               const chart = echarts.init(chartRef, null, {renderer: 'svg'});
-               chart.setOption(option.option);
+         }
+         
+         // 等待DOM完全更新后再初始化所有新图表
+         await this.$nextTick();
+         
+         // 使用setTimeout确保DOM完全渲染
+         setTimeout(() => {
+           // 计算新添加的图表数量
+           const newChartsCount = chartList.length;
+           const startIndex = this.chartStore.chartOptionsNode.length - newChartsCount;
+           
+           for (let i = 0; i < newChartsCount; i++) {
+             const index = startIndex + i;
+             const option = this.chartStore.chartOptionsNode[index];
+             const chartRef = this.$refs['chart' + (index + 10000)];
+             
+             if (chartRef && chartRef[0]) {
+               const chartContainer = chartRef[0];
+               
+               // 确保容器有正确的尺寸
+               if (chartContainer.offsetWidth === 0 || chartContainer.offsetHeight === 0) {
+                 console.warn(`Chart container has zero size: ${chartContainer.offsetWidth}x${chartContainer.offsetHeight}`);
+               }
+               
+               const chart = echarts.init(chartContainer, null, {renderer: 'svg'});
+               
+               // 增强图表样式配置
+               const enhancedOption = this.enhanceChartOption(option.option);
+               chart.setOption(enhancedOption);
+               
+               // 强制调整图表大小
+               setTimeout(() => {
+                 chart.resize();
+               }, 100);
+               
                this.nodeChartList.push({
                  chart: chart,
                  chartTitle: option.chartTitle,
@@ -609,8 +728,13 @@ export default {
              } else {
                console.error(`Chart ref "node chart${index}" is undefined`);
              }
-           });
-         }
+           }
+           
+           // 确保所有现有图表也正确调整大小
+           this.resizeAllCharts();
+           
+         }, 50);
+         
          ElMessage.success("监控启动成功");
        } catch (error) {
          ElMessage.error("启动监控失败: " + error);
@@ -644,12 +768,42 @@ export default {
           this.dialogChartInstance.dispose();
         }
         const chart = echarts.init(chartRef, null, { renderer: 'svg' });
-        chart.setOption({
+        
+        // 构建详细图表配置
+        const detailOption = {
           dataZoom: [
               {
                   type: "slider",
                   start: 0,
                   end: 100,
+                  backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                  dataBackground: {
+                    lineStyle: {
+                      color: '#667eea'
+                    },
+                    areaStyle: {
+                      color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: 'rgba(102, 126, 234, 0.3)' },
+                        { offset: 1, color: 'rgba(102, 126, 234, 0.1)' }
+                      ])
+                    }
+                  },
+                  selectedDataBackground: {
+                    lineStyle: {
+                      color: '#764ba2'
+                    },
+                    areaStyle: {
+                      color: 'rgba(118, 75, 162, 0.3)'
+                    }
+                  },
+                  handleStyle: {
+                    color: '#667eea',
+                    borderColor: '#667eea'
+                  },
+                  textStyle: {
+                    color: '#667eea'
+                  },
+                  borderColor: 'rgba(102, 126, 234, 0.2)'
               },
               {
                 type: 'inside',
@@ -661,30 +815,106 @@ export default {
             trigger: 'axis',
             position: function (pt) {
               return [pt[0], '10%'];
-            }
+            },
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            borderColor: 'rgba(102, 126, 234, 0.2)',
+            borderWidth: 1,
+            textStyle: {
+              color: '#333'
+            },
+            extraCssText: 'border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);'
           },
           xAxis: {
             type: 'category',
             boundaryGap: false,
             name: originChart.getOption().xAxis[0].name,
+            nameTextStyle: {
+              color: '#667eea',
+              fontSize: 12,
+              fontWeight: 500
+            },
             data: this.chartStore.xData[index],
+            axisLabel: {
+              color: '#666',
+              fontSize: 11
+            },
+            axisLine: {
+              lineStyle: {
+                color: 'rgba(102, 126, 234, 0.2)'
+              }
+            },
+            splitLine: {
+              show: true,
+              lineStyle: {
+                color: 'rgba(102, 126, 234, 0.1)',
+                type: 'dashed'
+              }
+            }
           },
           toolbox: {
             feature: {
-              saveAsImage: {}
+              saveAsImage: {
+                backgroundColor: '#fff'
+              }
             },
+            iconStyle: {
+              borderColor: '#667eea'
+            },
+            emphasis: {
+              iconStyle: {
+                borderColor: '#764ba2'
+              }
+            }
           },
           legend: {
             data: originChart.getOption().legend[0].data,
+            textStyle: {
+              color: '#666',
+              fontSize: 12
+            },
+            itemStyle: {
+              borderRadius: 4
+            }
           },
           yAxis: {
             type: 'value',
             nameLocation: 'center',
             nameGap: 45,
             name: originChart.getOption().yAxis[0].name,
+            nameTextStyle: {
+              color: '#667eea',
+              fontSize: 12,
+              fontWeight: 500
+            },
+            axisLabel: {
+              color: '#666',
+              fontSize: 11
+            },
+            axisLine: {
+              lineStyle: {
+                color: 'rgba(102, 126, 234, 0.2)'
+              }
+            },
+            splitLine: {
+              lineStyle: {
+                color: 'rgba(102, 126, 234, 0.1)',
+                type: 'dashed'
+              }
+            }
           },
           series: seriesList,
-        });
+          grid: {
+            left: '6%',
+            right: '6%',
+            bottom: '18%',
+            top: '12%',
+            containLabel: true
+          }
+        };
+        
+        // 增强详细图表样式配置
+        const enhancedDetailOption = this.enhanceChartOption(detailOption);
+        chart.setOption(enhancedDetailOption);
         this.dialogChartInstance = chart;
       });
     },
@@ -694,6 +924,241 @@ export default {
         this.dialogChartInstance.dispose();
         this.dialogChartInstance = null;
       }
+    },
+    
+    // 调整所有图表大小的方法
+    resizeAllCharts() {
+      // 调整总览图表
+      this.defaultChartList.forEach(chartItem => {
+        if (chartItem.chart && !chartItem.chart.isDisposed()) {
+          chartItem.chart.resize();
+        }
+      });
+      
+      // 调整节点图表
+      this.nodeChartList.forEach(chartItem => {
+        if (chartItem.chart && !chartItem.chart.isDisposed()) {
+          chartItem.chart.resize();
+        }
+      });
+      
+      // 调整用户图表
+      this.userChartList.forEach(chartItem => {
+        if (chartItem.chart && !chartItem.chart.isDisposed()) {
+          chartItem.chart.resize();
+        }
+      });
+    },
+    
+    // 图表样式增强方法
+    enhanceChartOption(originalOption) {
+      const enhanced = JSON.parse(JSON.stringify(originalOption));
+      
+      // 现代化颜色主题
+      const colorPalette = [
+        '#667eea', '#764ba2', '#f093fb', '#f5576c',
+        '#4facfe', '#00f2fe', '#43e97b', '#38f9d7',
+        '#667eea', '#764ba2', '#ffecd2', '#fcb69f'
+      ];
+      
+      // 设置全局颜色
+      enhanced.color = colorPalette;
+      
+      // 增强tooltip样式
+      enhanced.tooltip = {
+        ...enhanced.tooltip,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderColor: 'rgba(102, 126, 234, 0.2)',
+        borderWidth: 1,
+        borderRadius: 8,
+        textStyle: {
+          color: '#333',
+          fontSize: 12
+        },
+        extraCssText: 'box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); backdrop-filter: blur(10px);'
+      };
+      
+      // 增强网格样式
+      enhanced.grid = {
+        left: '10%',
+        right: '5%',
+        bottom: '5%',
+        top: '20%',
+        containLabel: true,
+        ...enhanced.grid
+      };
+      
+      // 增强x轴样式
+      if (enhanced.xAxis) {
+        const xAxis = Array.isArray(enhanced.xAxis) ? enhanced.xAxis[0] : enhanced.xAxis;
+        enhanced.xAxis = {
+          ...xAxis,
+          nameTextStyle: {
+            color: '#667eea',
+            fontSize: 12,
+            fontWeight: 500,
+            ...xAxis.nameTextStyle
+          },
+          axisLabel: {
+            color: '#666',
+            fontSize: 11,
+            ...xAxis.axisLabel
+          },
+          axisLine: {
+            lineStyle: {
+              color: 'rgba(102, 126, 234, 0.3)',
+              width: 1
+            },
+            ...xAxis.axisLine
+          },
+          axisTick: {
+            lineStyle: {
+              color: 'rgba(102, 126, 234, 0.3)'
+            },
+            ...xAxis.axisTick
+          },
+          splitLine: {
+            show: true,
+            lineStyle: {
+              color: 'rgba(102, 126, 234, 0.1)',
+              type: 'dashed',
+              width: 1
+            },
+            ...xAxis.splitLine
+          }
+        };
+      }
+      
+      // 增强y轴样式
+      if (enhanced.yAxis) {
+        const yAxis = Array.isArray(enhanced.yAxis) ? enhanced.yAxis[0] : enhanced.yAxis;
+        enhanced.yAxis = {
+          ...yAxis,
+          nameTextStyle: {
+            color: '#667eea',
+            fontSize: 12,
+            fontWeight: 500,
+            ...yAxis.nameTextStyle
+          },
+          axisLabel: {
+            color: '#666',
+            fontSize: 11,
+            ...yAxis.axisLabel
+          },
+          axisLine: {
+            lineStyle: {
+              color: 'rgba(102, 126, 234, 0.3)',
+              width: 1
+            },
+            ...yAxis.axisLine
+          },
+          axisTick: {
+            lineStyle: {
+              color: 'rgba(102, 126, 234, 0.3)'
+            },
+            ...yAxis.axisTick
+          },
+          splitLine: {
+            lineStyle: {
+              color: 'rgba(102, 126, 234, 0.1)',
+              type: 'dashed',
+              width: 1
+            },
+            ...yAxis.splitLine
+          }
+        };
+      }
+      
+      // 增强图例样式
+      if (enhanced.legend) {
+        enhanced.legend = {
+          ...enhanced.legend,
+          textStyle: {
+            color: '#666',
+            fontSize: 12,
+            fontWeight: 400
+          },
+          itemStyle: {
+            borderRadius: 4
+          },
+          itemGap: 20,
+          icon: 'roundRect'
+        };
+      }
+      
+      // 增强系列样式
+      if (enhanced.series) {
+        enhanced.series = enhanced.series.map((serie, index) => {
+          const enhancedSerie = { ...serie };
+          
+          if (serie.type === 'line') {
+            enhancedSerie.smooth = true;
+            enhancedSerie.smoothMonotone = 'x';
+            enhancedSerie.symbol = 'circle';
+            enhancedSerie.symbolSize = 6;
+            enhancedSerie.lineStyle = {
+              width: 2,
+              cap: 'round',
+              join: 'round',
+              ...serie.lineStyle
+            };
+            enhancedSerie.itemStyle = {
+              borderWidth: 2,
+              borderColor: '#fff',
+              shadowBlur: 4,
+              shadowColor: 'rgba(0, 0, 0, 0.1)',
+              ...serie.itemStyle
+            };
+            enhancedSerie.emphasis = {
+              scale: true,
+              scaleSize: 8,
+              ...serie.emphasis
+            };
+            
+            // 添加渐变区域填充
+            if (!enhancedSerie.areaStyle) {
+              const color = colorPalette[index % colorPalette.length];
+              enhancedSerie.areaStyle = {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                  { offset: 0, color: color + '20' },
+                  { offset: 1, color: color + '05' }
+                ])
+              };
+            }
+          }
+          
+          if (serie.type === 'bar') {
+            enhancedSerie.itemStyle = {
+              borderRadius: [4, 4, 0, 0],
+              shadowBlur: 4,
+              shadowColor: 'rgba(0, 0, 0, 0.1)',
+              shadowOffsetY: 2,
+              ...serie.itemStyle
+            };
+            enhancedSerie.emphasis = {
+              itemStyle: {
+                shadowBlur: 8,
+                shadowColor: 'rgba(0, 0, 0, 0.2)'
+              },
+              ...serie.emphasis
+            };
+          }
+          
+          // 添加动画配置
+          enhancedSerie.animationDuration = 1000;
+          enhancedSerie.animationEasing = 'cubicOut';
+          enhancedSerie.animationDelay = index * 100;
+          
+          return enhancedSerie;
+        });
+      }
+      
+      // 添加全局动画配置
+      enhanced.animation = true;
+      enhanced.animationDuration = 1000;
+      enhanced.animationEasing = 'cubicOut';
+      
+      return enhanced;
     },
   },
 };
@@ -806,9 +1271,12 @@ export default {
 /* 图表网格样式 */
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
   gap: 20px;
   margin-top: 20px;
+  /* 确保网格在动态添加元素时保持正确的布局 */
+  grid-auto-rows: auto;
+  grid-auto-flow: row;
 }
 
 .chart-card {
@@ -857,6 +1325,23 @@ export default {
   width: 100%;
   height: 300px;
   border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
+  padding: 8px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.chart-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent);
+  z-index: 1;
 }
 
 /* 配置选择器样式 */
@@ -1046,7 +1531,23 @@ export default {
   width: 100%;
   height: 500px;
   border-radius: 8px;
-  background: white;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+  padding: 12px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.dialog-chart-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent);
+  z-index: 1;
 }
 
 .dialog-footer {
@@ -1090,6 +1591,7 @@ export default {
   
   .charts-grid {
     grid-template-columns: 1fr;
+    grid-auto-rows: auto;
   }
   
   .selector-row {
@@ -1105,6 +1607,12 @@ export default {
   
   .chart-dialog {
     width: 95% !important;
+    max-width: 90vw !important;
+  }
+  
+  .dialog-chart-container {
+    height: 350px;
+    padding: 8px;
   }
 }
 
@@ -1145,6 +1653,74 @@ export default {
 .chart-dialog :deep(.el-dialog) {
   border-radius: 16px;
   overflow: hidden;
+}
+
+/* 图表容器额外样式 */
+.chart-container canvas,
+.dialog-chart-container canvas {
+  border-radius: 6px;
+}
+
+/* 图表hover效果 */
+.chart-card:hover .chart-container::before {
+  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent);
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* 图表加载状态 */
+.chart-container.loading {
+  position: relative;
+}
+
+.chart-container.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border: 3px solid rgba(102, 126, 234, 0.1);
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  z-index: 10;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 图表数据点动画 */
+.chart-container:hover {
+  transform: scale(1.01);
+  transition: transform 0.3s ease;
+}
+
+/* 美化滚动条 */
+.charts-grid::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.charts-grid::-webkit-scrollbar-track {
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 3px;
+}
+
+.charts-grid::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 3px;
+}
+
+.charts-grid::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2, #667eea);
 }
 
 
