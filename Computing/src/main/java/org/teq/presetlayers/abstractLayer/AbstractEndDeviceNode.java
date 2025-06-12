@@ -14,8 +14,8 @@ import org.teq.configurator.ExecutorConfig;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.EndDeviceTask;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.flink.javasocket.HighPerformanceDataReceiver;
-import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
+import org.teq.utils.connector.flink.netty.HighPerformanceDataReceiver;
+import org.teq.utils.connector.flink.netty.HighPerformanceTargetedDataSender;
 
 
 public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements EndDeviceTask {
@@ -34,7 +34,7 @@ public abstract class AbstractEndDeviceNode extends MeasuredFlinkNode implements
         DataStream<PackageBean> computedStream = measureDataStream(fromSensor);
         measureResponseDataStream(response);
 
-        DataStreamSink<PackageBean> ToCod = computedStream.addSink(new TargetedDataSender<>(ExecutorConfig.maxNumRetries, ExecutorConfig.retryInterval)).setParallelism(1);
+        DataStreamSink<PackageBean> ToCod = computedStream.addSink(new HighPerformanceTargetedDataSender<>(ExecutorConfig.maxNumRetries, ExecutorConfig.retryInterval)).setParallelism(1);
         logger.info("EndDeviceLayer: ToCod port is {}", ExecutorConfig.fromEndToCodPort);
     }
     public DataStream<PackageBean> measureDataStream(DataStream<PackageBean> infoSteam) {

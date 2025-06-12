@@ -1,4 +1,4 @@
-package org.teq.utils.connector.flink.javasocket;
+package org.teq.utils.connector.flink.netty;
 
 import com.alibaba.fastjson.JSON;
 import io.netty.bootstrap.ServerBootstrap;

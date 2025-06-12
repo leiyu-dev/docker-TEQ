@@ -12,8 +12,8 @@ import org.teq.mearsurer.MeasuredFlinkNode;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.WorkerTask;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.flink.javasocket.HighPerformanceDataReceiver;
-import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
+import org.teq.utils.connector.flink.netty.HighPerformanceDataReceiver;
+import org.teq.utils.connector.flink.netty.HighPerformanceTargetedDataSender;
 
 public abstract class AbstractWorkerNode extends MeasuredFlinkNode implements WorkerTask  {
     protected String logConfigFilePath; // 每个实例的日志配置文件路径都不一样
@@ -45,7 +45,7 @@ public abstract class AbstractWorkerNode extends MeasuredFlinkNode implements Wo
         DataStream<PackageBean> info = FromCenter.union(FromCod);
         DataStream<PackageBean> transformedWorkers = measureWorkerLayerRecord(info);
 
-        DataStreamSink sink = transformedWorkers.addSink(new TargetedDataSender<>(maxNumRetries,retryInterval));
+        DataStreamSink sink = transformedWorkers.addSink(new HighPerformanceTargetedDataSender<>(maxNumRetries,retryInterval));
     }
     public DataStream<PackageBean> measureWorkerLayerRecord(DataStream<PackageBean> stream) {
         DataStream<PackageBean> inputMap = stream.map(new MapFunction<PackageBean, PackageBean>() {

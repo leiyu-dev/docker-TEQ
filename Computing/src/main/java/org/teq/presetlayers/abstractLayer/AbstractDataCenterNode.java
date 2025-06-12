@@ -13,8 +13,8 @@ import org.teq.configurator.ExecutorConfig;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.DataCenterTask;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.flink.javasocket.HighPerformanceDataReceiver;
-import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
+import org.teq.utils.connector.flink.netty.HighPerformanceDataReceiver;
+import org.teq.utils.connector.flink.netty.HighPerformanceTargetedDataSender;
 
 public abstract class AbstractDataCenterNode extends MeasuredFlinkNode implements DataCenterTask {
     private static final Logger logger = LogManager.getLogger(AbstractEndDeviceNode.class);
@@ -26,7 +26,7 @@ public abstract class AbstractDataCenterNode extends MeasuredFlinkNode implement
         DataStream<PackageBean> FromWorker = env.addSource(new HighPerformanceDataReceiver<PackageBean>(ExecutorConfig.fromWorkerToCenterPort, PackageBean.class))
                 .returns(TypeInformation.of(PackageBean.class));
         DataStream<PackageBean> modifiedInfo = measurerDataCenterRecord(FromWorker);
-        DataStreamSink ToWorker = modifiedInfo.addSink(new TargetedDataSender<>(maxNumRetries,retryInterval));
+        DataStreamSink ToWorker = modifiedInfo.addSink(new HighPerformanceTargetedDataSender<>(maxNumRetries,retryInterval));
     }
     public DataStream<PackageBean> measurerDataCenterRecord(DataStream<PackageBean> stream){
         DataStream<PackageBean> inputMap = stream.map(new MapFunction<PackageBean, PackageBean>() {

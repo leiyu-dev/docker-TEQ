@@ -13,9 +13,8 @@ import org.teq.configurator.ExecutorConfig;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.taskInterface.CoordinatorTask;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.flink.javasocket.HighPerformanceDataReceiver;
-import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
-//import org.apache.log4j.PropertyConfigurator;
+import org.teq.utils.connector.flink.netty.HighPerformanceDataReceiver;
+import org.teq.utils.connector.flink.netty.HighPerformanceTargetedDataSender;
 
 
 public abstract class AbstractCoordinatorNode extends MeasuredFlinkNode implements CoordinatorTask {
@@ -38,8 +37,8 @@ public abstract class AbstractCoordinatorNode extends MeasuredFlinkNode implemen
         DataStream<PackageBean> routedToEnd = measureToEndRecord(FromWorker);
 
 
-        DataStreamSink<PackageBean> ToEnd = routedToEnd.addSink(new TargetedDataSender<>(maxNumRetries,retryInterval)).setParallelism(1);
-        DataStreamSink<PackageBean> ToWorker = routedToWorker.addSink(new TargetedDataSender<>(maxNumRetries,retryInterval)).setParallelism(1);
+        DataStreamSink<PackageBean> ToEnd = routedToEnd.addSink(new HighPerformanceTargetedDataSender<>(maxNumRetries,retryInterval)).setParallelism(1);
+        DataStreamSink<PackageBean> ToWorker = routedToWorker.addSink(new HighPerformanceTargetedDataSender<>(maxNumRetries,retryInterval)).setParallelism(1);
     }
     public DataStream<PackageBean> measureToWorkerRecord(DataStream<PackageBean> stream){
         DataStream<PackageBean> inputMap = stream.map(new MapFunction<PackageBean, PackageBean>() {

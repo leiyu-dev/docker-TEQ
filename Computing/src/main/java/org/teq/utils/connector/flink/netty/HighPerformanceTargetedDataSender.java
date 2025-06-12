@@ -1,4 +1,4 @@
-package org.teq.utils.connector.flink.javasocket;
+package org.teq.utils.connector.flink.netty;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;

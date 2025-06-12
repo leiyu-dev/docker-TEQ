@@ -9,7 +9,7 @@ import org.teq.mearsurer.BuiltInMetrics;
 import org.teq.node.AbstractFlinkNode;
 import org.teq.utils.DockerRuntimeData;
 import org.teq.utils.connector.flink.javasocket.CommonDataSender;
-import org.teq.utils.connector.flink.javasocket.HighPerformanceDataReceiver;
+import org.teq.utils.connector.flink.netty.HighPerformanceDataReceiver;
 
 import java.util.ArrayList;
 import java.util.List;

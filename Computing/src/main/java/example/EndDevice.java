@@ -11,7 +11,7 @@ import org.teq.configurator.unserializable.InfoType;
 import org.teq.presetlayers.PackageBean;
 import org.teq.presetlayers.abstractLayer.AbstractEndDeviceNode;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.flink.javasocket.HighPerformanceDataReceiver;
+import org.teq.utils.connector.flink.netty.HighPerformanceDataReceiver;
 
 import java.util.Arrays;
 import java.util.List;

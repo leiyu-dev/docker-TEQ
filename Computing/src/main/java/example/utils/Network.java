@@ -7,7 +7,7 @@ import org.teq.configurator.unserializable.InfoType;
 import org.teq.presetlayers.PackageBean;
 import org.teq.simulator.network.AbstractNetworkHostNode;
 import org.teq.utils.DockerRuntimeData;
-import org.teq.utils.connector.flink.javasocket.TargetedDataSender;
+import org.teq.utils.connector.flink.netty.HighPerformanceTargetedDataSender;
 import org.teq.utils.dataSet.dataSetPlayer.CommonDataSource;
 import org.teq.utils.dataSet.dataSetPlayer.DataSetCommonPlayer;
 import org.teq.utils.dataSet.dataSetPlayer.Reader.CSVReader;
@@ -40,6 +40,6 @@ public class Network extends AbstractNetworkHostNode {
                         DockerRuntimeData.getNodeNameListByLayerName(ExecutorConfig.endDeviceLayerName).get(
                                 random.nextInt(DockerRuntimeData.getNodeNameListByLayerName(ExecutorConfig.endDeviceLayerName).size())),
                         ExecutorConfig.fromNetworkToEndPort, s[12].equals("0") ? InfoType.Data : InfoType.Query, Arrays.asList(s), System.nanoTime())).
-                addSink(new TargetedDataSender<>(ExecutorConfig.maxNumRetries, ExecutorConfig.retryInterval)).setParallelism(1);
+                addSink(new HighPerformanceTargetedDataSender<>(ExecutorConfig.maxNumRetries, ExecutorConfig.retryInterval)).setParallelism(1);
     }
 }
