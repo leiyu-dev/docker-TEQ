@@ -59,7 +59,7 @@ Teq addresses three core challenges in edge query processing algorithm developme
 ## 📦 Quick Start
 
 ### Requirements
-- Java 11
+- Java 11(Higher Java versions are temporarily not supported.)
 - Maven 3.6+
 - Docker
 - Node.js 22+ (for frontend development)
@@ -72,14 +72,16 @@ Teq addresses three core challenges in edge query processing algorithm developme
    cd docker-TEQ
    ```
 
-2. **Compile backend project**
+2. **Pull docker image**
    ```bash
-   mvn clean compile
+   docker pull leiyu0503/teq:1.0
    ```
 
-3. **Start the testbed**
+3. **start backend project**
    ```bash
-   ./run.sh
+   mvn clean compile
+   mvn exec:java -Dexec.mainClass="example.Example" -pl Computing
+   # or you can execute the run.sh script
    ```
 
 4. **Launch Web interface** (optional)
@@ -88,7 +90,8 @@ Teq addresses three core challenges in edge query processing algorithm developme
    npm install
    npm run dev
    ```
-Web interface will be integrated into the java application in the near future
+if you launch the web interface on the server, you also need to forward port 8889(backend port, can be configured in the configurator) to your local machine.
+Web interface will be integrated into the java application in the near future.
 
 ## 🚀 Algorithm Implementation Examples
 

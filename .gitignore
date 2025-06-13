@@ -45,7 +45,7 @@ statistics/*
 Computing/src/main/resources/config
 Computing/src/main/resources/config.json
 Computing/src/main/resources/config.properties
-Computing/src/main/resources/data*
+Computing/src/main/resources/dataItem*
 Computing/src/main/resources/*Data**
 debug/*
 !docker/data*

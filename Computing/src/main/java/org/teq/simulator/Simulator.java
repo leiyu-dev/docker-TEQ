@@ -432,14 +432,14 @@ public class Simulator {
                 startClassImportContent +
                 "public class "+ SimulatorConfig.StartClassName +"{\n" +
                 "    public static void main(String[] args) throws Exception{\n" +
-                "        Path path = Path.of(SimulatorConfigurator.dataFolderName + \"/\" + SimulatorConfigurator.parametersClassFileName);\n" +
+                "        Path path = Path.of(SimulatorConfig.dataFolderName + \"/\" + SimulatorConfig.parametersClassFileName);\n" +
                 "            List<String> parametersClassNames = Files.readAllLines(path);\n" +
                 "            for(int i = 0; i < parametersClassNames.size(); i++){\n" +
                 "                if(parametersClassNames.get(i).isEmpty()){\n" +
                 "                    continue;\n" +
                 "                }\n" +
                 "                String parametersClassName = parametersClassNames.get(i);\n" +
-                "                String parametersFilePath = SimulatorConfigurator.dataFolderName + \"/config/\" + parametersClassName + \".json\";\n" +
+                "                String parametersFilePath = SimulatorConfig.dataFolderName + \"/config/\" + parametersClassName + \".json\";\n" +
                 "                try {\n" +
                 "                    StaticSerializer.deserializeFromJson(Class.forName(parametersClassName),utils.readFirstLineFromFile(parametersFilePath));\n" +
                 "                } catch (Exception e) {\n" +
