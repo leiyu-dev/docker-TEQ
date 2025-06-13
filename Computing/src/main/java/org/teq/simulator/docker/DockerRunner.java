@@ -312,7 +312,7 @@ public class DockerRunner {
 //                .withShowAll(true) // show all containers (not just running ones)
 //                .exec();
 //        for (Container container : containers) {
-//            if (container.getNames()[0].startsWith("/"+SimulatorConfigurator.classNamePrefix)) {
+//            if (container.getNames()[0].startsWith("/"+SimulatorConfig.classNamePrefix)) {
 //                System.out.println("Waiting for container " + container.getNames()[0] + " to stop");
 //                try {
 //                    dockerClient.waitContainerCmd(container.getId()).exec( new ResultCallback.Adapter<WaitResponse>() {
@@ -534,7 +534,7 @@ public class DockerRunner {
         "tc qdisc add dev eth0 parent 1:1 handle 10: netem delay "+ parameters.getNetworkOutLatency() +"ms && " +
         "tc class add dev eth0 parent 1: classid 1:2 htb rate 100mbit ceil 100mbit && " +
         "tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 match ip tos 0x10 0xff flowid 1:2 && " +
-        "bash "+ SimulatorConfigurator.volumePath + "/" + SimulatorConfigurator.startScriptName
+        "bash "+ SimulatorConfig.volumePath + "/" + SimulatorConfig.startScriptName
         };
      */
     public void changeNetworkOut(String containerName, double outBandwidth, double outLatency) throws IllegalArgumentException {

@@ -215,7 +215,7 @@ public class HighPerformanceTargetedDataSender<T extends MetricsPackageBean> ext
             @Override
             public void operationComplete(ChannelFuture channelFuture) {
                 if (channelFuture.isSuccess()) {
-                    logger.trace("Message sent successfully to {}:{}: {}", hostname, port, jsonMessage.trim());
+                    logger.info("Message sent successfully to {}:{}: {}", hostname, port, jsonMessage.trim());
                 } else {
                     logger.error("Failed to send message to {}:{}: {}", 
                         hostname, port, channelFuture.cause().getMessage());

@@ -24,7 +24,7 @@ public class Network extends AbstractNetworkHostNode {
      */
     @Override
     public void dataProcess() {
-        //wait for 10 seconds to make sure the end devices are ready
+        //wait for 60 seconds to make sure the end devices are ready
         try {
             Thread.sleep(ExecutorConfig.waitBeforeStart);
         } catch (InterruptedException e) {
