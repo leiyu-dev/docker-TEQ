@@ -2,60 +2,6 @@
 
 Teq is a testbed specifically designed for edge-based query processing algorithms, providing an open, extensible simulation and algorithm deployment environment. It is developer-friendly, simplifying the otherwise cumbersome simulation, complex algorithm module management, and tedious evaluation processes.
 
-## Key Features
-
-- **Real Query Execution**: Unlike existing simulators that only support resource management, Teq enables the execution and testing of real query processing algorithms
-- **Layered Edge Architecture**: Employs a four-layer model (End Device, Coordinator, Worker, Data Center layers) to simulate heterogeneous edge computing environments
-- **Docker Containerization**: Provides node isolation and modular deployment based on Docker technology
-- **Data Playback Control**: Offers reproducible data and query stream control to ensure consistent and fair algorithm evaluation
-- **Real-time Monitoring & Visualization**: Built-in performance metrics monitoring system with runtime metric collection and real-time visualization
-- **Developer-friendly**: Simplifies distributed algorithm module implementation - developers only need to implement abstract methods without handling underlying network communications
-
-## 🏗️ System Architecture
-
-### Four-layer Edge Computing Model
-```
-Data Center Layer    # Global data aggregation and processing
-        ↕ D2W / W2D
-Worker Layer         # Local computational task execution  
-        ↕ W2C / C2W
-Coordinator Layer    # Data and query routing
-        ↕ C2E / E2C
-End Device Layer     # Data generation and query initiation
-```
-
-### Backend Architecture (Computing/)
-```
-org.teq/
-├── backend/          # Backend manager and log handling
-├── configurator/     # Simulation configuration management
-├── layer/            # Layered architecture implementation
-├── measurer/         # Performance monitoring and metric collection
-│   └── receiver/     # Metric reception and processing
-├── node/             # Node abstraction and Docker implementation
-├── presetlayers/     # Preset layers and task interfaces
-├── simulator/        # Simulator core and Docker runner
-│   ├── docker/       # Docker container management
-│   └── network/      # Network host nodes
-├── utils/            # Utilities and data connectors
-│   ├── connector/    # Flink and Netty connectors
-│   └── dataSet/      # Dataset players
-└── visualizer/       # Visualization components
-```
-
-### Frontend Architecture (front/)
-- **Controller**: Basic execution controls (start, stop, restart) and runtime information display
-- **Configurator**: Runtime settings panel with real-time parameter adjustment support
-- **Visualizer**: Interactive chart analysis and real-time data display
-
-## 🔬 Academic Research Background
-
-Teq addresses three core challenges in edge query processing algorithm development and evaluation:
-
-1. **Cumbersome Simulation**: Existing edge computing simulators cannot execute real queries, forcing researchers to integrate simulation code into algorithm implementations
-2. **Complex Algorithm Module Management**: Edge computing algorithms contain modules distributed across different nodes, making overall algorithm implementation and execution complex
-3. **Tedious Evaluation**: Algorithm evaluation requires real-time monitoring of distributed modules, and any changes require repeated evaluations
-
 ## 📦 Quick Start
 
 ### Requirements
@@ -196,58 +142,7 @@ public class CustomFlinkNode extends AbstractFlinkNode {
 }
 ```
 
-## 📊 Performance Monitoring Metrics
-
-Teq provides comprehensive performance metric monitoring:
-
-### Effectiveness Metrics
-- **Query Accuracy**: Correctness verification of query results
-- **Query Completeness**: Result coverage and completeness analysis
-
-### Efficiency Metrics  
-- **Processing Latency**: End-to-end processing time for individual queries
-- **Transfer Latency**: Data transmission time between nodes
-- **Throughput**: Number of queries/data items processed per second
-- **Memory Usage**: Heap memory usage of each node
-- **Energy Estimation**: Energy consumption calculation based on data processing volume
-
-### System-wide Metric Transformation
-```java
-// Example: Overall query energy consumption calculation
-double totalEnergyConsumption = 
-    computingEnergy(nodes) + communicationEnergy(pipes);
-    
-// Where:
-// computingEnergy = Σ(N_i × δ_i) for all nodes i
-// communicationEnergy = Σ(N_p × κ_p) for all pipes p
-```
-
-## 🔧 Data Playback Control
-
-### Data Stream Control
-- **Controllable Flow Rate**: Set data generation speed through configurator
-- **Order Guarantee**: Support fixed latency mode to ensure data order
-
-### Query Stream Control  
-- **Query File Format**: Query instances stored in query time order
-- **Parameter Combinations**: Support random parameter combinations for continuous query streams
-- **Frequency Control**: Configurable query generation frequency
-
-
-
-## 📈 Comparison with Existing Tools
-
-| Feature | EmuFog | iFogSim | EdgeCloudSim | IoTSim-Edge | PureEdgeSim | **Teq** |
-|---------|---------|---------|--------------|-------------|-------------|----------|
-| Network Model | ❌ | 🔸 | ✅ | ✅ | ✅ | ✅ |
-| Device Characteristics | 🔸 | 🔸 | 🔸 | ✅ | ✅ | ✅ |
-| Query Workload | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Real Tasks | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Metric Plots | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-
-## 🤝 Academic Contributions
-
-### Core Innovations
+## 🤝 Core Innovations
 1. **Streamlined Framework**: Implementing decentralized algorithms as modular, Docker-based executables
 2. **Playback Control**: Data and query playback control for reproducible and consistent evaluations  
 3. **Metric Transformation**: Converting runtime metrics into system-wide metrics desired by algorithm developers
